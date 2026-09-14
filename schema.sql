@@ -1,11 +1,13 @@
 -- ============================================================
 -- Schema do banco de dados - Sistema Banco de Leite Humano
 -- ============================================================
--- Como usar:
--- 1. Crie o banco de dados manualmente no phpMyAdmin, com o nome:
---    banco_de_leite_humano
--- 2. Entre nesse banco, vá na aba "SQL" e cole todo o conteúdo
---    deste arquivo de uma vez, depois execute.
+-- Como usar (phpMyAdmin): aba "SQL" de qualquer banco > colar
+-- tudo > Executar. As duas linhas abaixo já criam o banco
+-- "banco_de_leite_humano" sozinhas — não precisa criar antes.
+--
+-- Como usar (linha de comando):
+--   mysql -u root < schema.sql
+
 -- As tabelas são criadas na ordem correta de dependência
 -- (cada FOREIGN KEY referencia uma tabela já existente).
 -- ============================================================
