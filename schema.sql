@@ -34,7 +34,7 @@ CREATE TABLE FRASCO_CRU (
     id_frasco_cru INT AUTO_INCREMENT PRIMARY KEY,
     id_coleta INT NOT NULL,
     classificacao ENUM('colostro', 'transicao', 'maduro') NOT NULL,
-    status_conformidade ENUM('conforme', 'nao_conforme') NOT NULL,
+    status_conformidade ENUM('conforme', 'nao_conforme') DEFAULT 'pendente',
     motivo_descarte VARCHAR(255),
     FOREIGN KEY (id_coleta) REFERENCES COLETA_DOMICILIAR(id_coleta)
 );
