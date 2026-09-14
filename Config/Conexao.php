@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Config; // reflete a pasta config/, conforme o autoload do composer.json
+namespace App\Config; // reflete a pasta Config/, conforme o autoload do composer.json
 
 use PDO;           // classe nativa do PHP para conectar a bancos de dados
 use PDOException;  // exceção nativa, lançada quando algo dá errado na conexão/consulta
+use RuntimeException; // exceção nativa, lançada aqui quando o config.php não existe
 
 class Conexao {
 
@@ -18,10 +19,14 @@ class Conexao {
         // se a conexão ainda não existe, cria agora; se já existe, pula e reaproveita
         if (self::$conexao === null) {
 
-            $host = "localhost";               // XAMPP local, mesma máquina
-            $banco = "banco_de_leite_humano";  // nome exato criado no phpMyAdmin
-            $usuario = "root";                 // usuário padrão do MySQL no XAMPP
-            $senha = "";                       // XAMPP local não define senha por padrão
+            // credenciais não ficam mais fixas aqui — vêm do config.php de cada máquina
+            // (ver método carregarConfig() logo abaixo)
+            $config = self::carregarConfig();
+
+            $host = $config['host'];       // XAMPP local, mesma máquina
+            $banco = $config['dbname'];    // nome exato criado no phpMyAdmin
+            $usuario = $config['usuario']; // usuário padrão do MySQL no XAMPP
+            $senha = $config['senha'];     // XAMPP local não define senha por padrão
 
             // try/catch: tentar conectar pode falhar (banco fora do ar, senha errada, etc.)
             try {
@@ -44,5 +49,26 @@ class Conexao {
 
         // devolve a conexão (recém-criada, ou a que já existia)
         return self::$conexao;
+    }
+
+    // "private" = só a própria classe usa; "static" pelo mesmo motivo do conectar() acima
+    // lê Config/config.php (arquivo local, fora do Git) e devolve suas credenciais.
+    // Cada pessoa do grupo tem o seu próprio, copiado a partir de config.example.php.
+    private static function carregarConfig(): array {
+
+        $caminho = __DIR__ . '/config.php'; // __DIR__ = pasta onde este arquivo está (Config/)
+
+        // se a pessoa esqueceu de copiar o config.example.php, avisa com uma mensagem clara
+        // em vez de deixar o erro estourar mais na frente, sem explicação nenhuma
+        if (!file_exists($caminho)) {
+            throw new RuntimeException(
+                "Arquivo Config/config.php não encontrado. " .
+                "Copie Config/config.example.php para Config/config.php " .
+                "e ajuste as credenciais se necessário."
+            );
+        }
+
+        // require de um arquivo que só tem um "return [...]" devolve o próprio array
+        return require $caminho;
     }
 }
