@@ -9,13 +9,24 @@ class Doadora {
 
     // "?string" = aceita string OU null, pois esses campos não são NOT NULL no banco
     // ": int" = esse método sempre devolve um número inteiro (o ID gerado)
-    public function criar(string $nome, string $cpf, ?string $cartaoSus, ?string $telefone, ?string $endereco): int {
+    // "?int $idRequisitos = null" = parâmetro NOVO, opcional (valor padrão null) —
+    // quem já chamava criar() com 5 argumentos continua funcionando sem mudar nada.
+    // É usado só quando a doadora nasce de uma aprovação (RequisitosSaude::aprovar),
+    // para já registrar o elo de rastreabilidade com a solicitação original.
+    public function criar(
+        string $nome,
+        string $cpf,
+        ?string $cartaoSus,
+        ?string $telefone,
+        ?string $endereco,
+        ?int $idRequisitos = null
+    ): int {
 
         $pdo = Conexao::conectar(); // pega a conexão (reaproveitada, graças ao Singleton)
 
         // SQL com "placeholders" (:nome, :cpf...) em vez de valores colados na string
-        $sql = "INSERT INTO DOADORA (nome, cpf, cartao_sus, telefone, endereco)
-                VALUES (:nome, :cpf, :cartao_sus, :telefone, :endereco)";
+        $sql = "INSERT INTO DOADORA (nome, cpf, cartao_sus, telefone, endereco, id_requisitos)
+                VALUES (:nome, :cpf, :cartao_sus, :telefone, :endereco, :id_requisitos)";
 
         $stmt = $pdo->prepare($sql); // "prepara" o comando, ainda sem executar
 
@@ -25,7 +36,8 @@ class Doadora {
             'cpf' => $cpf,
             'cartao_sus' => $cartaoSus,
             'telefone' => $telefone,
-            'endereco' => $endereco
+            'endereco' => $endereco,
+            'id_requisitos' => $idRequisitos
         ]);
 
         // pega o ID que o AUTO_INCREMENT acabou de gerar para esse novo registro
