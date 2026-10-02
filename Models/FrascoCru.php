@@ -5,8 +5,6 @@ namespace App\Models;
 use App\Config\Conexao;
 use PDO;
 
-// Cada frasco individual que sai de uma coleta, ainda cru (não pasteurizado).
-// É aqui que acontece o primeiro "gate" de conformidade.
 class FrascoCru {
 
     public function criar(int $idColeta, string $classificacao): int {
@@ -34,9 +32,6 @@ class FrascoCru {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // registra o resultado da inspeção de conformidade. Se reprovado, o
-    // motivo é OBRIGATÓRIO — é o que garante a trilha de auditoria mesmo
-    // para frascos descartados (nada é só silenciosamente apagado)
     public function marcarConformidade(int $id, bool $conforme, ?string $motivoDescarte = null): bool {
 
         $pdo = Conexao::conectar();
