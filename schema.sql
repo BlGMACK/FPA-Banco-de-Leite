@@ -1,31 +1,8 @@
--- ============================================================
--- Schema do banco de dados - Sistema Banco de Leite Humano
--- ============================================================
--- Como usar (phpMyAdmin): aba "SQL" de qualquer banco > colar
--- tudo > Executar. As duas linhas abaixo já criam o banco
--- "banco_de_leite_humano" sozinhas — não precisa criar antes.
---
--- Como usar (linha de comando):
---   mysql -u root < schema.sql
---
--- As tabelas são criadas na ordem correta de dependência
--- (cada FOREIGN KEY referencia uma tabela já existente).
---
--- Fluxo completo (admissão -> operação), cada etapa é uma
--- tabela própria, criada só quando a etapa realmente acontece:
---
---   SOLICITACAO -> VISITA -> FICHA_TRIAGEM -> REQUISITOS_SAUDE
---       -> DOADORA (aprovação final) -> RETIRADA
---       -> COLETA_DOMICILIAR -> FRASCO_CRU -> FRASCO_PASTEURIZADO
---       -> ANALISE_QUALIDADE / PRESCRICAO -> RECEPTOR
--- ============================================================
 
 CREATE DATABASE IF NOT EXISTS banco_de_leite_humano;
 USE banco_de_leite_humano;
 
--- ------------------------------------------------------------
--- FASE 1: ADMISSÃO — do primeiro contato até a doadora aprovada
--- ------------------------------------------------------------
+
 
 CREATE TABLE SOLICITACAO (
     id_solicitacao INT AUTO_INCREMENT PRIMARY KEY,
@@ -68,7 +45,7 @@ CREATE TABLE REQUISITOS_SAUDE (
 
 CREATE TABLE DOADORA (
     id_doadora INT AUTO_INCREMENT PRIMARY KEY,
-    id_requisitos INT UNIQUE NULL, -- liga de volta até a solicitação original (traceback)
+    id_requisitos INT UNIQUE NULL,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL,
     cartao_sus VARCHAR(20),
@@ -78,9 +55,7 @@ CREATE TABLE DOADORA (
     FOREIGN KEY (id_requisitos) REFERENCES REQUISITOS_SAUDE(id_requisitos)
 );
 
--- ------------------------------------------------------------
--- FASE 2: OPERAÇÃO — da doadora aprovada até a distribuição
--- ------------------------------------------------------------
+
 
 CREATE TABLE RETIRADA (
     id_retirada INT AUTO_INCREMENT PRIMARY KEY,
@@ -94,7 +69,7 @@ CREATE TABLE RETIRADA (
 CREATE TABLE COLETA_DOMICILIAR (
     id_coleta INT AUTO_INCREMENT PRIMARY KEY,
     id_doadora INT NOT NULL,
-    id_retirada INT NULL, -- qual aviso de retirada esta coleta está atendendo
+    id_retirada INT NULL,
     data_visita DATE NOT NULL,
     zona_regiao ENUM('norte', 'sul', 'oeste', 'leste', 'rural') NOT NULL,
     volume_ml DECIMAL(6,2),
