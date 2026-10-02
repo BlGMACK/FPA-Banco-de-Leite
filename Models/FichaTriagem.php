@@ -5,8 +5,6 @@ namespace App\Models;
 use App\Config\Conexao;
 use PDO;
 
-// Dados completos colhidos durante a visita — hoje em papel, aqui registrados
-// pelo responsável que foi até a casa da doadora (pensado para acesso mobile).
 class FichaTriagem {
 
     public function criar(
@@ -46,8 +44,6 @@ class FichaTriagem {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // id_visita é UNIQUE na tabela (uma visita só gera uma ficha), então
-    // essa busca sempre devolve no máximo uma linha
     public function buscarPorVisita(int $idVisita): array|false {
 
         $pdo = Conexao::conectar();
@@ -58,8 +54,6 @@ class FichaTriagem {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // quem revisa a ficha (uma segunda pessoa, por segurança) aprova ou
-    // reprova aqui — só depois disso o processo segue para REQUISITOS_SAUDE
     public function revisar(int $id, bool $aprovada): bool {
 
         $pdo = Conexao::conectar();
