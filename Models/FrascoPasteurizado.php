@@ -5,11 +5,6 @@ namespace App\Models;
 use App\Config\Conexao;
 use PDO;
 
-// O MOMENTO EXATO em que o dado se "esconde": este método recebe só o ID
-// do frasco cru, a data e o volume — nada de nome ou documento de doadora.
-// Quem pasteuriza e reenvasa só enxerga isso, mesmo que, seguindo a corrente
-// de FKs para trás (frasco cru -> coleta -> doadora), a origem continue
-// rastreável para quem tiver permissão de acesso a essa corrente completa.
 class FrascoPasteurizado {
 
     public function criar(int $idFrascoCru, string $dataPasteurizacao, ?float $volumeFinalMl): int {
