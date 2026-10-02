@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Config\Conexao;
 use PDO;
 
-// Resultados físico-químicos de um frasco já pasteurizado.
+
 class AnaliseQualidade {
 
     public function criar(int $idFrascoPast, ?float $crematocrito, ?float $dornic): int {
