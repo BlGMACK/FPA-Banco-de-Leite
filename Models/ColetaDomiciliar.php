@@ -5,9 +5,6 @@ namespace App\Models;
 use App\Config\Conexao;
 use PDO;
 
-// O responsável vai até a doadora, busca o leite, e registra a visita aqui.
-// id_retirada é opcional (nullable) pq, na prática, pode existir uma
-// coleta de rotina que não veio de um aviso prévio específico.
 class ColetaDomiciliar {
 
     public function criar(
@@ -36,9 +33,6 @@ class ColetaDomiciliar {
             'temperatura_caixa' => $temperaturaCaixa
         ]);
 
-        // nota: se veio de um aviso de retirada, é o Controller quem chama
-        // Retirada::marcarComoColetada($idRetirada) em seguida — mesmo
-        // princípio do Visita::criar(), cada Model cuida só da própria tabela.
         return (int) $pdo->lastInsertId();
     }
 
