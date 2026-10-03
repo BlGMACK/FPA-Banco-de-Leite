@@ -21,10 +21,12 @@ Os comandos abaixo usam o PowerShell do Windows. Usamos `npm.cmd` para evitar o 
 ```powershell
 git clone https://github.com/BlGMACK/FPA-Banco-de-Leite.git
 cd FPA-Banco-de-Leite
-cd banco-de-leite
+git switch migracao-laravel
 ```
 
-O repositório é privado e exige uma conta com acesso. Todos os comandos seguintes devem ser executados dentro da pasta `banco-de-leite`.
+O repositório é privado e exige uma conta com acesso. O comando acima seleciona a branch `migracao-laravel`, onde o Laravel está na raiz. Se a equipe usar outro nome de branch, ajuste o comando. Quando essa estrutura for incorporada à `main`, selecione a `main`.
+
+Todos os comandos seguintes devem ser executados na raiz do repositório, onde estão `artisan`, `composer.json` e `package.json`.
 
 Não é necessário colocar o projeto em `htdocs`: durante o desenvolvimento, o site será executado com `php artisan serve`.
 
@@ -102,7 +104,7 @@ O MySQL precisa continuar ligado. O Apache não é necessário para executar o s
 Com o ambiente já configurado:
 
 1. Inicie o MySQL no XAMPP.
-2. Abra o terminal na pasta `banco-de-leite`.
+2. Abra o terminal na raiz do repositório, onde está o arquivo `artisan`.
 3. Execute `php artisan serve`.
 4. Acesse <http://localhost:8000>.
 
@@ -142,7 +144,7 @@ O comando gera os arquivos; os campos, relações e regras ainda precisam ser im
 
 ## Estrutura
 
-A aplicação nova fica em `banco-de-leite/`. Os caminhos abaixo são relativos a essa pasta:
+A aplicação Laravel fica diretamente na raiz do repositório. Os caminhos abaixo são relativos à raiz:
 
 | Arquivo/pasta | Finalidade |
 |---|---|
@@ -164,7 +166,7 @@ A aplicação nova fica em `banco-de-leite/`. Os caminhos abaixo são relativos 
 | `vite.config.js` | Configuração de preparação dos arquivos da interface. |
 | `artisan` | Ferramenta de comandos do Laravel. |
 
-As pastas antigas `Config/` e `Models/`, assim como `schema.sql` e `index.php` na raiz do repositório, permanecem como referência durante a migração. Elas não são a estrutura utilizada para executar a nova aplicação Laravel.
+A estrutura antiga (`Config/`, `Models/`, `schema.sql` e `index.php`) foi removida da raiz na branch da migração. Ela pode ser consultada no histórico do Git ou na versão anterior da `main`, enquanto essa versão estiver disponível.
 
 ## Git e trabalho em equipe
 
@@ -179,3 +181,24 @@ As pastas antigas `Config/` e `Models/`, assim como `schema.sql` e `index.php` n
 - Respeite letras maiúsculas e minúsculas nos nomes de arquivos, classes e namespaces; diferenças podem causar erros em Linux.
 - O servidor do Artisan é destinado ao desenvolvimento. A instalação definitiva no Banco de Leite exigirá configuração própria de hospedagem e backups.
 - Não execute `php artisan migrate:fresh` em um banco com dados que precisam ser preservados: esse comando apaga as tabelas antes de recriá-las.
+
+## Após mover o Laravel para a raiz
+
+Os caminhos padrão do Laravel e do Vite são relativos à aplicação. Mover toda a estrutura junta normalmente não exige alterar rotas, imports ou `vite.config.js`.
+
+- Abra a raiz do repositório no VS Code e use novos terminais nesse diretório.
+- Mantenha o `.env` local e a mesma `APP_KEY`; o banco MySQL não muda de local com a movimentação dos arquivos.
+- Se houver configurações personalizadas com caminhos absolutos, ajuste-as para a nova localização.
+- Se houver configuração própria de Apache ou virtual host, atualize o diretório público para a pasta `public` na nova localização. Isso não é necessário para `php artisan serve`.
+- Se existir `public/hot` após encerrar o Vite, remova esse arquivo gerado antes de usar apenas o build.
+
+Com os servidores de desenvolvimento encerrados, execute na nova raiz:
+
+```powershell
+php artisan config:clear
+php artisan view:clear
+npm.cmd run build
+php artisan serve
+```
+
+Acesse <http://localhost:8000> e confira a página inicial e o botão de teste do Bootstrap.
