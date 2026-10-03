@@ -21,10 +21,9 @@ Os comandos abaixo usam o PowerShell do Windows. Usamos `npm.cmd` para evitar o 
 ```powershell
 git clone https://github.com/BlGMACK/FPA-Banco-de-Leite.git
 cd FPA-Banco-de-Leite
-git switch migracao-laravel
 ```
 
-O repositório é privado e exige uma conta com acesso. O comando acima seleciona a branch `migracao-laravel`, onde o Laravel está na raiz. Se a equipe usar outro nome de branch, ajuste o comando. Quando essa estrutura for incorporada à `main`, selecione a `main`.
+O repositório é privado e exige uma conta com acesso. A branch padrão `main` contém a aplicação Laravel diretamente na raiz. A versão antiga está preservada na branch `Banco-de-leite_old`
 
 Todos os comandos seguintes devem ser executados na raiz do repositório, onde estão `artisan`, `composer.json` e `package.json`.
 
@@ -166,14 +165,14 @@ A aplicação Laravel fica diretamente na raiz do repositório. Os caminhos abai
 | `vite.config.js` | Configuração de preparação dos arquivos da interface. |
 | `artisan` | Ferramenta de comandos do Laravel. |
 
-A estrutura antiga (`Config/`, `Models/`, `schema.sql` e `index.php`) foi removida da raiz na branch da migração. Ela pode ser consultada no histórico do Git ou na versão anterior da `main`, enquanto essa versão estiver disponível.
+A estrutura antiga (`Config/`, `Models/,` `schema.sql` e `index.php`) está preservada na branch `Banco-de-leite_old` e no histórico do Git. A branch `main` utiliza a estrutura do Laravel diretamente na raiz.
 
 ## Git e trabalho em equipe
 
 - Não envie `.env`, `vendor/` ou `node_modules/`. Esses itens devem estar ignorados pelo Git.
 - Envie `.env.example`, os arquivos de código, as migrations e os arquivos de dependências, incluindo `composer.lock` e `package-lock.json`.
 - Não envie credenciais, dados pessoais ou registros reais de saúde. Para testes, use dados fictícios.
-- Desenvolva em uma branch e envie os commits com `git push`. O merge de um pull request incorpora as alterações na branch de destino, como `main`.
+- Crie branches de trabalho a partir da `main` e envie os commits com `git push`. Abra um pull request para integrar as alterações à `main`. A branch `Banco-de-leite_old` fica como referência da versão anterior.
 - Cada integrante possui seu próprio banco local. O Git compartilha código e migrations, não os registros cadastrados no banco.
 
 ## Observações
