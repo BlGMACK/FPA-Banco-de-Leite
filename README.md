@@ -1,181 +1,34 @@
 # FPA - Banco de Leite Humano
 
-Sistema de gestão de dados do Banco de Leite Humano de Marília, em migração para uma aplicação web responsiva com **PHP, Laravel, Blade, Bootstrap e MySQL/MariaDB**.
+Sistema de virtualização de dados do Banco de Leite Humano de Marília. Back-end em PHP (POO) + MySQL/MariaDB, seguindo o padrão PSR-4 de autoload.
 
-O sistema será acessado pelo navegador em computadores e celulares, com contas e permissões conforme a função de cada usuário. A versão atual possui o ambiente básico configurado e uma página de teste do Bootstrap; os módulos de negócio ainda serão migrados.
+## Como rodar
 
-## Pré-requisitos
+1. Clone dentro da pasta htdocs do XAMPP.
+2. Copie Config/config.example.php para Config/config.php (só edite os valores se seu MySQL não for o padrão do XAMPP).
+3. Rode schema.sql — ele cria o banco de dados sozinho:
+   mysql -u root < schema.sql
 
-- PHP compatível com Laravel 13 (8.3 a 8.5), com as extensões exigidas pelo framework, incluindo `pdo_mysql` para o banco. Recomenda-se habilitar `zip` para a instalação pelo Composer.
-- Composer.
-- Node.js LTS e npm.
-- MySQL ou MariaDB (pode ser o fornecido pelo XAMPP).
-- Git e um editor, como VS Code.
+   ou cole o conteúdo na aba "SQL" do phpMyAdmin.
+4. Instale as dependências:
+   composer install
 
-Os comandos abaixo usam o PowerShell do Windows. Usamos `npm.cmd` para evitar o bloqueio de `npm.ps1` pela política de execução do PowerShell. No Prompt de Comando, Linux ou macOS, pode-se usar `npm`.
+5. Teste:
+   php index.php
 
-## Primeira instalação
 
-### 1. Clonar e acessar a aplicação
+## Como editar
 
-```powershell
-git clone https://github.com/BlGMACK/FPA-Banco-de-Leite.git
-cd FPA-Banco-de-Leite
-cd banco-de-leite
-```
+- **Nova tabela/entidade**: adicione o CREATE TABLE em schema.sql e crie a classe correspondente em Models/, seguindo o padrão de Doadora.php (métodos criar, buscarPorId, atualizar, excluir, sempre com PDO e prepared statements).
+- **Credencial de banco diferente na sua máquina**: edite só o seu Config/config.php local. Nunca edite config.example.php — ele é o modelo compartilhado no Git.
 
-O repositório é privado e exige uma conta com acesso. Todos os comandos seguintes devem ser executados dentro da pasta `banco-de-leite`.
+## Estrutura e observações
 
-Não é necessário colocar o projeto em `htdocs`: durante o desenvolvimento, o site será executado com `php artisan serve`.
-
-### 2. Instalar as dependências
-
-```powershell
-composer install
-npm.cmd install
-```
-
-Bootstrap e Popper já estão declarados nas dependências do projeto; não precisam ser adicionados novamente.
-
-### 3. Configurar o ambiente local
-
-Na primeira instalação, copie o modelo e gere a chave da aplicação:
-
-```powershell
-Copy-Item .env.example .env
-php artisan key:generate
-```
-
-Se já existir um `.env` configurado, mantenha-o em vez de sobrescrevê-lo. A chave é gerada uma vez por instalação; não precisa ser regenerada a cada execução.
-
-### 4. Criar e conectar o banco de dados
-
-Inicie o **MySQL** no painel do XAMPP. Para usar o phpMyAdmin, inicie também o **Apache** e acesse <http://localhost/phpmyadmin>.
-
-Crie um banco vazio chamado `banco_de_leite_dev`, com collation `utf8mb4_unicode_ci`. Se preferir, execute na aba SQL do phpMyAdmin:
-
-```sql
-CREATE DATABASE banco_de_leite_dev
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-```
-
-No arquivo `.env` da aplicação Laravel, configure o bloco abaixo, sem `#` no início das linhas e sem duplicar as variáveis:
-
-```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=banco_de_leite_dev
-DB_USERNAME=root
-DB_PASSWORD=
-```
-
-Esses valores consideram um ambiente local com porta 3306 e usuário `root` sem senha. Ajuste conforme a configuração da sua máquina. Essas credenciais são apenas para desenvolvimento local.
-
-Mantenha o banco do projeto antigo separado. Não importe o `schema.sql` antigo no novo banco: as tabelas da aplicação Laravel serão criadas e atualizadas pelas migrations.
-
-### 5. Criar as tabelas e preparar a interface
-
-Salve o `.env` e execute:
-
-```powershell
-php artisan config:clear
-php artisan migrate
-npm.cmd run build
-```
-
-As migrations atuais criam as tabelas básicas do Laravel. As tabelas específicas do Banco de Leite serão acrescentadas durante a migração.
-
-### 6. Executar o sistema
-
-```powershell
-php artisan serve
-```
-
-Acesse <http://localhost:8000>. Mantenha o terminal aberto enquanto utiliza o sistema; para encerrar, pressione `Ctrl + C`.
-
-O MySQL precisa continuar ligado. O Apache não é necessário para executar o site pelo Artisan; ele é usado aqui apenas para acessar o phpMyAdmin.
-
-## Execuções seguintes
-
-Com o ambiente já configurado:
-
-1. Inicie o MySQL no XAMPP.
-2. Abra o terminal na pasta `banco-de-leite`.
-3. Execute `php artisan serve`.
-4. Acesse <http://localhost:8000>.
-
-Ao receber alterações da equipe, execute `composer install` se as dependências PHP mudarem, `npm.cmd install` se as dependências da interface mudarem e `php artisan migrate` se houver novas migrations. Após alterações no CSS ou JavaScript, execute `npm.cmd run build`.
-
-Para atualizar a interface automaticamente durante o desenvolvimento, use dois terminais na pasta da aplicação:
-
-```powershell
-# Terminal 1
-php artisan serve
-```
-
-```powershell
-# Terminal 2
-npm.cmd run dev
-```
-
-Com o Vite ativo, ele prepara as alterações de CSS e JavaScript sem exigir um build manual a cada edição. Continue acessando o endereço do Artisan.
-
-## Como desenvolver
-
-- **Tabelas:** crie migrations em `database/migrations`; aplique-as com `php artisan migrate`. Mudanças compartilhadas no banco devem ser registradas em novas migrations.
-- **Entidades:** crie models em `app/Models`, usando o Eloquent do Laravel.
-- **Operações e requisições:** organize os controladores em `app/Http/Controllers` e as validações em `app/Http/Requests`, conforme necessário.
-- **Rotas web:** edite `routes/web.php`.
-- **Páginas:** crie templates Blade em `resources/views`, utilizando Bootstrap.
-- **Estilos e interações:** edite `resources/css/app.css` e `resources/js/app.js`.
-- **Configuração local:** altere seu `.env`. Atualize `.env.example` quando surgir uma nova variável necessária à equipe, usando valores de exemplo sem segredos.
-
-Exemplo de comando para gerar um model e sua migration:
-
-```powershell
-php artisan make:model Solicitacao -m
-```
-
-O comando gera os arquivos; os campos, relações e regras ainda precisam ser implementados.
-
-## Estrutura
-
-A aplicação nova fica em `banco-de-leite/`. Os caminhos abaixo são relativos a essa pasta:
-
-| Arquivo/pasta | Finalidade |
+| Arquivo/pasta | O que é |
 |---|---|
-| `app/Models/` | Models e relações entre entidades. |
-| `app/Http/Controllers/` | Controladores das operações do sistema. |
-| `app/Http/Requests/` | Classes de validação de requisições, quando criadas. |
-| `database/migrations/` | Histórico versionado da estrutura do banco. |
-| `database/seeders/` | Inserção de dados iniciais ou de teste. |
-| `routes/web.php` | Rotas acessadas pelo navegador. |
-| `resources/views/` | Páginas Blade, incluindo `inicio.blade.php`. |
-| `resources/css/app.css` | Import do CSS do Bootstrap e estilos próprios. |
-| `resources/js/app.js` | Import do JavaScript do Bootstrap e interações próprias. |
-| `public/` | Diretório público da aplicação. |
-| `storage/` | Logs, cache e arquivos gerados pela aplicação. |
-| `.env` | Configuração local; não deve ser enviado ao Git. |
-| `.env.example` | Modelo de configuração compartilhado no Git. |
-| `composer.json` e `composer.lock` | Dependências PHP e suas versões. |
-| `package.json` e `package-lock.json` | Dependências da interface e suas versões. |
-| `vite.config.js` | Configuração de preparação dos arquivos da interface. |
-| `artisan` | Ferramenta de comandos do Laravel. |
-
-As pastas antigas `Config/` e `Models/`, assim como `schema.sql` e `index.php` na raiz do repositório, permanecem como referência durante a migração. Elas não são a estrutura utilizada para executar a nova aplicação Laravel.
-
-## Git e trabalho em equipe
-
-- Não envie `.env`, `vendor/` ou `node_modules/`. Esses itens devem estar ignorados pelo Git.
-- Envie `.env.example`, os arquivos de código, as migrations e os arquivos de dependências, incluindo `composer.lock` e `package-lock.json`.
-- Não envie credenciais, dados pessoais ou registros reais de saúde. Para testes, use dados fictícios.
-- Desenvolva em uma branch e envie os commits com `git push`. O merge de um pull request incorpora as alterações na branch de destino, como `main`.
-- Cada integrante possui seu próprio banco local. O Git compartilha código e migrations, não os registros cadastrados no banco.
-
-## Observações
-
-- Respeite letras maiúsculas e minúsculas nos nomes de arquivos, classes e namespaces; diferenças podem causar erros em Linux.
-- O servidor do Artisan é destinado ao desenvolvimento. A instalação definitiva no Banco de Leite exigirá configuração própria de hospedagem e backups.
-- Não execute `php artisan migrate:fresh` em um banco com dados que precisam ser preservados: esse comando apaga as tabelas antes de recriá-las.
+| Config/Conexao.php | Conexão única (Singleton) com o banco; lê as credenciais de Config/config.php. |
+| Config/config.example.php | Modelo de configuração — este **vai** para o Git. |
+| Config/config.php | Configuração real de cada máquina — **não vai** para o Git (está no .gitignore). |
+| Models/ | Uma classe por tabela. Nomeie a pasta e os arquivos sempre com a mesma letra maiúscula/minúscula do namespace — PSR-4 é sensível a isso no Linux/Mac, mesmo passando despercebido no Windows. |
+| schema.sql | Cria o banco e todas as tabelas, na ordem certa (uma FOREIGN KEY só funciona se a tabela referenciada já existir antes dela). |
+| index.php | Script de teste manual do CRUD — não é a aplicação final, serve só pra confirmar que a conexão e as classes estão funcionando. |
