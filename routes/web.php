@@ -1,20 +1,26 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('inicio');
 });
 
-// --- Rotas de teste do middleware de permissão (role) -----------------
-// Objetivo: provar, antes de construir qualquer tela de verdade, que o
-// bloqueio por papel funciona no servidor. Depois que o grupo validar
-// isso manualmente (ver checklist abaixo), estas duas rotas somem e
-// dão lugar aos módulos reais (solicitação, triagem, etc.).
-//
-// 'auth' primeiro: exige estar logado. 'role:...' depois: exige o papel
-// certo. A ORDEM dos middlewares importa — sem 'auth' antes, $request
-// ->user() dentro do EnsureUserHasRole viria vazio para um visitante.
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+});
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin-teste', function () {
@@ -24,6 +30,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
 Route::middleware(['auth', 'role:admin,funcionario'])->group(function () {
     Route::get('/interno-teste', function () {
-        return view('teste-papel', ['papel' => 'Administração ou Funcionário']);
+        return view('teste-papel', [
+            'papel' => 'Administração ou Funcionário',
+        ]);
     });
 });
+
+require __DIR__ . '/auth.php';

@@ -201,3 +201,7 @@ php artisan serve
 ```
 
 Acesse <http://localhost:8000> e confira a página inicial e o botão de teste do Bootstrap.
+
+## Autenticação e Bootstrap
+
+As telas do Breeze foram adaptadas para Bootstrap. Alpine permanece para interações dos formulários. Consulte `APLICAR_BOOTSTRAP.md` para aplicar a atualização em uma cópia existente e testar os fluxos. Não execute novamente `breeze:install`: isso pode sobrescrever as telas adaptadas.

@@ -1,1 +1,6 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
+
+[x-cloak] { display: none !important; }
+.blh-auth { max-width: 32rem; }
+.blh-form-width { max-width: 42rem; }
+.blh-stack > * + * { margin-top: 1.5rem; }
