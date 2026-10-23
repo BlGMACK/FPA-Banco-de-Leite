@@ -2,7 +2,7 @@
 
 ## Natureza e estado
 
-Os contratos abaixo são **implementados, extraídos do código**; não representam aceite formal de produto. Acordos futuros precisam de decisão identificada. A integração atual usa HTML Blade, formulários e sessão, sem API REST de negócio.
+A superfície atual e suas convenções abaixo são **implementadas, extraídas do código**; não representam aceite formal de produto. A seção de admissão ao final é **proposta**, baseada nas diretrizes informadas pelo usuário em 23/10/2026. Acordos precisam de decisão identificada. A integração atual usa HTML Blade, formulários e sessão, sem API REST de negócio.
 
 Fontes: [rotas web](../../routes/web.php), [rotas de autenticação](../../routes/auth.php), [controllers Auth](../../app/Http/Controllers/Auth), [ProfileController](../../app/Http/Controllers/ProfileController.php) e [views](../../resources/views).
 
@@ -81,3 +81,51 @@ Copie este modelo para a seção do fluxo quando houver trabalho autorizado; dei
 | Aceite e evidência | cenários positivos/negativos, teste backend e validação frontend, data e ambiente |
 
 Nenhum fluxo futuro está aprovado por este modelo. Atualize contrato, implementação e documentação afetada no mesmo PR quando o comportamento mudar. Consulte [Roadmap](ROADMAP.md) e [Padrões](../PADROES.md).
+
+## Permissões propostas para o fluxo de admissão
+
+Origem: **G** = diretrizes do guia do usuário, registradas em [R1](ROADMAP.md); **P** = detalhamento proposto abaixo. G exige acesso da interessada apenas aos próprios dados e atuação profissional autorizada. Os papéis atuais `admin`, `funcionario` e `doadora` não implementam as permissões desta matriz.
+
+“Equipe de atendimento”, “preenchedor”, “revisor” e “decisor” são atribuições funcionais propostas, **não novos perfis aprovados**. Definir profissionais, acúmulo de atribuições, concessão/revogação e representação técnica dessas permissões em D5. Não se propõe instalar pacote de permissões nem criar arquitetura nova.
+
+| Ação | Interessada autenticada e vinculada | Equipe de atendimento autorizada | Profissional com atribuição clínica específica | Admin sem atribuição clínica |
+| --- | --- | --- | --- | --- |
+| Criar solicitação própria | Sim, conforme D1 e validação dos campos. | Em nome da interessada somente se D2 aprovado. | Mesma condição da equipe; atribuição clínica não concede automaticamente outras ações. | Somente com atribuição de atendimento e D2. |
+| Consultar identificação, solicitação e agenda | Somente próprias. | Registros dentro do escopo de atendimento atribuído. | Apenas registros necessários à sua atuação autorizada. | Somente com atribuição operacional correspondente. |
+| Corrigir dados básicos | Proposta: próprios antes da análise; após isso, pedir correção à equipe. Regra a confirmar. | Se autorizado, preservando histórico. | Apenas se também autorizado a corrigir cadastro. | Não por simples papel; depende da atribuição. |
+| Analisar pedido, recusar administrativamente e confirmar agenda | Não. | Sim, conforme D5/D8 e com autoria/motivo. | Somente se também tiver atribuição de atendimento. | Somente com atribuição de atendimento. |
+| Registrar atendimento | Não. | Conforme D5. | Conforme D5. | Somente com atribuição correspondente. |
+| Preencher/concluir triagem | Não pelo formulário público. | Apenas se tiver atribuição de preenchedor. | Somente com atribuição de preenchedor. | Não por simples papel. |
+| Ler/revisar dados de saúde e exames | Apenas informações próprias liberadas segundo D11; conteúdo detalhado a definir. | Sem acesso por padrão. | Conforme atribuição e registro, D5. | Sem acesso por padrão. |
+| Registrar decisão final | Não. | Não por atribuição administrativa. | Apenas decisor autorizado, com requisitos satisfeitos. | Não por simples papel. |
+| Ver resultado comunicado | Próprio, conforme D11. | Resultado operacional mínimo necessário; sem justificativa clínica por padrão. | Conforme atribuição. | Conforme atribuição; sem justificativa clínica por padrão. |
+| Ler justificativas restritas e histórico clínico | Conteúdo e canal de acesso a definir em D11; não exibir automaticamente. | Não por padrão. | Apenas atribuição específica para o registro. | Não por simples papel. |
+| Apagar histórico de recusa/decisão | Não. | Não. | Não. | Não. Retenção/correção segue D10. |
+
+Visitante sem conta: orientações podem ser públicas; envio de solicitação depende de D1. Se essa entrada for escolhida, consulta posterior exige mecanismo de identidade/acesso acordado. Não permitir consulta pública por CPF, e-mail, protocolo ou ID isolado.
+
+Proposta de autorização: verificar ação **e** vínculo/escopo do registro no servidor em listagens, detalhes, downloads e gravações. IDs da interessada proprietária, autor, aprovador e estado técnico são determinados pelo servidor; não confiar em campos ocultos enviados pelo navegador. O papel doadora, sozinho, não comprova propriedade de um registro. O atual middleware de papel não realiza esse vínculo.
+
+### Limites dos formulários propostos
+
+| Etapa | Entradas admitidas após definição dos campos | Valores controlados pelo servidor | Saída pretendida |
+| --- | --- | --- | --- |
+| Solicitação | Identificação, contato, endereço mínimo acordado e preferência de data. | Protocolo, identidade/vínculo validado, estado inicial, autor e instante; nenhum resultado clínico. | Confirmação de recebimento; explicar que data desejada não confirma agenda. |
+| Análise e agenda | Resultado administrativo, motivo quando necessário, horário/local/modalidade combinados. | Autorização, transição válida, confirmador e instante; vínculo à solicitação. | Situação atualizada e agendamento registrado. |
+| Atendimento e triagem | Dados efetivamente coletados e conteúdo autorizado de triagem a definir. | Autor, versão, vínculo e transição; preenchimento não aprova. | Atendimento/triagem registrados, com pendências identificadas. |
+| Avaliação | Dados e parecer técnico definidos com o serviço. | Avaliador, versão de triagem e validação de completude. | Avaliação em andamento, aguardando complementação ou concluída. |
+| Decisão | Resultado e justificativa conforme D5/D6/D11. | Decisor, instante, avaliação de origem e habilitação atômica quando aprovada. | Decisão preservada; mensagem à interessada separada da justificativa restrita. |
+
+Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. Rotas, nomes de views, campos finais, mensagens, bags e canais de notificação permanecem a definir em R5. As linhas acima não são endpoints disponíveis.
+
+### Falhas e critérios para detalhar R5
+
+- Erros de campos: apresentar junto ao campo e preservar apenas entradas permitidas, sem gravar dados parciais.
+- Falta de sessão: exigir autenticação nas ações privadas; eventual entrada pública depende de D1.
+- Acesso fora do escopo: negar no servidor; decidir resposta 403/404 para registros alheios sem expor sua existência.
+- Estado alterado por outro operador ou envio repetido: não duplicar decisão, agenda ativa ou doadora; informar conflito/resultado já registrado.
+- Requisitos clínicos pendentes: impedir decisão final; não converter ausência de informação em resultado desfavorável.
+- Justificativas e dados de saúde: não incluir em mensagens genéricas, URLs ou logs comuns.
+- Exibir estados e decisões conforme permissão, distinguindo recebimento, agendamento confirmado e habilitação.
+
+Critérios funcionais estão em [R1](ROADMAP.md); integridade e estados em [Modelagem](MODELAGEM.md). A implementação depende das decisões abertas, especialmente entrada com/sem conta, profissionais, campos e critérios de avaliação.

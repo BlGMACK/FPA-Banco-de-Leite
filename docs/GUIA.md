@@ -1,6 +1,6 @@
 # Guia da documentação
 
-Esta documentação descreve a aplicação presente neste repositório em 22/10/2026. O código e as migrations são evidências de implementação; ideias e arquivos antigos não comprovam funcionalidades disponíveis.
+A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contratos receberam propostas de admissão em 23/10/2026. O código e as migrations são evidências de implementação; ideias e arquivos antigos não comprovam funcionalidades disponíveis.
 
 ## Estados usados
 
@@ -11,7 +11,7 @@ Esta documentação descreve a aplicação presente neste repositório em 22/10/
 | Implementado | Existe no código ou na configuração versionada, com referência à fonte. |
 | Validado | Há uma verificação identificada, com data, ambiente e limites. Não equivale a homologação do produto. |
 
-As instruções de documentação e limites de atuação solicitadas pelo usuário nesta tarefa são **acordadas para esta entrega**. As convenções novas de trabalho e as prioridades futuras são **propostas para revisão da equipe**. Não há registro consultado que comprove sua aprovação coletiva.
+As instruções de documentação e limites de atuação solicitadas pelo usuário são **acordadas para esta entrega**. O primeiro fluxo e suas diretrizes estruturais estão **acordados conforme relato do usuário em 23/10/2026**, com origem registrada em [R1](backend/ROADMAP.md). Campos, relações, estados, permissões detalhadas, novas convenções e prioridades continuam **propostos para revisão**. Não há ata ou homologação do serviço consultada.
 
 ## Ordem de leitura
 
