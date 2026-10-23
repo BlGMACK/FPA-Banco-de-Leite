@@ -36,7 +36,7 @@ Atualizado em 23/10/2026. O usuário escolheu “Cadastro de doadoras” e trans
 
 ### Fluxo e diretrizes acordadas — G
 
-**Solicitação → análise pela equipe → confirmação do agendamento → atendimento e triagem → avaliação de saúde → decisão registrada → habilitação para doações e coletas.**
+**Solicitação → análise e contato pela equipe → cadastro administrativamente concluído → contato para agendar visita → visita e relatório → análise das informações → solicitação de documentos/exames quando indicada → avaliação de saúde → decisão registrada → habilitação para doações e coletas.**
 
 A interessada recebe orientações e registra interesse, possivelmente a partir de um link na página da prefeitura. Isso é contexto pretendido, não uma integração implementada. Coletas, processamento, estoque e distribuição ficam em fluxos posteriores; aqui se registra a habilitação que permitirá a participação.
 
@@ -49,6 +49,30 @@ A interessada recebe orientações e registra interesse, possivelmente a partir 
 - A decisão registra responsável, data e avaliação de origem.
 - Recusa e avaliação desfavorável preservam histórico, com acesso controlado às justificativas.
 - Dados básicos são relacionados entre etapas para evitar cadastros independentes e divergentes.
+
+### Refinamento de entrada e acesso — relato de 23/10/2026
+
+- **Preferência do usuário, ainda proposta (D1/D11):** formulário sem conta para a interessada e acompanhamento pelo WhatsApp, evitando portal de consulta de status. O usuário explicitou que ainda não há decisão concreta coletiva. A proposta detalhada passa a usar essa direção como hipótese de trabalho.
+- **Confirmado pelo usuário (D2):** a equipe deve conseguir registrar solicitações recebidas por telefone ou presencialmente, sem exigir conta da interessada; registrar canal e funcionário autor.
+- **Proposta do usuário (D5):** contas internas com permissões configuráveis por funcionário, permitindo acumular funções; administrador com alcance amplo. Cargos reais, poderes clínicos e concessão de permissões continuam a definir.
+- **Revisado pelo usuário (D7):** receber pedidos com indícios de duplicidade e mostrar um alerta único por pedido, detalhando campos e outros pedidos/cadastros relacionados. Isso substitui a proposta anterior de bloquear uma segunda solicitação ativa. A resolução continua humana.
+- **Proposta técnica:** WhatsApp operado manualmente pela equipe neste primeiro recorte, com registro mínimo dos contatos no sistema. Não há aprovação de API, robô ou envio automático.
+- **Pendência adicional:** “mandar dados para atualizar” precisa distinguir primeiro pedido de correção de cadastro existente. Recomenda-se que correções recebidas sem autenticação sejam conferidas pela equipe antes de alterar dados.
+
+O princípio anterior de acesso apenas aos próprios dados continua aplicável se houver futuramente uma área de consulta. Na hipótese atual, não há consulta pública de cadastro ou status por CPF/telefone.
+
+### Definições da entrada confirmadas em 23/10/2026
+
+Origem: respostas do usuário sobre campos, alertas, cargo de atendimento e contato, incluindo confirmação posterior sobre a escolha do número de WhatsApp.
+
+- Nome completo, CPF, e-mail, município, bairro e endereço completo na abertura; telefone fixo e/ou celular, com pelo menos um preenchido; campo amplo de detalhes adicionais opcional.
+- A pessoa escolhe um dos números informados como WhatsApp e declara disponibilidade. Sem essa indicação/declaração, não é possível abrir pedido. A equipe verifica no contato; não há verificação automática de conta WhatsApp.
+- Os pedidos são listados em ordem de criação, com destaque e filtro de alerta. A direção da ordenação é proposta em Contratos.
+- Um alerta reúne todas as correspondências do pedido e identifica campos e outros pedidos/cadastros já completos; a equipe decide o encaminhamento. Não bloquear automaticamente pelo simples dado repetido.
+- Tratamento de pedidos agrupado em uma função de atendimento, concedida a um ou mais funcionários com contas individuais.
+- WhatsApp é requisito inicial. E-mail e telefone podem ser usados como canais secundários a critério do funcionário; não substituem silenciosamente o requisito de abertura.
+
+Detalhes técnicos, limites de campos, normalização e resolução dos alertas permanecem **propostos**. Requisitos do usuário não significam implementação ou homologação pelo serviço.
 
 ### Glossário de trabalho
 
@@ -68,17 +92,17 @@ A interessada recebe orientações e registra interesse, possivelmente a partir 
 
 | ID | Decisão pendente | Encaminhamento |
 | --- | --- | --- |
-| D1 | Conta obrigatória antes da solicitação? | Se aceitar visitante, definir comprovação de identidade e acesso posterior. Protocolo isolado não deve conceder acesso. |
-| D2 | Equipe pode registrar pedidos por telefone ou presencialmente? | Confirmar canais e representação da interessada. |
-| D3 | Campos obrigatórios e momento de CPF/CNS. | Revisar dicionário proposto com o serviço. |
-| D4 | Endereço completo ou conjunto mínimo inicial. | Confirmar conforme modalidade de atendimento. |
-| D5 | Quem preenche, revisa e aprova cada avaliação? | Confirmar atribuições e se uma pessoa pode preencher e aprovar a mesma avaliação. |
-| D6 | Aptidão, documentos, exames, validade e reavaliação. | Confirmar com o Banco de Leite e referências disponibilizadas; nenhum critério clínico foi inventado. |
-| D7 | Duplicidade e retorno após recusa. | Definir identificadores e solicitações simultâneas permitidas. |
+| D1 | Confirmar entrada pública sem conta. | Preferência do usuário: sem portal da doadora; proposta revisada nessa direção. Definir verificação no contato e correções; CPF/protocolo não concedem acesso. |
+| D2 | Registro interno sem conta da interessada. | Confirmado pelo usuário: permitir telefone/presencial, registrando canal e funcionário; campos mínimos ainda em D3. |
+| D3 | Campos iniciais definidos pelo usuário. | Nome completo, CPF, e-mail, município/bairro, endereço completo e fixo e/ou celular (ao menos um); detalhes adicionais opcionais. CNS e preferência de data não entram como obrigatórios; momento a definir. Tipos/limites em Modelagem são propostos. |
+| D4 | Endereço completo na abertura, confirmado pelo usuário. | Decomposição e limites propostos em Modelagem; complemento opcional. |
+| D5 | Atendimento dos pedidos agrupado em uma função. | Confirmado pelo usuário: funcionário(s) focados no tratamento de solicitações. Propor conjunto de permissões de atendimento; atribuições clínicas e alcance do administrador continuam pendentes. |
+| D6 | Aptidão, documentos, exames, validade e reavaliação. | Sequência confirmada: somente solicitar documentos/exames após visita e análise das informações, quando houver indicação. Conteúdo exigido, profissionais, critérios e validade ainda dependem do serviço; relatório narrativo é preferência atual, sujeita a revisão. |
+| D7 | Alertas de correspondência e resolução humana. | Confirmado: contato que esclarece a repetição, escolha humana de qual pedido avança e qual arquiva, ou arquivamento de ambos com motivo. Comparar somente pedidos ativos e cadastros administrativamente concluídos; arquivados não geram flags. Detalhes técnicos/reabertura continuam propostos ou pendentes. |
 | D8 | Cancelamento, ausência e reagendamento. | Definir atores, prazos e efeitos sobre a solicitação. |
 | D9 | Criar doadora na aprovação ou atualizar cadastro existente? | Recomendação e alternativa em Modelagem; escolha ainda pendente. |
 | D10 | Correções, exclusão de conta e retenção. | Histórico preservado é diretriz; mecanismo, prazo e acesso precisam de definição. |
-| D11 | Resultado exibido e comunicação à interessada. | Confirmar conteúdo e responsáveis; não expor justificativa técnica por padrão. |
+| D11 | WhatsApp exigido para abertura. | Confirmado pelo usuário: indicar um dos telefones e declarar disponibilidade; equipe confere no contato. E-mail/telefone são secundários a critério do funcionário. Operação manual proposta; sem garantia automática de número ativo. |
 | D12 | Aceite final do serviço. | Identificar participantes e confirmar propostas e cenários; não presumir aprovação coletiva. |
 
 ### Critérios de aceite — propostos, não executados
@@ -88,8 +112,8 @@ A interessada recebe orientações e registra interesse, possivelmente a partir 
 | A1 | Conta criada ou solicitação enviada, inclusive com campos técnicos manipulados. | Nenhuma aprovação automática; papel administrativo e campos técnicos não são aplicados pelo formulário. |
 | A2 | Solicitação informa data desejada. | Não cria agendamento confirmado; confirmação posterior registra equipe, instante e horário combinado. |
 | A3 | Falta campo obrigatório acordado. | Erro no campo e nenhuma submissão parcialmente salva. |
-| A4 | Interessada troca URL ou identificador para acessar outra pessoa. | Acesso negado no servidor sem exposição de dados. |
-| A5 | Funcionário ou admin sem atribuição clínica tenta ler dados restritos ou decidir. | Acesso negado conforme matriz proposta; papel não implica atribuição clínica. |
+| A4 | Visitante consulta CPF/telefone/ID ou envia correção para cadastro existente. | Sem consulta pública ou alteração automática; dados existentes preservados e divergências encaminhadas à equipe. |
+| A5 | Funcionário sem permissão tenta ler dados restritos, decidir ou conceder acesso a si mesmo. | Acesso negado no servidor; alcance administrativo e atos clínicos definidos em D5. |
 | A6 | Avaliação exigida ainda está pendente. | Aprovação bloqueada; complementação não equivale a resultado desfavorável. |
 | A7 | Profissional autorizado registra decisão. | Responsável, instante e avaliação preservados; cadeia pertence à mesma solicitação e pessoa. |
 | A8 | Aprovação enviada duas vezes ou simultaneamente. | Uma decisão final por avaliação e uma doadora por pessoa; falha não deixa habilitação parcial. |
@@ -97,6 +121,29 @@ A interessada recebe orientações e registra interesse, possivelmente a partir 
 | A10 | Reagendamento ou correção de avaliação concluída. | Registro anterior preservado e ligado ao sucessor; decisão anterior mantém seu fundamento. |
 | A11 | Correção de dados básicos. | Vínculos mantidos e histórico suficiente para recuperar o contexto anterior. |
 | A12 | Retorno de pessoa anteriormente recusada. | Histórico preservado; novo fluxo depende de D6/D7, sem aprovação automática. |
+| A13 | Dois pedidos contêm dados repetidos, inclusive com cadastro já completo. | Ambos ficam disponíveis para análise, com uma flag por pedido detalhando campos e registros relacionados; sem mesclagem, atualização ou recusa automática e sem exposição pública. |
+| A14 | Contato por WhatsApp falha ou não tem resposta. | Registro da tentativa e próxima ação interna; envio de mensagem não confirma leitura, identidade ou agenda. |
+| A15 | Permissão de funcionário é concedida ou revogada. | Autor/data registrados; próximas operações refletem a mudança, inclusive em sessão já aberta. |
+| A16 | Só fixo, só celular ou ambos preenchidos. | Aceitar as três combinações com os demais campos válidos, WhatsApp selecionado entre números informados e declaração de disponibilidade; ausência de ambos os telefones bloqueia o envio. |
+| A17 | Não há indicação/declaração de WhatsApp. | Formulário informa o requisito e não abre pedido, inclusive no registro interno; contato secundário não contorna a regra. |
+| A18 | Pedido coincide por CPF, e-mail e telefone com vários registros. | Um único alerta agrega todos os motivos e destinos, sem contar três flags para o mesmo pedido. |
+| A19 | Novo pedido coincide com pedido ativo ou cadastro administrativamente concluído. | Alerta detalha apenas alvos elegíveis e dados administrativos; se coincidir só com arquivados, não gera flag. Histórico anterior continua acessível separadamente. |
+| A20 | Funcionário tenta confirmar repetição após apenas enviar mensagem, sem esclarecer a dúvida com a interessada. | Resolução bloqueada; tentativa de contato não equivale a confirmação. |
+| A21 | Após contato que esclareceu a repetição, funcionário decide arquivar os dois pedidos e informa motivo. | Ambos saem da fila de análise, mas permanecem consultáveis no histórico com vínculos, autor, instante, motivo e contato que fundamentou a ação. |
+| A22 | Contato esclarece repetição e a interessada deseja prosseguir. | Funcionário escolhe o pedido principal; admissão administrativa e arquivamento do repetido ficam vinculados, com autoria e fundamento, sem aprovação clínica. |
+| A23 | Único destino de correspondência é arquivado. | Recalcular os pedidos afetados e retirar a flag atual; manter somente evidência histórica da resolução. |
+| A24 | Cadastro é administrativamente concluído. | Surge na área de acompanhamento com visita pendente, sem habilitação para coleta nem exigência automática de documentos/exames. |
+| A25 | Funcionário registra relatório de visita e recebe documentos posteriormente solicitados. | Relatório e anexos mantêm autoria e vínculos; recebimento de anexos não conclui avaliação automaticamente. |
+
+### Resolução após contato — definição do usuário em 23/10/2026
+
+O funcionário precisa entrar em contato com a interessada e esclarecer se os pedidos realmente são os mesmos antes de confirmar a repetição. O usuário admitiu arquivar os dois pedidos, retirando-os da análise e explicando o motivo. Arquivamento preserva os dados e a evidência histórica da análise; deixa de participar das correspondências atuais e não significa exclusão nem reprovação clínica.
+
+**Esclarecimento confirmado pelo usuário:** “cadastro concluído” significa permissão administrativa para iniciar o acompanhamento, ainda sem aprovação para doar. O funcionário escolhe qual pedido avança e qual arquiva. O arquivado sai das comparações; apenas pedidos ativos e cadastros administrativamente concluídos participam dos alertas.
+
+Após essa admissão, o cadastro aparece em uma área de acompanhamento com etapas pendentes. A equipe entra em contato para agendar visita presencial, conversar, tirar dúvidas e levantar a situação da interessada e as condições de armazenamento/retirada. A preferência atual do usuário é registrar a visita em um relatório narrativo amplo, podendo rever esse formato.
+
+Documentos e exames só são solicitados depois da análise dessas informações, quando indicados. A interessada os envia pelo canal de contato telefônico e o funcionário os anexa ao cadastro; a proposta operacional usa WhatsApp, sem upload público ou integração automática. Receber um arquivo não equivale a avaliá-lo ou aprovar a doadora. Os dados básicos já definidos para o pedido inicial continuam exigidos; o adiamento diz respeito à documentação e aos exames da avaliação.
 
 R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; regras detalhadas e aceite permanecem pendentes. R2/R4 têm propostas em [Contratos](CONTRATOS.md) e [Modelagem](MODELAGEM.md). R5 ainda precisa fixar rotas, views e respostas. R6 depende de R2–R5, incluindo qualidade em R3.
 

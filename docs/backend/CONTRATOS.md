@@ -86,46 +86,128 @@ Nenhum fluxo futuro está aprovado por este modelo. Atualize contrato, implement
 
 Origem: **G** = diretrizes do guia do usuário, registradas em [R1](ROADMAP.md); **P** = detalhamento proposto abaixo. G exige acesso da interessada apenas aos próprios dados e atuação profissional autorizada. Os papéis atuais `admin`, `funcionario` e `doadora` não implementam as permissões desta matriz.
 
-“Equipe de atendimento”, “preenchedor”, “revisor” e “decisor” são atribuições funcionais propostas, **não novos perfis aprovados**. Definir profissionais, acúmulo de atribuições, concessão/revogação e representação técnica dessas permissões em D5. Não se propõe instalar pacote de permissões nem criar arquitetura nova.
+### Hipótese de entrada sem conta e contato manual
 
-| Ação | Interessada autenticada e vinculada | Equipe de atendimento autorizada | Profissional com atribuição clínica específica | Admin sem atribuição clínica |
-| --- | --- | --- | --- | --- |
-| Criar solicitação própria | Sim, conforme D1 e validação dos campos. | Em nome da interessada somente se D2 aprovado. | Mesma condição da equipe; atribuição clínica não concede automaticamente outras ações. | Somente com atribuição de atendimento e D2. |
-| Consultar identificação, solicitação e agenda | Somente próprias. | Registros dentro do escopo de atendimento atribuído. | Apenas registros necessários à sua atuação autorizada. | Somente com atribuição operacional correspondente. |
-| Corrigir dados básicos | Proposta: próprios antes da análise; após isso, pedir correção à equipe. Regra a confirmar. | Se autorizado, preservando histórico. | Apenas se também autorizado a corrigir cadastro. | Não por simples papel; depende da atribuição. |
-| Analisar pedido, recusar administrativamente e confirmar agenda | Não. | Sim, conforme D5/D8 e com autoria/motivo. | Somente se também tiver atribuição de atendimento. | Somente com atribuição de atendimento. |
-| Registrar atendimento | Não. | Conforme D5. | Conforme D5. | Somente com atribuição correspondente. |
-| Preencher/concluir triagem | Não pelo formulário público. | Apenas se tiver atribuição de preenchedor. | Somente com atribuição de preenchedor. | Não por simples papel. |
-| Ler/revisar dados de saúde e exames | Apenas informações próprias liberadas segundo D11; conteúdo detalhado a definir. | Sem acesso por padrão. | Conforme atribuição e registro, D5. | Sem acesso por padrão. |
-| Registrar decisão final | Não. | Não por atribuição administrativa. | Apenas decisor autorizado, com requisitos satisfeitos. | Não por simples papel. |
-| Ver resultado comunicado | Próprio, conforme D11. | Resultado operacional mínimo necessário; sem justificativa clínica por padrão. | Conforme atribuição. | Conforme atribuição; sem justificativa clínica por padrão. |
-| Ler justificativas restritas e histórico clínico | Conteúdo e canal de acesso a definir em D11; não exibir automaticamente. | Não por padrão. | Apenas atribuição específica para o registro. | Não por simples papel. |
-| Apagar histórico de recusa/decisão | Não. | Não. | Não. | Não. Retenção/correção segue D10. |
+D1/D11: preferência do usuário por formulário público e WhatsApp, ainda sem decisão coletiva final sobre portal. Esta proposta substitui a matriz anterior centrada em uma interessada autenticada. D2: o usuário confirmou a necessidade de cadastro pela equipe por telefone/presencial sem conta da interessada.
 
-Visitante sem conta: orientações podem ser públicas; envio de solicitação depende de D1. Se essa entrada for escolhida, consulta posterior exige mecanismo de identidade/acesso acordado. Não permitir consulta pública por CPF, e-mail, protocolo ou ID isolado.
+A interessada envia dados e recebe confirmação de recebimento, sem área de consulta neste recorte. O sistema não mostra cadastro/status ao informar CPF ou telefone. Correções de dados existentes precisam de conferência pela equipe; o formulário não autentica a pessoa nem sobrescreve registros por coincidência de identificadores.
 
-Proposta de autorização: verificar ação **e** vínculo/escopo do registro no servidor em listagens, detalhes, downloads e gravações. IDs da interessada proprietária, autor, aprovador e estado técnico são determinados pelo servidor; não confiar em campos ocultos enviados pelo navegador. O papel doadora, sozinho, não comprova propriedade de um registro. O atual middleware de papel não realiza esse vínculo.
+WhatsApp manual é proposta técnica para concretizar a preferência de contato. A equipe mantém a situação do processo no sistema e registra as tentativas/contatos. Nenhuma API, automação ou envio foi autorizado. O usuário definiu WhatsApp disponível como requisito de abertura: selecionar um dos telefones informados e declarar disponibilidade. Sem isso, o pedido não pode ser aberto, inclusive pela equipe. E-mail/telefone são canais secundários a critério do funcionário; não dispensam esse requisito. Falha de contato descoberta depois não apaga nem recusa automaticamente um pedido já recebido. Mensagens devem informar o necessário à etapa após conferência do destinatário.
+
+### Catálogo funcional de permissões — proposto
+
+Funcionários usam contas individuais com permissões configuráveis. O usuário definiu uma função única para o tratamento de solicitações. Propõe-se o conjunto “Atendimento de solicitações”, que reúne consulta, cadastro/correção, conferência de alertas, análise administrativa e contato, atribuível a um ou mais funcionários. Não concede acesso clínico. A representação como conjunto de permissões evita alterar o enum de papéis por antecipação; nome técnico e implementação ainda são propostos. O administrador administra acessos; funcionários não concedem permissões a si próprios.
+
+| Permissão funcional | Alcance proposto |
+| --- | --- |
+| Consultar cadastro | Identificação, contato e situação administrativa dentro do escopo concedido; não inclui prontuário técnico. |
+| Registrar/corrigir solicitação | Cadastro interno por telefone/presencial e correção conferida, com autoria e histórico. |
+| Analisar solicitação | Análise administrativa e recusa fundamentada conforme regras acordadas; não decide aptidão. |
+| Gerenciar agenda | Confirmar, cancelar e reagendar conforme D8. |
+| Registrar contato | Contato com a interessada e registro mínimo da tentativa/resultado. |
+| Registrar atendimento | Fato do atendimento e responsável. |
+| Preencher triagem | Dados de triagem no escopo permitido; não implica permissão de aprovação. |
+| Consultar saúde | Informações técnicas necessárias à atuação, com acesso ao registro autorizado. |
+| Avaliar saúde | Preenchimento/conclusão da avaliação; critérios profissionais dependem de D5/D6. |
+| Registrar decisão | Decisão final fundamentada, com profissional autorizado e requisitos satisfeitos. |
+| Consultar justificativas/histórico restrito | Acesso específico, sem inclusão automática na consulta administrativa. |
+| Gerenciar funcionários/permissões | Criação/gestão de contas internas e concessão/revogação registrada. |
+
+A função de atendimento reúne o tratamento dos pedidos; sua inclusão em gerência de agenda ainda depende de D8. Como exemplos para etapas posteriores, profissional de consultas pode acumular atendimento, triagem e avaliação; permissão de decisão é separada. Logística de produção mencionada pelo usuário pertence a módulos futuros: não gera acesso automático a saúde nem exige implementar produção agora.
+
+Administrador com acesso amplo é **proposta do usuário**, substituindo a hipótese anterior de admin necessariamente sem acesso clínico. Confirmar se “fazer tudo” inclui apenas consultar/gerenciar ou também emitir decisões clínicas. Recomendação: permissões técnicas e autorização profissional devem ser explícitas; não permitir aprovação sem requisitos nem exclusão do histórico, mesmo pelo administrador.
+
+Todas as permissões precisam de escopo de registros definido em D5 (por exemplo, todos os atendimentos da unidade ou somente os atribuídos). Conferir permissão no servidor em cada ação, inclusive consulta, exportação/download e gravação. Concessões/revogações registram responsável e data e devem valer nas próximas operações, inclusive em sessões já abertas.
+
+### Recebimento público e identificação — proposto
+
+- Somente dados mínimos acordados entram pelo formulário. Papel, estado, resultados, responsáveis e habilitação são controlados pelo servidor.
+- Validar formato do CPF/telefone não verifica identidade. Correspondências ficam restritas à equipe; não devolver dados de cadastro encontrado.
+- Receber pedidos com dados repetidos e sinalizá-los internamente, inclusive correspondências com cadastros completos. Isso substitui a hipótese de bloquear nova solicitação ativa. Telefone compartilhado ou divergência não provocam mesclagem automática.
+- Limitação de frequência e controles contra automação complementam a deduplicação; limiares e mecanismo a definir, sem presumir que um CPF único impede spam.
+- Usar resposta neutra para envios recebidos e possíveis duplicidades. Exemplo: “Recebemos suas informações. A equipe verificará o pedido e entrará em contato pelo canal informado.” Não afirmar aprovação ou confirmação de agenda.
+- No contato, registrar destinatário conferido, funcionário, momento e resultado. Não informar avaliação a um número apenas porque foi digitado em um reenvio.
+- Falta de resposta requer próxima ação da equipe, não conclusão automática do processo.
 
 ### Limites dos formulários propostos
 
 | Etapa | Entradas admitidas após definição dos campos | Valores controlados pelo servidor | Saída pretendida |
 | --- | --- | --- | --- |
-| Solicitação | Identificação, contato, endereço mínimo acordado e preferência de data. | Protocolo, identidade/vínculo validado, estado inicial, autor e instante; nenhum resultado clínico. | Confirmação de recebimento; explicar que data desejada não confirma agenda. |
+| Solicitação | Nome completo, CPF, fixo e/ou celular, e-mail, município/bairro, endereço completo, número selecionado para WhatsApp, declaração de disponibilidade e detalhes opcionais. | Protocolo de recebimento, estado inicial, canal, autor interno quando houver e instante; identidade sujeita a conferência, nenhum resultado clínico. | Confirmação de recebimento; explicar que data desejada não confirma agenda. |
 | Análise e agenda | Resultado administrativo, motivo quando necessário, horário/local/modalidade combinados. | Autorização, transição válida, confirmador e instante; vínculo à solicitação. | Situação atualizada e agendamento registrado. |
-| Atendimento e triagem | Dados efetivamente coletados e conteúdo autorizado de triagem a definir. | Autor, versão, vínculo e transição; preenchimento não aprova. | Atendimento/triagem registrados, com pendências identificadas. |
+| Atendimento e triagem | Relatório narrativo da visita, formato inicial indicado pelo usuário. | Autor, versão, vínculo e transição; preenchimento não aprova. | Relatório disponível para análise; documentos/exames só serão solicitados quando indicados depois dessa análise. |
 | Avaliação | Dados e parecer técnico definidos com o serviço. | Avaliador, versão de triagem e validação de completude. | Avaliação em andamento, aguardando complementação ou concluída. |
 | Decisão | Resultado e justificativa conforme D5/D6/D11. | Decisor, instante, avaliação de origem e habilitação atômica quando aprovada. | Decisão preservada; mensagem à interessada separada da justificativa restrita. |
 
-Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. Rotas, nomes de views, campos finais, mensagens, bags e canais de notificação permanecem a definir em R5. As linhas acima não são endpoints disponíveis.
+Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. Rotas, nomes de views, limites finais dos campos, mensagens, bags e detalhes de contato permanecem a definir em R5; WhatsApp manual é a hipótese preferida. As linhas acima não são endpoints disponíveis.
 
 ### Falhas e critérios para detalhar R5
 
 - Erros de campos: apresentar junto ao campo e preservar apenas entradas permitidas, sem gravar dados parciais.
-- Falta de sessão: exigir autenticação nas ações privadas; eventual entrada pública depende de D1.
+- Falta de sessão: exigir autenticação da equipe nas ações privadas; a hipótese D1 permite somente recebimento público, sem consulta ou edição pública de registros existentes.
 - Acesso fora do escopo: negar no servidor; decidir resposta 403/404 para registros alheios sem expor sua existência.
 - Estado alterado por outro operador ou envio repetido: não duplicar decisão, agenda ativa ou doadora; informar conflito/resultado já registrado.
 - Requisitos clínicos pendentes: impedir decisão final; não converter ausência de informação em resultado desfavorável.
 - Justificativas e dados de saúde: não incluir em mensagens genéricas, URLs ou logs comuns.
 - Exibir estados e decisões conforme permissão, distinguindo recebimento, agendamento confirmado e habilitação.
 
-Critérios funcionais estão em [R1](ROADMAP.md); integridade e estados em [Modelagem](MODELAGEM.md). A implementação depende das decisões abertas, especialmente entrada com/sem conta, profissionais, campos e critérios de avaliação.
+Critérios funcionais estão em [R1](ROADMAP.md); integridade e estados em [Modelagem](MODELAGEM.md). A implementação depende das decisões abertas, com o primeiro recorte limitado à abertura, fila, conferência e contato; critérios clínicos são dependência das etapas posteriores. Ainda faltam confirmar limites técnicos e desfechos da análise de correspondências.
+
+### Telas do primeiro recorte — especificação proposta
+
+Campos e normalização estão em [Modelagem](MODELAGEM.md#dicionário-da-abertura-do-pedido). Fluxo: formulário público → confirmação de recebimento → fila interna → conferência de correspondências → contato registrado. As telas abaixo não foram implementadas.
+
+| Tela | Conteúdo e comportamento |
+| --- | --- |
+| Pedido público | Campos definidos, fixo/celular com exigência de ao menos um, seleção do número de WhatsApp e declaração obrigatória. Detalhes adicionais em área ampla opcional. Erros por campo, sem exibir dados de cadastros existentes. |
+| Recebimento | Mensagem neutra de recebimento, próxima ação da equipe e protocolo sem poder de consulta. Não prometer contato automático, agenda ou aprovação. |
+| Pedidos de cadastro — interna | Todos os pedidos acessíveis à função de atendimento, em ordem de criação. Proposta: mais antigos primeiro, com ID como desempate, paginação e opção de inverter. Colunas: protocolo, criação, nome, situação, canal e um indicador de correspondências. |
+| Detalhe do pedido | Dados declarados, campo adicional, histórico de contato/conferência e ação de registrar contato. Correção interna preserva autoria e valores anteriores. |
+| Detalhes do alerta | Um painel reúne campos coincidentes, identificação dos outros pedidos/cadastros e links autorizados. Destacar os campos, usar rótulo/ícone além de cor, inclusive correspondências com cadastro completo. |
+| Registro de contato | Funcionário, instante, canal, finalidade, resultado e próxima ação; WhatsApp principal, e-mail/telefone secundários. |
+
+Filtro “Com correspondências” mostra apenas flags atuais de pedidos ativos, calculadas contra pedidos ativos e cadastros administrativamente concluídos. Arquivados não aparecem nesse filtro nem como destinos. Revisões antigas ficam no histórico separado; pode haver novo alerta se surgir outra correspondência elegível. O funcionário vê um único indicador por pedido, mesmo que vários campos/destinos coincidam.
+
+Exemplo fictício: pedido P-104 tem CPF repetido em P-099, telefone repetido em P-080 e e-mail repetido no cadastro C-012. A linha de P-104 mostra **um** alerta; o detalhe mostra os três campos e seus destinos. Não é uma decisão automática de que os quatro registros representam a mesma pessoa.
+
+A função de atendimento precisa consultar as correspondências administrativas em pedidos e cadastros completos. Esse acesso deve ser concedido explicitamente com a função; não estender para exames, avaliações ou justificativas clínicas. Destino fora do escopo autorizado não pode expor dados por meio do alerta.
+
+Proposta de ações de conferência: “mesma pessoa”, “pessoas distintas” e “aguardando esclarecimento”, registrando funcionário, data e motivo. A coincidência continua registrada; não interpretar a flag como recusa automática.
+
+### Resolver repetição após contato
+
+**Confirmado pelo usuário em 23/10/2026:** o funcionário só confirma pedidos repetidos após contato com a interessada que realmente esclareça a dúvida. Ele pode arquivar ambos, justificando a decisão e retirando-os da análise. Preservar dados e histórico.
+
+**Interação proposta:** selecionar os pedidos analisados, indicar o registro de contato que esclareceu a dúvida, registrar o resultado e preencher o motivo antes de confirmar o arquivamento. Mostrar os protocolos e o efeito da ação. Envio de mensagem ou tentativa sem resposta não habilita a resolução. Conferir esses requisitos no servidor, inclusive em envio direto da ação.
+
+A tela deve distinguir “Arquivar pedidos analisados”, “Concluir cadastro” administrativamente e aprovação clínica. Propor visualização padrão dos pedidos em análise e acesso a “Todos/Arquivados”. Arquivamento retira o pedido das comparações e remove suas flags atuais, recalculando também os pedidos relacionados. A resolução anterior permanece consultável no histórico, sem badge de duplicidade atual no arquivado.
+
+**Esclarecido pelo usuário:** “cadastro concluído” encerra a admissão administrativa e permite seguir para agendamento da visita; não aprova a doação. O funcionário decide qual pedido avança e qual arquiva após o contato esclarecedor. A ação registra principal, repetido, motivo e contato. Texto de apoio proposto: “Cadastro admitido para acompanhamento; avaliação para doação ainda pendente.” Reabertura de arquivado permanece pendente.
+
+### WhatsApp e validação da abertura
+
+A pessoa pode informar só fixo, só celular ou ambos. O seletor oferece apenas números preenchidos; ao remover o número selecionado, exigir nova escolha. A declaração informa que a pessoa pode receber contato pelo WhatsApp naquele número. Isso foi confirmado pelo usuário nesta interação.
+
+Declaração e confirmação pela equipe são dados diferentes. Sem integração acordada, o sistema verifica preenchimento e formato, não a existência de conta WhatsApp. Não aprovar automaticamente identidade, número ou agenda. A indisponibilidade descoberta depois fica registrada e a equipe decide a próxima ação; pode usar canais secundários sem apagar o pedido.
+
+Nova submissão independente com dados iguais gera pedido sinalizável. Propor proteção contra duplo clique/retransmissão da mesma operação, sem impedir novos pedidos apenas por igualdade dos dados. O mecanismo de repetição técnica e os controles contra spam serão definidos na implementação.
+
+### Área de acompanhamento — definição funcional e proposta de tela
+
+**Confirmado pelo usuário:** ao concluir administrativamente o cadastro, movê-lo para uma área de acompanhamento, onde as informações posteriores aparecem pendentes. Depois, o Banco entra em contato para marcar a visita presencial, conversar, esclarecer dúvidas e levantar informações sobre a situação da interessada e armazenamento/retirada do leite.
+
+Fluxo exibido: **cadastro admitido → visita a agendar → visita agendada → relatório da visita → análise → documentos/exames indicados, se necessários → avaliação e decisão final**. A abertura da área não cria exames obrigatórios nem inicia coleta.
+
+**Proposta de tela:** manter identificação e pedido de origem no cabeçalho e organizar pendências por etapa. Exibir claramente “Admissão administrativa concluída” e “Aprovação para doar pendente”. Separar filtros de pedidos de cadastro, cadastros em acompanhamento e pedidos arquivados. Não duplicar os dados da pessoa ao mudar de área.
+
+| Etapa | Interação prevista | Distinção necessária |
+| --- | --- | --- |
+| Agendamento | Equipe registra contato e horário combinado. | Admissão não é agendamento confirmado. |
+| Visita/triagem | Profissional registra relatório narrativo amplo, preservando autoria e versões. | Relatório é o formato inicial informado pelo usuário; campos estruturados podem ser revistos depois. |
+| Análise do relatório | Profissional registra encaminhamento e indica documentos/exames quando necessários. | Não exigir exames antes dessa análise; conteúdo e critérios dependem do serviço. |
+| Recebimento de arquivos | Interessada envia pelo canal de contato; funcionário autorizado anexa ao cadastro/requisito correspondente. | Sem conta/portal de upload da interessada e sem integração automática. |
+| Avaliação dos arquivos | Profissional autorizado analisa e registra resultado ou necessidade de complementação. | Arquivo recebido não significa validado, requisito atendido ou doadora aprovada. |
+
+No primeiro acesso ao acompanhamento, mostrar documentos/exames como “a definir após visita”, não como documentação faltante. A ausência de arquivo só vira pendência concreta após uma exigência registrada. Se houver desfecho desfavorável antes dos exames, preservar o fundamento e não exigir exames desnecessariamente; critérios e profissionais responsáveis continuam em D5/D6.
+
+Relatórios e anexos têm permissões próprias. A função de atendimento não ganha leitura de saúde só por poder resolver um pedido repetido. Definir quem recebe/anexa documentos e quem os avalia antes de implementar essa etapa.

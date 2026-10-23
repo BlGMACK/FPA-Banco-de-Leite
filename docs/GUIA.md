@@ -11,7 +11,7 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 | Implementado | Existe no código ou na configuração versionada, com referência à fonte. |
 | Validado | Há uma verificação identificada, com data, ambiente e limites. Não equivale a homologação do produto. |
 
-As instruções de documentação e limites de atuação solicitadas pelo usuário são **acordadas para esta entrega**. O primeiro fluxo e suas diretrizes estruturais estão **acordados conforme relato do usuário em 23/10/2026**, com origem registrada em [R1](backend/ROADMAP.md). Campos, relações, estados, permissões detalhadas, novas convenções e prioridades continuam **propostos para revisão**. Não há ata ou homologação do serviço consultada.
+As instruções de documentação e limites de atuação solicitadas pelo usuário são **acordadas para esta entrega**. O primeiro fluxo e suas diretrizes estruturais estão **acordados conforme relato do usuário em 23/10/2026**, com origem registrada em [R1](backend/ROADMAP.md). Campos funcionais de abertura, alerta agregado, função de atendimento, WhatsApp, resolução de repetição após contato, exclusão de arquivados das comparações e admissão administrativa seguida de visita/relatório antes da solicitação de documentos/exames receberam definições adicionais do usuário, registradas no Roadmap. Tipos/limites, relações, estados técnicos, demais desfechos dos alertas, permissões técnicas, novas convenções e prioridades continuam **propostos para revisão**. Não há ata ou homologação do serviço consultada.
 
 ## Ordem de leitura
 

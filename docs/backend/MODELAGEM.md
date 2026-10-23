@@ -48,7 +48,7 @@ Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acim
 
 ### Escolha recomendada e alternativa — D9
 
-Recomenda-se identificar a pessoa em `interessadas` desde a solicitação e criar `doadoras` somente na primeira aprovação. A doadora referencia a pessoa e a decisão inicial; nome, contato e documentos não são recopiados. Novas avaliações preservam a mesma identidade e a história das decisões.
+Recomenda-se confirmar a identificação da pessoa em `interessadas` na conferência do pedido e criar `doadoras` somente na primeira aprovação. A doadora referencia a pessoa e a decisão inicial; nome, contato e documentos não são recopiados. Novas avaliações preservam a mesma identidade e a história das decisões.
 
 A alternativa é manter um único cadastro com situação de habilitação, sem tabela `doadoras`. Ela reduz uma entidade, mas exige distinguir explicitamente uma pessoa cadastrada de uma doadora aprovada em todas as consultas. Ambas atendem à separação conceitual G; esta especificação desenvolve a primeira, ainda sujeita à confirmação.
 
@@ -56,8 +56,8 @@ A alternativa é manter um único cadastro com situação de habilitação, sem 
 
 | Origem | Relação proposta | Justificativa e origem |
 | --- | --- | --- |
-| Conta ↔ interessada | Interessada tem zero ou uma conta; conta tem zero ou uma interessada vinculada. | G separa conceitos; P permite conta opcional até D1. Autores da equipe são referências distintas. |
-| Interessada → solicitações | Uma pessoa pode ter várias solicitações ao longo do tempo. | G exige histórico; P permite retorno sem apagar recusa. Quantidade simultânea depende de D7. |
+| Conta ↔ interessada | Na hipótese de entrada sem conta, não exigir nem criar vínculo de login da interessada. | Preferência posterior do usuário em D1; contas da equipe continuam sendo referências de autoria. Vínculo futuro depende de decisão sobre portal. |
+| Interessada → solicitações | Pessoa confirmada pode ter vários pedidos, inclusive simultâneos sujeitos à análise. Pedido recebido pode estar sem vínculo até conferência. | G revisado: sinalizar correspondências, não bloquear por repetição; P: vínculo confirmado pela equipe. |
 | Solicitação → agendamentos | Zero ou vários registros; no máximo um confirmado ativo por vez na proposta. | L ligava visita à solicitação; P separa agenda de execução e preserva reagendamentos. |
 | Agendamento → atendimento | Zero ou um atendimento realizado. | P; ausência ou cancelamento não criam atendimento fictício. Encaixe sem agenda depende de D8. |
 | Atendimento → triagens | Zero ou várias versões, identificadas por número e antecessora. | G separa triagem; L tinha uma ficha por visita. P mantém versões para preservar decisões. |
@@ -76,18 +76,18 @@ Notação: **O** = obrigatório na proposta; **N** = anulável; **D** = obrigaç
 | Entidade | Campos e tipos propostos | Origem e pendências |
 | --- | --- | --- |
 | `users` existente | Manter nome, e-mail, senha e papel atuais. | Implementado. G: papel não representa aptidão. Não adicionar aprovação clínica ao papel. |
-| `interessadas` | `user_id` FK N/único; `nome` texto até 150 O; `telefone` texto até 20 D; `email_contato` até 255 N; `cpf` texto normalizado D; `cartao_sus` texto D. | Nome/telefone/documentos: L; identidade compartilhada e conta opcional: P. Sugerir nome e pelo menos um contato na entrada; confirmar D1/D3/D7. Não assumir que contato e login sejam iguais. |
-| Endereço da interessada | Campos candidatos: município, bairro, logradouro, número, complemento e CEP, como texto; obrigatoriedade D. | Endereço: G/L. Estrutura P; D4 decide conjunto mínimo e momento. Número deve aceitar “s/n”. Não criar dois cadastros de endereço concorrentes. |
-| `solicitacoes` | `interessada_id` FK O; `protocolo` texto único gerado O; `data_desejada` data D; `canal_origem` código O; `status` código O; `registrada_por_user_id` FK N; `enviada_em` data/hora O. | Preferência e entrada: G/L; protocolo/canal/autoria: P. Canal web; telefone/presencial somente se D2 for confirmado. Autor nulo só se entrada sem conta for aprovada. |
+| `interessadas` | Nome completo, CPF, e-mail, fixo/celular, endereço e indicação de WhatsApp conforme dicionário abaixo; CNS fora do formulário inicial. | Dados básicos definidos pelo usuário; formatos/limites P. Cadastro compartilhado somente após conferência; não confundir com dados declarados de novo envio. |
+| Endereço da interessada | Município, bairro e endereço completo obrigatórios; decomposição proposta abaixo. | Obrigatoriedade confirmada pelo usuário; formatos P. Aceitar número “s/n” e complemento opcional. |
+| `solicitacoes` | `interessada_id` FK N até conferência; `protocolo` único O; dados declarados conforme dicionário; `canal_origem`, `status`, `enviada_em` O; `registrada_por_user_id` FK N para envio público e O para interno. | Todo pedido recebido fica na fila; ligação com pessoa existente só após conferência. Sem unicidade de CPF/e-mail/telefone nos pedidos. Data desejada e CNS permanecem fora do conjunto obrigatório inicial. |
 | `agendamentos` | `solicitacao_id` FK O; `inicio_previsto_em` data/hora O ao confirmar; `modalidade` código D; `local_atendimento` D; `status` código O; `confirmado_por_user_id` FK O; `confirmado_em` data/hora O; `substitui_agendamento_id` FK N. | Data combinada distinta da preferência: G; separação e histórico: P. Modalidades e detalhes de local a confirmar. |
 | `atendimentos` | `agendamento_id` FK único O; `realizado_em` data/hora O; `responsavel_user_id` FK O. | Atendimento: G/L; estrutura P. Registrar fato ocorrido, não apenas chegada da data agendada. |
-| `triagens` | `atendimento_id` FK O; `versao` inteiro O; `substitui_triagem_id` FK N; `status` código O; `preenchida_por_user_id` FK O; `concluida_em` data/hora N; conteúdo clínico D. | Separação: G/L; versão P. L tinha moradia, renda, intercorrências e dados do bebê; não os tornar obrigatórios nem copiar campos livres sem D3/D6. |
+| `triagens` | `atendimento_id` FK O; `versao` inteiro O; `substitui_triagem_id` FK N; `status` código O; `preenchida_por_user_id` FK O; `concluida_em` data/hora N; `relatorio_visita` texto amplo. | Preferência atual do usuário: relatório narrativo, sem questionário clínico estruturado nesta fase. Formato pode mudar; obrigatoriedade de campos clínicos e conclusão profissional dependem de D6. Metadados de autoria/vínculo permanecem estruturados. |
 | `avaliacoes_saude` | `triagem_id` FK O; `substitui_avaliacao_id` FK N; `status` código O; `avaliador_user_id` FK O; `concluida_em` data/hora N; `valida_ate` data N/D; parecer técnico restrito D. | G/L: avaliação própria; P: autoria e versões. Documentos, exames, resultados estruturados e validade dependem de D6. Nulo não significa validade ilimitada. |
 | `decisoes` | `avaliacao_saude_id` FK única O; `resultado` código O; `decidida_por_user_id` FK O; `decidida_em` data/hora O; `justificativa_restrita` texto D; `mensagem_interessada` texto N/D. | Autoria/data/fundamento e proteção da justificativa: G; estrutura P. Sugerir justificativa obrigatória para resultado desfavorável. Conteúdo exibido depende de D11. |
 | `doadoras` | `interessada_id` FK única O; `decisao_inicial_id` FK única O. | Criação na aprovação: P/D9. Instante da habilitação inicial vem da decisão; não duplicar nome, endereço, CPF ou sorologia. |
 | `eventos_solicitacao` | `solicitacao_id` FK O; tipo de evento O; estados anterior/novo N; `autor_user_id` FK N; `ocorrido_em` data/hora O; vínculo com registro afetado e motivo conforme ação. | Histórico: G; armazenamento P. FKs do registro afetado a detalhar por tipo; evitar ID sem integridade referencial. Dados de saúde não entram em log geral. |
 
-Dados de identificação são mantidos em uma fonte compartilhada. Correções devem gerar histórico restrito dos valores alterados, suficiente para recuperar o contexto de um atendimento/decisão anterior. O desenho físico desse histórico e do endereço fica pendente de D4/D10; não substituir isso por cópias independentes em cada etapa.
+Dados de identificação são mantidos em uma fonte compartilhada. Correções devem gerar histórico restrito dos valores alterados, suficiente para recuperar o contexto de um atendimento/decisão anterior. O desenho físico desse histórico fica pendente de D10; não substituir isso por cópias independentes em cada etapa.
 
 ### Estados e transições propostos
 
@@ -95,7 +95,7 @@ Separar **andamento administrativo**, **andamento da avaliação** e **resultado
 
 | Entidade | Estados propostos | Transições e condições |
 | --- | --- | --- |
-| Solicitação | `enviada`, `em_analise`, `aguardando_atendimento`, `em_avaliacao`, `concluida`, `recusada`, `cancelada` | Enviada → em análise pela equipe; → aguardando atendimento ao confirmar agenda; → em avaliação ao registrar atendimento; → concluída ao registrar decisão. Recusa administrativa a partir de enviada/em análise com autor, data e motivo; cancelamento depende de D8. |
+| Solicitação | `enviada`, `em_analise`, `admitida`, `aguardando_atendimento`, `em_avaliacao`, `concluida`, `recusada`, `cancelada`, `arquivada` | Em análise → admitida representa “cadastro concluído” administrativo, após conferência; → aguardando atendimento somente ao confirmar agenda; → em avaliação ao registrar atendimento; → concluída ao registrar decisão final. Arquivamento após contato segue regra abaixo; cancelamento depende de D8. |
 | Agendamento | `confirmado`, `realizado`, `cancelado`, `substituido`, `nao_compareceu` | Criado confirmado após acordo, nunca a partir apenas da preferência. Confirmado → realizado com atendimento; → substituído ao registrar novo agendamento; cancelamento/ausência exigem registro da equipe e regra D8. |
 | Triagem | `em_preenchimento`, `concluida` | Conclusão por pessoa autorizada e campos exigidos completos. Correção após conclusão cria nova versão; não altera a usada em decisão. |
 | Avaliação | `pendente`, `em_avaliacao`, `aguardando_complementacao`, `concluida` | Pendente → em avaliação; pode aguardar complementação e retomar; conclusão exige requisitos acordados. Situação concluída não aprova por si só. |
@@ -104,18 +104,102 @@ Separar **andamento administrativo**, **andamento da avaliação** e **resultado
 
 No legado L: solicitação tinha pendente/confirmada/recusada; visita pendente/realizada/cancelada; ficha pendente/aprovada/reprovada; requisitos misturavam situação e sorologia; doadora também repetia sorologia. A proposta P distribui cada responsabilidade e retira aprovação da simples conclusão de formulário.
 
-Após agendamento cancelado ou ausência, propõe-se manter a solicitação aberta para análise da equipe; o retorno a `em_analise` e um novo agendamento dependem de D8. Reagendamento preserva a preferência original e o agendamento substituído. Não reabrir solicitação recusada/concluída apagando o estado anterior: sugerir novo pedido vinculado à mesma pessoa, condicionado a D6/D7.
+Após agendamento cancelado ou ausência, preservar a admissão administrativa e propor retorno à espera de novo agendamento; o estado técnico e as regras dependem de D8. Reagendamento preserva a preferência original e o agendamento substituído. Não reabrir solicitação recusada/concluída apagando o estado anterior: sugerir novo pedido vinculado à mesma pessoa, condicionado a D6/D7.
 
 ### Integridade e decisões que bloqueiam a implementação
 
 - Verificar que triagem, avaliação, decisão e doadora pertencem à mesma cadeia e interessada; não aceitar combinações de IDs enviadas pelo cliente.
-- Unicidade proposta: conta vinculada, protocolo, atendimento por agendamento, versão por atendimento, decisão por avaliação e doadora por interessada. Unicidade de CPF depende de D3/D7; telefone e nome não identificam pessoa de forma suficiente.
+- Unicidade proposta: protocolo, atendimento por agendamento, versão por atendimento, decisão por avaliação e doadora por interessada. Nos pedidos, CPF/e-mail/telefone/nome repetidos geram alerta, não restrição de unicidade. Unicidade no cadastro de identidade confirmada ainda depende da resolução D7; telefone e nome não identificam pessoa de forma suficiente.
 - Uma decisão final exige avaliação concluída e todas as etapas exigidas pelo serviço satisfeitas. Até D6 ser confirmado, não há regra clínica programável.
-- Aprovação, conclusão administrativa e criação da doadora devem ocorrer atomicamente, com proteção contra envio repetido e decisões concorrentes. Desfecho desfavorável não cria doadora.
+- Na decisão clínica final, aprovação, encerramento dessa etapa e criação da doadora devem ocorrer atomicamente, com proteção contra envio repetido e decisões concorrentes. Concluir a conferência de dados ou resolver repetição não cria doadora aprovada. Desfecho desfavorável não cria doadora.
 - Na primeira aprovação, habilitar a participação conforme G; nas futuras coletas, verificar a decisão aplicável e validade/reavaliação a definir. Decisão desfavorável posterior não pode deixar uma autorização antiga valendo por simples existência do cadastro; tratamento depende de D6.
 - Propor impedimento de exclusão física de contas com autoria ou vínculos de domínio até política D10 definida. O código atual exclui contas fisicamente: esse comportamento precisará ser revisto antes dos novos vínculos, sem apagar a autoria histórica.
 - Preservar recusas, decisões e versões; não usar exclusão em cascata para a cadeia de origem. Correção e retenção devem ter acesso controlado e política definida.
-- Vincular conta a interessada somente após comprovação de identidade definida em D1/D7; não vincular automaticamente por nome, CPF ou e-mail informado.
+- Na hipótese atual, não criar login ou vínculo de conta da interessada. Se houver portal futuro, definir comprovação de identidade antes de vincular; não vincular automaticamente por nome, CPF ou e-mail informado.
 - Índices candidatos: protocolo, identidade validada e filas por estado/data. Desenho físico e restrições de simultaneidade serão revisados antes das migrations, após confirmar regras e consultas.
 
 A matriz de ações e acesso está em [Contratos](CONTRATOS.md#permissões-propostas-para-o-fluxo-de-admissão). Nada nesta proposta altera o schema atual ou define critérios clínicos.
+
+### Entrada pública, duplicidade e contato — proposta revisada
+
+A preferência sem conta em D1 altera a proposta anterior: `interessadas` não precisa de `user_id` neste recorte. `users` permanece para a equipe e para a autenticação já implementada; remover/desativar o cadastro público Breeze e definir o destino das contas doadora existentes será tarefa futura explícita, sem apagar registros nesta etapa.
+
+A regra revisada pelo usuário substitui “uma solicitação ativa por pessoa” por recebimento e sinalização para análise. Não impor unicidade de CPF, telefone, e-mail ou nome em `solicitacoes`. Limitar abuso/automação é uma regra separada; correspondência de dados não equivale a spam.
+
+Proposta de persistência: cada pedido mantém os dados declarados no envio e um vínculo inicialmente anulável à interessada confirmada. Esses dados são a evidência de entrada, não um segundo cadastro mestre. Após conferência, a equipe vincula à pessoa existente ou cria sua identificação; atualizações da identidade exigem ação explícita. Preservar valores originalmente declarados e histórico de correções. Essa estrutura substitui a fila adicional `entradas_solicitacao` anteriormente sugerida.
+
+Pedido sem identidade conferida pode ser recebido/analisado/contatado; antes de agendamento e etapas técnicas, propor vínculo confirmado. Nunca associar dados clínicos automaticamente ao cadastro encontrado por CPF ou telefone.
+
+### Dicionário da abertura do pedido
+
+Obrigatoriedade funcional abaixo confirmada pelo usuário. Nomes técnicos, tamanhos e normalização são **P**. Validar tanto no formulário público quanto no registro interno.
+
+| Campo | Obrigatoriedade | Proposta técnica |
+| --- | --- | --- |
+| Nome completo | Sim | `nome_completo`, texto até 150; aparar espaços e preservar grafia original. |
+| CPF | Sim | Texto de 11 dígitos após remover máscara, com validação dos dígitos verificadores; não prova identidade. |
+| Telefone fixo | Pelo menos fixo ou celular | `telefone_fixo`, texto até 20, com DDD; anulável quando celular preenchido. |
+| Celular | Pelo menos fixo ou celular | `telefone_celular`, texto até 20, com DDD; anulável quando fixo preenchido. Ambos podem ser informados. |
+| E-mail | Sim | `email_contato`, texto até 255, formato válido; não é login nem prova de titularidade. |
+| Município e bairro | Ambos | Textos até 150 cada. |
+| Endereço completo | Sim | Propor UF (2), CEP normalizado (8), logradouro (255), número (20, aceitando “s/n”) e complemento opcional (150), além de município/bairro. Detalhamento técnico para revisão. |
+| Número para WhatsApp | Sim | Seletor fixo/celular entre os campos preenchidos; não repetir telefone em um terceiro campo independente. Escolha confirmada pelo usuário. |
+| Disponibilidade no WhatsApp | Sim | Declaração explícita de disponibilidade no número selecionado; registrar momento. Não chamar essa declaração de número verificado. |
+| Outros detalhes | Não | Área de texto até 2.000 caracteres, sem HTML ou anexos; limite P. Orientar a não enviar exames ou dados de terceiros. |
+
+Preferência de data estava no guia anterior, mas não na lista final de campos iniciais; manter pendente sua inclusão opcional e tratar o horário combinado no agendamento. CNS, exames e resultados não integram esta abertura.
+
+### Correspondências e alerta único — regra funcional e proposta técnica
+
+**Confirmado pelo usuário:** flag única por pedido, indicando quais dados repetem e em quais pedidos/cadastros já completos aparecem, com filtro de pedidos sinalizados.
+
+**Proposta técnica:** calcular `tem_correspondencias` como existência de pelo menos uma correspondência; detalhes são uma coleção de campo, tipo de destino (pedido ou cadastro confirmado), ID do destino e valor coincidente. Um badge agrega múltiplos motivos/destinos. Contagem de pedidos sinalizados não deve aumentar por número de motivos.
+
+| Campo comparado | Regra inicial proposta | Limite |
+| --- | --- | --- |
+| CPF | Igualdade após remover máscara. | Indício forte, mas pode haver erro ou uso de dados de terceiro. |
+| Telefones | Comparar ambos os campos com ambos nos destinos, após normalizar DDD/número; remover código +55 somente quando identificável. | Fixo e celular podem representar o mesmo contato; número compartilhado não comprova duplicidade. |
+| E-mail | Aparar espaços e comparar sem diferença de caixa. | Não remover pontos/sufixos “+”; não inferir que endereços diferentes pertencem à mesma pessoa. |
+| Nome completo | Igualdade após normalizar caixa, acentos e espaços para comparação. | Homônimos geram alerta, não bloqueio. Busca aproximada/fonética não integra a primeira proposta. |
+
+Endereço compartilhado não gera alerta sozinho nesta versão proposta; inclusão de outros campos precisa de revisão para não sinalizar toda família ou domicílio como duplicidade. Campos vazios não coincidem entre si.
+
+Comparar somente pedidos ativos e cadastros administrativamente concluídos, conforme esclarecimento do usuário. Proposta de mapeamento: pedidos `enviada/em_analise` participam como pedidos; a partir de `admitida`, comparar a identidade confirmada como cadastro, inclusive quando já houver aprovação final. Não contar o pedido de origem e seu cadastro como dois destinos independentes. Arquivados ficam fora dos dois lados da comparação e não geram flag. Propor excluir pedidos recusados/cancelados como alvos inativos; essa extensão permanece a validar. Excluir o próprio registro e mostrar seu vínculo canônico como “cadastro vinculado”, não como repetição.
+
+Recalcular correspondências quando pedidos/cadastros surgirem, forem corrigidos, admitidos ou arquivados, inclusive nos pedidos antigos afetados. Definir estratégia de consulta/índices na implementação; flags armazenadas não podem ficar desatualizadas.
+
+A análise não apaga pedidos. Propor registrar responsável, data, motivo e encaminhamento (mesma pessoa, pessoas distintas, aguardando esclarecimento). Manter a evidência da coincidência e distinguir alerta pendente de já revisado. Nova correspondência deve exigir nova conferência; nunca realizar fusão automática.
+
+**Definição do usuário:** confirmar que os pedidos são os mesmos exige contato efetivo que esclareça a dúvida. Após essa análise, é permitido arquivar ambos com justificativa, retirando-os da fila de análise. Propor estado `arquivada` para esse desfecho administrativo; não converter em `recusada` ou em resultado clínico desfavorável.
+
+**Persistência proposta:** cada resolução identifica os pedidos efetivamente analisados, funcionário, data/hora, motivo, resultado da conferência e contato que a fundamentou. O contato deve referenciar os pedidos abrangidos pela conversa. Status de contato `realizado`, sozinho, não basta: registrar também que a identidade e a repetição foram esclarecidas, sem copiar a conversa inteira.
+
+Arquivar os dois deve ser uma operação atômica, conferindo autorização e estado atual de cada pedido. Se algum já mudou de estado, solicitar nova análise; não arquivar parcialmente ou alterar cadastro aprovado por associação. Arquivados não aparecem na fila ativa, no filtro de flags atuais nem como destinos de correspondência; continuam no histórico/todos. A evidência da resolução fica no histórico, separada do indicador atual. Se o arquivado era o único destino de uma flag, ela desaparece também no outro pedido.
+
+O usuário confirmou que “cadastro concluído” é admissão administrativa e que o funcionário escolhe qual pedido avança e qual arquiva. Proposta: registrar `admitida` no principal, `arquivada` no repetido e vínculo de resolução com contato/motivo/autor, de forma atômica. Não reutilizar `concluida`, reservado à decisão final. Reabertura permanece a definir.
+
+### Registro de contatos
+
+Contato manual: propor `contatos_solicitacao` ligado à solicitação, com canal, funcionário, data/hora, finalidade, resultado (tentado/realizado/sem_resposta/numero_incorreto), resumo operacional mínimo e próxima ação. Não copiar conversas inteiras ou exames para esse histórico. Registrar como o destinatário foi conferido conforme procedimento a definir; controle de um número não prova, sozinho, a identidade civil.
+
+O telefone informado no formulário não deve substituir automaticamente um contato previamente confirmado. Correções recebidas publicamente ficam pendentes de conferência. Mensagem enviada, recebimento de resposta e confirmação de agendamento são eventos diferentes.
+
+### Permissões configuráveis — proposta de estrutura
+
+Manter contas individuais de funcionários. Propor um catálogo de permissões por ação e vínculo entre conta e permissões concedidas; registrar quem concedeu/revogou, quando e o escopo de registros. Para este recorte, agrupar consulta/cadastro/conferência de pedidos e registro de contato na função “Atendimento de solicitações”, conforme o usuário, atribuível a vários funcionários. Isso é um conjunto de permissões, não obrigação de alterar o enum atual nem de criar contas compartilhadas. Outras funções podem continuar configuráveis. A representação física (tabelas próprias ou recursos existentes) será escolhida em tarefa autorizada; nenhum pacote foi escolhido.
+
+Administrador amplo é proposta do usuário. Seu alcance em atos clínicos ainda exige definição em D5: acesso técnico não elimina requisitos da avaliação, autoria nem critérios profissionais. Mesmo administrador não apaga histórico ou aprova com avaliação incompleta. Catálogo funcional inicial em [Contratos](CONTRATOS.md#permissões-propostas-para-o-fluxo-de-admissão).
+
+### Acompanhamento após admissão administrativa
+
+**Definido pelo usuário:** nova área para os cadastros admitidos, com visita e informações posteriores pendentes; contato para agendamento, visita presencial, relatório, análise e só então solicitação de documentos/exames quando indicada. Admissão administrativa não cria registro de doadora aprovada nem autoriza coleta.
+
+**Proposta técnica:** a área é uma visão do mesmo cadastro/solicitação, não uma cópia de identificação. Registrar `admitida_por_user_id` e `admitida_em` no pedido principal. Manter pendências de visita, análise do relatório e requisitos separados da aprovação. Antes da indicação profissional, documentos/exames ficam “a definir após visita”, não “em atraso” ou “exigidos”.
+
+O relatório narrativo integra a triagem já proposta, com autor, atendimento, versão e data de conclusão. Sua análise registra profissional, instante e encaminhamento: solicitar complementação, indicar documentos/exames ou registrar desfecho fundamentado conforme atribuições D5/D6. Não exigir exames automaticamente para toda pessoa admitida; critérios clínicos continuam pendentes.
+
+Para os requisitos efetivamente indicados, propor itens vinculados à avaliação: tipo/descrição, profissional solicitante, instante, fundamento no relatório e estado `solicitado/recebido/em_analise/aceito/complementacao_necessaria`. Tipos de documentos, exames, prazos e critérios de aceite serão definidos pelo serviço. Arquivo recebido não satisfaz automaticamente o requisito.
+
+Anexos enviados pelo canal de contato são carregados pelo funcionário autorizado e vinculados ao cadastro, avaliação e item solicitado. Propor metadados de tipo, referência privada ao arquivo, nome original, tamanho, tipo de conteúdo, data de recebimento, canal e funcionário responsável. Preservar versões/substituições sem sobrescrever a evidência usada por decisão. Armazenamento privado e autorização para leitura/download; formato, tamanho máximo, retenção e procedimento de recebimento ainda serão definidos.
+
+O conjunto de atendimento pode conduzir o pedido e contato sem obter automaticamente permissão para acessar relatórios ou anexos clínicos. Definir em D5 quem anexa e quem analisa. A inclusão dessa etapa na documentação não autoriza implementar upload, integrações ou regras clínicas.
