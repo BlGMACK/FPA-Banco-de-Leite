@@ -24,7 +24,8 @@ A aplicação é um monólito web Laravel com páginas renderizadas por Blade e 
 | [app/Http/Controllers](../app/Http/Controllers) | Tratamento das ações HTTP; retorno de views ou redirecionamentos. |
 | [app/Http/Requests](../app/Http/Requests) | Form Requests de login e perfil. Outros controllers validam diretamente. |
 | [app/Http/Middleware](../app/Http/Middleware) | Autorização por papel. |
-| [app/Models/User.php](../app/Models/User.php) | Conta autenticável, casts e auxiliares de papel. Único model de aplicação encontrado. |
+| [app/Models](../app/Models) | Conta autenticável e oito models administrativos com relações/casts; concessão e revogação auditadas em `Permissao`. |
+| [AppServiceProvider](../app/Providers/AppServiceProvider.php) | Gates `atender-solicitacoes` e `gerenciar-permissoes`, sem liberação global do administrador para capacidades futuras. |
 | [database](../database) | Migrations, factory e seeder; detalhes em [Modelagem](backend/MODELAGEM.md). |
 | [resources/views](../resources/views) | Templates, layouts, componentes e formulários. |
 | [app/View/Components](../app/View/Components) | Componentes de layout Blade. |
@@ -41,4 +42,4 @@ Esconder links na navegação não substitui a autorização do servidor. A apli
 
 A página inicial demonstra Bootstrap; o painel apenas confirma a sessão; as páginas de papel demonstram acesso. Elas são apoio ao desenvolvimento, sem aprovação como interface final. Há telas funcionais de autenticação e perfil, mas sua existência também não comprova homologação visual.
 
-Não foram encontradas camadas próprias de serviços, repositórios, API ou módulos de domínio. A necessidade dessas camadas e de integrações externas permanece proposta, a avaliar conforme os primeiros casos de uso; não é requisito automático.
+Há base de domínio administrativo em models e autorização por Gates, ainda sem telas ou rotas de pedidos. Não foram adicionadas camadas próprias de serviços, repositórios ou API. O funcionamento e os limites da base estão em [Contratos](backend/CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026).

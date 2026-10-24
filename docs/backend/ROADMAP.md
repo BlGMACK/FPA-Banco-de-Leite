@@ -145,6 +145,20 @@ Após essa admissão, o cadastro aparece em uma área de acompanhamento com etap
 
 Documentos e exames só são solicitados depois da análise dessas informações, quando indicados. A interessada os envia pelo canal de contato telefônico e o funcionário os anexa ao cadastro; a proposta operacional usa WhatsApp, sem upload público ou integração automática. Receber um arquivo não equivale a avaliá-lo ou aprovar a doadora. Os dados básicos já definidos para o pedido inicial continuam exigidos; o adiamento diz respeito à documentação e aos exames da avaliação.
 
-R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; regras detalhadas e aceite permanecem pendentes. R2/R4 têm propostas em [Contratos](CONTRATOS.md) e [Modelagem](MODELAGEM.md). R5 ainda precisa fixar rotas, views e respostas. R6 depende de R2–R5, incluindo qualidade em R3.
+R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; regras detalhadas e aceite permanecem pendentes. R2/R4 têm propostas em [Contratos](CONTRATOS.md) e [Modelagem](MODELAGEM.md). Em 24/10/2026, R5 recebeu [contrato técnico do primeiro recorte](CONTRATOS.md#r5--contrato-técnico-do-primeiro-recorte), com rotas, views, entradas, respostas, autorização e consistência. É proposta para revisão, não implementação ou homologação. R6 depende de R2–R5, incluindo qualidade em R3.
+
+### Preparação da implementação — proposta de sequência em 24/10/2026
+
+**Avanço autorizado nesta interação:** o usuário solicitou preparar o schema/migrations e verificar em banco isolado, sem aplicação ao banco local. Foram criadas seis migrations e testes de integridade: [schema físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026) e [evidências](STATUS.md#verificações-de-24102026--schema-administrativo). Este avanço entrega a persistência preparada, não a implementação completa de R6; autorização nas ações, modelos, fluxos e telas ainda são próximos trabalhos.
+
+Atualização de 24/10/2026: o usuário autorizou e foram implementados os models, Gates e operações de concessão/revogação, com tratamento da exclusão de contas vinculadas. O [contrato implementado](CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026) delimita essa entrega; evidências em Status. O próximo recorte é recebimento/fila e integração da autorização nas rotas, sem considerar R6 concluído.
+
+1. Consolidar o schema do recorte administrativo: pedidos, identidade confirmada, contatos, conferências/resoluções, histórico e concessão da função de atendimento. Rever exclusão de contas para preservar autoria; não criar tabelas clínicas antes de seus requisitos.
+2. Implementar a base de persistência e autorização com testes; revisar migrations antes de aplicá-las, preservando o banco local.
+3. Entregar recebimento público/interno, confirmação neutra e fila de pedidos com alertas calculados somente sobre registros elegíveis.
+4. Entregar contato, conferência, arquivamento e admissão administrativa com transações, controle de concorrência e visão inicial de acompanhamento.
+5. Validar os cenários do contrato, comportamento relevante em MySQL isolado e interface responsiva; registrar evidências e limitações. Atualizar Status somente quando houver implementação/verificação real.
+
+Visita, relatório, documentos/exames e decisão clínica continuam na sequência funcional, mas fora desta primeira entrega. Pendências de cargos clínicos não impedem especificar a entrada administrativa; a implantação dessa entrada ainda exige autorização por função, proteção da autoria, definição operacional dos limites de recebimento e revisão do contrato.
 
 Verificação: inspeção estática dos documentos, código atual e schema local legado. Sem execução do fluxo, validação clínica ou conteúdo de PDF consultado.

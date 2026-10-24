@@ -1,8 +1,10 @@
 # Guia da documentação
 
-A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contratos receberam propostas de admissão em 23/10/2026. O código e as migrations são evidências de implementação; ideias e arquivos antigos não comprovam funcionalidades disponíveis.
+A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contratos receberam propostas de admissão em 23/10/2026. Em 24/10/2026, foram detalhados R5 e, após autorização do usuário, preparadas migrations do schema administrativo verificadas em SQLite em memória, sem aplicação ao MySQL local. Consulte Modelagem e Status para o recorte e os limites. O código e as migrations são evidências de implementação; ideias e arquivos antigos não comprovam funcionalidades disponíveis.
 
 ## Estados usados
+
+Atualização posterior em 24/10/2026: o schema também foi verificado em MariaDB isolado; models administrativos, Gates e proteção de autoria na exclusão foram implementados. Consulte [Contratos](backend/CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026) e [Status](backend/STATUS.md) para distinguir a base implementada dos fluxos/telas ainda pendentes.
 
 | Estado | Significado |
 | --- | --- |
@@ -22,8 +24,11 @@ As instruções de documentação e limites de atuação solicitadas pelo usuár
 5. [Modelagem](backend/MODELAGEM.md): tabelas e pendências.
 6. [Contratos](backend/CONTRATOS.md): integração Laravel e Blade.
 7. [Roadmap](backend/ROADMAP.md): propostas futuras e dependências.
+8. [Segurança](SEGURANCA.md): controles, reforços, testes pendentes e evidências por assunto.
 
 Cada assunto tem um documento principal acima. Evite repetir instruções nos demais: use links.
+
+Para análises ou correções de segurança, comece pelos IDs aplicáveis em [Segurança](SEGURANCA.md), confira suas fontes no código e atualize as evidências junto com a mudança. O checklist orienta a revisão e não autoriza, por si só, implementar todos os itens pendentes.
 
 ## Para novos integrantes e agentes
 

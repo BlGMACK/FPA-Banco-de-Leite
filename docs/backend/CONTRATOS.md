@@ -25,7 +25,7 @@ Requisições que esperam JSON têm tratamento de erros previsto em [bootstrap/a
 | Autenticado | GET `/profile` | View `profile.edit` recebe `user`. |
 | Autenticado | PATCH `/profile` | `name`, `email`; sucesso volta ao perfil; mudança de e-mail limpa sua data de verificação. |
 | Autenticado | PUT `/password` | `current_password`, `password`, `password_confirmation`; volta à origem com status. |
-| Autenticado | DELETE `/profile` | `password` atual; exclusão física da própria conta, invalidação da sessão e redirecionamento para início. |
+| Autenticado | DELETE `/profile` | `password` atual; exclui conta sem vínculos e encerra a sessão. Restrição por histórico preserva conta/sessão e retorna erro no bag `userDeletion`. |
 | Autenticado | GET/POST `/confirm-password` | View `auth.confirm-password`; POST recebe `password`; confirma sessão e redireciona ao destino pretendido/painel. |
 | Autenticado | GET `/verify-email` | View `auth.verify-email` ou redirecionamento ao painel. |
 | Autenticado | GET `/verify-email/{id}/{hash}` | URL assinada, limite `6,1`; marca verificação e redireciona com `?verified=1`. |
@@ -44,7 +44,7 @@ Cadastro e atualização de perfil exigem nome e e-mail, com limite de 255 carac
 | --- | --- |
 | Perfil salvo | Sessão `status=profile-updated`; erros no bag padrão. |
 | Senha alterada | Sessão `status=password-updated`; erros no bag `updatePassword`. |
-| Exclusão com senha inválida | Bag `userDeletion`; modal reabre conforme erros. |
+| Exclusão com senha inválida ou conta vinculada a histórico | Bag `userDeletion`, campo `password`; modal reabre conforme erros. |
 | Notificação de verificação solicitada | Sessão `status=verification-link-sent`. |
 | Recuperação de senha | Status traduzido do broker ou erro de `email`; não assumir texto fixo. |
 
@@ -58,6 +58,21 @@ A integração do modal usa eventos `open-modal`/`close-modal`, identificador `c
 | `/interno-teste` | Permitido | Permitido | 403 | Login |
 
 A matriz descreve o código do [middleware](../../app/Http/Middleware/EnsureUserHasRole.php), sem afirmar execução de teste completo. Esconder um item no menu não autoriza o usuário no servidor. Papéis não definem ainda permissões de módulos futuros.
+
+## Base de models e autorização implementada em 24/10/2026
+
+Escopo autorizado pelo usuário: models do recorte administrativo, autorização dos funcionários e preservação de autoria. Não foram criadas rotas, telas ou API de atendimento/gestão de permissões. As rotas de apoio por papel mantêm sua finalidade anterior.
+
+- Gate `atender-solicitacoes`: admin atual ou funcionário atual com concessão não revogada desse código. Doadora, visitante, conta removida e funcionário sem concessão são negados. Escopo administrativo de uma unidade conforme R5; não concede acesso clínico.
+- Gate `gerenciar-permissoes`: somente admin atual. Não existe `Gate::before` que libere todas as capacidades para admin; permissões futuras permanecem negadas até implementação explícita.
+- Ambos consultam o banco em cada verificação, sem confiar em relações carregadas ou papel antigo na instância. As futuras rotas internas devem usar `auth` e `can:atender-solicitacoes`, além das pré-condições da operação. Gates não filtram consultas ou protegem automaticamente qualquer rota nova.
+- `Permissao::conceder($funcionario, $responsavel, $motivo)` e `revogar(...)` verificam `gerenciar-permissoes`, exigem motivo e operam somente sobre `atender-solicitacoes`. Concessão exige destinatário funcionário; revogação pode retirar concessão antiga mesmo se o papel mudou. O responsável deve ser obtido da sessão autenticada pelo futuro controller, nunca de um ID enviado pelo cliente.
+- A alteração e seu evento são gravados em transação; a linha do catálogo e o destinatário são bloqueados durante a operação. Pedido de concessão já ativa/revogação já efetiva retorna `false`, sem novo evento. Uma nova concessão após revogação atualiza a linha atual e preserva os eventos anteriores. Não substitui o contrato de idempotência das solicitações.
+- [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara somente o código de atendimento, de forma idempotente; não cria funcionários nem concede acessos. Foi exercitado apenas nos testes, não conectado automaticamente ao `DatabaseSeeder` nem executado no banco local.
+- `User.role` não aceita atribuição em massa. Alteração administrativa de papéis e criação de contas internas ainda não têm fluxo implementado; factories usam estados explícitos para dados fictícios.
+- Exclusão com vínculos retorna a mensagem “Esta conta possui registros vinculados e não pode ser excluída. Procure a administração.” no bag `userDeletion`, campo `password`, preservando a sessão. A exclusão sem vínculos continua disponível. Não foi implementada desativação de conta.
+
+Fontes: [models](../../app/Models), [Gates](../../app/Providers/AppServiceProvider.php), [perfil](../../app/Http/Controllers/ProfileController.php). Verificações e limites em [Status](STATUS.md); acompanhamento em [Segurança](../SEGURANCA.md). As especificações funcionais seguintes permanecem propostas onde ainda não implementadas.
 
 ## Modelo para contratos futuros — proposto
 
@@ -139,7 +154,7 @@ Todas as permissões precisam de escopo de registros definido em D5 (por exemplo
 | Avaliação | Dados e parecer técnico definidos com o serviço. | Avaliador, versão de triagem e validação de completude. | Avaliação em andamento, aguardando complementação ou concluída. |
 | Decisão | Resultado e justificativa conforme D5/D6/D11. | Decisor, instante, avaliação de origem e habilitação atômica quando aprovada. | Decisão preservada; mensagem à interessada separada da justificativa restrita. |
 
-Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. Rotas, nomes de views, limites finais dos campos, mensagens, bags e detalhes de contato permanecem a definir em R5; WhatsApp manual é a hipótese preferida. As linhas acima não são endpoints disponíveis.
+Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. A proposta técnica de rotas, views, entradas e respostas do primeiro recorte está em [R5](#r5--contrato-técnico-do-primeiro-recorte). Limites clínicos e operações posteriores continuam pendentes. Nenhuma rota de domínio descrita aqui está implementada.
 
 ### Falhas e critérios para detalhar R5
 
@@ -151,7 +166,7 @@ Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. Rot
 - Justificativas e dados de saúde: não incluir em mensagens genéricas, URLs ou logs comuns.
 - Exibir estados e decisões conforme permissão, distinguindo recebimento, agendamento confirmado e habilitação.
 
-Critérios funcionais estão em [R1](ROADMAP.md); integridade e estados em [Modelagem](MODELAGEM.md). A implementação depende das decisões abertas, com o primeiro recorte limitado à abertura, fila, conferência e contato; critérios clínicos são dependência das etapas posteriores. Ainda faltam confirmar limites técnicos e desfechos da análise de correspondências.
+Critérios funcionais estão em [R1](ROADMAP.md); integridade e estados em [Modelagem](MODELAGEM.md). O primeiro recorte inclui abertura, fila, conferência, contato, resolução de repetição e admissão administrativa, com uma visão inicial de acompanhamento. Operações clínicas são posteriores. R5 detalha as operações deste recorte como proposta técnica.
 
 ### Telas do primeiro recorte — especificação proposta
 
@@ -211,3 +226,110 @@ Fluxo exibido: **cadastro admitido → visita a agendar → visita agendada → 
 No primeiro acesso ao acompanhamento, mostrar documentos/exames como “a definir após visita”, não como documentação faltante. A ausência de arquivo só vira pendência concreta após uma exigência registrada. Se houver desfecho desfavorável antes dos exames, preservar o fundamento e não exigir exames desnecessariamente; critérios e profissionais responsáveis continuam em D5/D6.
 
 Relatórios e anexos têm permissões próprias. A função de atendimento não ganha leitura de saúde só por poder resolver um pedido repetido. Definir quem recebe/anexa documentos e quem os avalia antes de implementar essa etapa.
+
+## R5 — Contrato técnico do primeiro recorte
+
+Elaborado em **24/10/2026**, por solicitação do usuário para avançar ao próximo passo. **Estado: proposto, não implementado.** As regras funcionais confirmadas em R1 são a base; nomes de rotas, campos técnicos, views, respostas e mecanismos abaixo são escolhas propostas para revisão. A inspeção de `routes/web.php` e `routes/auth.php` confirmou que essas rotas ainda não existem.
+
+### Limites e autorização
+
+Entrega: receber pedido sem conta; listar e conferir; registrar contato; resolver repetição; concluir admissão administrativa; consultar acompanhamento com visita pendente. Agendar visita, redigir relatório, anexar exames e aprovar doação são operações de entregas posteriores. A tela inicial de acompanhamento apenas mostra a admissão e as próximas etapas; não oferece botões que simulem funções ainda indisponíveis.
+
+**Permissão lógica proposta:** `atender-solicitacoes`, reunindo as ações administrativas definidas pelo usuário. Nas rotas internas, exigir sessão e essa permissão, além do acesso a cada registro envolvido. `role:admin,funcionario` sozinho é insuficiente. Proposta para este recorte de uma unidade: funcionários com a função acessam todos os pedidos e os dados administrativos dos cadastros dessa unidade; admin tem alcance administrativo amplo. Papel doadora e funcionário sem a função não têm acesso. Isso não concede permissão clínica.
+
+A concessão da função depende de persistência e operação administrativa explícitas antes de disponibilizar o módulo; nunca expor campo de permissão no cadastro público. Concessão/revogação e proteção da autoria precisam ser contempladas na tarefa de implementação, sem instalar pacote por pressuposição.
+
+### Rotas e nomes propostos
+
+Todos os caminhos são relativos à aplicação, não endereços publicados. Escritas usam formulários web com CSRF; PATCH usa o mecanismo de método do formulário já adotado pelo projeto. Leituras não alteram estado nem confirmam contato.
+
+| Método/caminho | Nome da rota | Acesso e efeito |
+| --- | --- | --- |
+| GET `/doar` | `solicitacoes.create` | Público; formulário sem login. |
+| POST `/pedidos-de-cadastro` | `solicitacoes.store` | Público; valida e recebe pedido, com controle de frequência. |
+| GET `/pedido-recebido` | `solicitacoes.recebida` | Público; confirmação genérica, sem parâmetro de CPF/ID para consulta. |
+| GET `/interno/solicitacoes` | `interno.solicitacoes.index` | Função de atendimento; lista e filtros. |
+| GET `/interno/solicitacoes/nova` | `interno.solicitacoes.create` | Função de atendimento; formulário para telefone/presencial. |
+| POST `/interno/solicitacoes` | `interno.solicitacoes.store` | Função de atendimento; recebe pedido com canal e autoria. |
+| GET `/interno/solicitacoes/{solicitacao}` | `interno.solicitacoes.show` | Detalhe, alerta atual, contatos e histórico administrativo autorizados. |
+| PATCH `/interno/solicitacoes/{solicitacao}` | `interno.solicitacoes.update` | Corrige dados declarados de pedido ativo, com motivo e controle de versão. |
+| POST `/interno/solicitacoes/{solicitacao}/analise` | `interno.solicitacoes.analise.store` | Marca início da análise; abrir a página não realiza essa ação. |
+| POST `/interno/solicitacoes/{solicitacao}/contatos` | `interno.solicitacoes.contatos.store` | Registra tentativa ou contato realizado; não envia mensagem. |
+| POST `/interno/solicitacoes/{solicitacao}/conferencias` | `interno.solicitacoes.conferencias.store` | Registra pessoas distintas ou necessidade de esclarecimento, sem admissão/arquivamento. |
+| POST `/interno/solicitacoes/{solicitacao}/resolucoes` | `interno.solicitacoes.resolucoes.store` | Resolve repetição após contato: arquivar ambos ou admitir principal e arquivar repetido. |
+| POST `/interno/solicitacoes/{solicitacao}/admissao` | `interno.solicitacoes.admissao.store` | Conclui cadastro administrativo sem repetição pendente; cria/vincula identidade confirmada. |
+| GET `/interno/acompanhamentos` | `interno.acompanhamentos.index` | Lista administrativa dos cadastros admitidos. |
+| GET `/interno/acompanhamentos/{solicitacao}` | `interno.acompanhamentos.show` | Identificação, pedido de origem, admissão e próximas etapas pendentes; nenhum dado clínico neste recorte. |
+
+Não criar rota pública de consulta, API REST, exclusão física ou reabertura de arquivado neste recorte. A rota estática `nova` deve ser diferenciada do identificador de solicitação na implementação.
+
+### Entradas e contrato do formulário
+
+O [dicionário](MODELAGEM.md#dicionário-da-abertura-do-pedido) é a fonte de obrigatoriedade e limites. Nomes propostos para transporte: `nome_completo`, `cpf`, `telefone_fixo`, `telefone_celular`, `email_contato`, `municipio`, `bairro`, `uf`, `cep`, `logradouro`, `numero`, `complemento`, `whatsapp_telefone` (`fixo` ou `celular`), `whatsapp_disponivel` (declaração afirmativa) e `outros_detalhes`.
+
+Aplicar as mesmas validações de dados no recebimento público e interno. Ao menos um telefone, escolha de WhatsApp que corresponda a número preenchido e declaração são obrigatórios. CPF com dígitos válidos não é identidade autenticada. Não exigir unicidade dos dados de identificação nos pedidos. Sem CNS, preferência de data ou anexos nesta primeira versão proposta.
+
+O registro interno acrescenta `canal_origem=telefone|presencial`; no público, o servidor define `web`. Autor interno, instante, protocolo, status, identidade confirmada, alertas e permissões são calculados/controlados pelo servidor. Não aplicar campos adicionais enviados como `role`, `status`, `interessada_id` ou resultado clínico.
+
+Propor `operacao_id` opaco emitido pelo servidor para distinguir retransmissão da mesma operação de novo envio deliberado. Ele não concede consulta nem autorização. Mesma operação com mesma entrada retorna o resultado seguro já produzido; outra entrada com a mesma chave é conflito. Nova operação com dados iguais cria novo pedido sujeito a alerta. Escopo, expiração, persistência e limite de frequência precisam ser definidos no desenho físico; não usar CPF como chave de bloqueio permanente.
+
+Recebimento público bem-sucedido redireciona para `solicitacoes.recebida` com mensagem neutra. Protocolo pode aparecer apenas como comprovante temporário da submissão na própria sessão, sem CPF/dados e sem conceder consulta. Acesso direto sem comprovante mostra orientação genérica para o formulário. Não refletir dados de outro pedido em reenvios ou mensagens de coincidência.
+
+### Operações internas e pré-condições
+
+Cada escrita sobre registro existente envia a versão exibida na tela. O servidor verifica estado, versão, permissões e vínculos novamente ao gravar. IDs enviados não comprovam autorização nem pertencimento.
+
+| Operação | Entrada específica proposta | Pré-condição e efeito |
+| --- | --- | --- |
+| Correção | Campos permitidos, `motivo`, `versao` | Somente pedido `enviada/em_analise`; preserva declaração anterior e autoria, recalcula alertas. Não edita identidade canônica silenciosamente. |
+| Iniciar análise | `versao` | `enviada → em_analise`, com autor/instante. Reabrir tela não assume exclusividade de atendimento. |
+| Contato | `canal`, `ocorrido_em`, `resultado`, `resumo`, `proxima_acao`, `pedidos_abordados[]`, `identidade_conferida`, `duvida_esclarecida`, versões dos pedidos | Canal WhatsApp/telefone/e-mail; resumo operacional. Tentativa/sem resposta/número incorreto não podem declarar dúvida esclarecida. Registrar relato do funcionário, sem alegar verificação automática do canal. |
+| Conferência | Destinos tipados (`pedido`/`cadastro`), IDs, `contato_id`, `resultado`, `motivo`, versões | `pessoas_distintas` exige contato que esclareceu a coincidência; `aguardando_esclarecimento` não encerra alerta e admite tentativa sem resposta. Preservar os pares/campos examinados. |
+| Resolver repetição | `acao=arquivar_selecionados|admitir_principal`, `pedidos_ids[]`, `principal_id` quando aplicável, `cadastro_referencia_id` quando houver, `contato_id`, `motivo`, versões, escolha de identidade nova/existente | Pedidos ativos, acesso a todos, contato que abrange o conjunto com identidade conferida e dúvida esclarecida, estado/versão atuais. Arquivar os selecionados ou admitir o escolhido e arquivar os demais numa operação única. |
+| Admissão simples | `contato_id`, `motivo`, `versao`, escolha de identidade nova/existente | Pedido em análise, dados completos e identidade conferida. Proposta: exigir contato realizado também sem flag. Sem repetição pendente; grava autor/instante, identidade confirmada e `admitida`. Não cria doadora aprovada. |
+
+Vínculo de identidade: a equipe escolhe explicitamente criar identificação ou usar cadastro existente autorizado após conferência. Validar que essa escolha corresponde ao contato e à resolução; não escolher pelo primeiro CPF/telefone encontrado. Dados divergentes não sobrescrevem a identidade existente; correção do cadastro confirmado será uma operação própria, fora deste recorte.
+
+Quando a correspondência for com **cadastro já concluído**, não arquivar nem alterar esse cadastro pela ação de resolução. Proposta: após contato esclarecer que o novo pedido foi engano, permitir arquivar o pedido recebido, com referência ao cadastro existente e motivo. Se for uma nova necessidade de atendimento, registrar esclarecimento e manter pendente de encaminhamento; reabrir processo clínico permanece fora deste recorte. Não criar segundo cadastro confirmado automaticamente.
+
+Generalização proposta dos exemplos de dois pedidos: resolução aceita o conjunto efetivamente esclarecido no contato, sem incluir automaticamente todos os resultados da flag. Para admitir um principal, ele pertence ao conjunto e os demais são arquivados; correspondências pendentes fora do conjunto precisam ser esclarecidas antes da admissão. Para arquivar, permitir dois ou mais pedidos repetidos, ou um pedido recebido com referência a cadastro já concluído. Pedidos de pessoas distintas não podem ser agrupados por telefone/nome compartilhado. Validar IDs únicos, contato abrangente e permissões para todos os alvos.
+
+### Fila, alertas e views
+
+Filtros GET propostos: `situacao=ativos|arquivados|todos`, `com_correspondencias=1`, `ordem=antigos|recentes`, `page`. Padrão: ativos, mais antigos primeiro, desempate por ID, 25 itens por página. Parâmetros têm valores permitidos definidos; não aceitar nomes arbitrários de coluna/SQL. Não colocar CPF, telefone ou e-mail em parâmetros de URL.
+
+| View proposta | Dados permitidos ao frontend |
+| --- | --- |
+| `solicitacoes.create` | Opções do formulário, token da operação, erros e valores permitidos da própria tentativa. |
+| `solicitacoes.recebida` | Mensagem neutra e comprovante temporário da própria operação, se disponível. |
+| `interno.solicitacoes.index` | `pedidos` paginados com resumo administrativo, `filtros` normalizados, indicador agregado e ações autorizadas. |
+| `interno.solicitacoes.create` | Formulário compartilhado e canais internos, sem permissões/estado editáveis. |
+| `interno.solicitacoes.show` | `pedido`, `correspondencias` atuais autorizadas, `contatos`, `historicoAdministrativo`, `acoesPermitidas`, versões. |
+| `interno.acompanhamentos.index/show` | Cadastros admitidos e identificação administrativa, origem, autoria da admissão e visita pendente. Sem relatório/anexos clínicos neste recorte. |
+
+Correspondência é dado derivado, não campo editável. Comparar pedidos ativos e identidades de cadastros admitidos; excluir arquivados nos dois lados e não duplicar o pedido de origem como destino de seu próprio cadastro. Um nome igual sinaliza possível homônimo. Arquivamento/admissão/correção atualizam os indicadores afetados. Uma conferência de pessoas distintas preserva o indício como revisado; nova correspondência não herda automaticamente essa revisão.
+
+### Respostas e mensagens propostas
+
+| Resultado | Resposta web |
+| --- | --- |
+| Recebimento válido | Redirecionamento 302 para confirmação pública ou detalhe interno; mensagem `pedido-recebido`. |
+| Contato/conferência/correção salva | 302 para detalhe interno; `contato-registrado`, `conferencia-registrada` ou `pedido-atualizado`. |
+| Admissão/resolução válida | 302 para acompanhamento do principal ou fila de pedidos quando ambos arquivados; `cadastro-admitido` ou `pedidos-arquivados`. |
+| Campos inválidos ou contato sem esclarecimento exigido | 302 de volta ao formulário/detalhe com erros por campo e valores permitidos; sem alteração parcial. Bags propostos: padrão para cadastro/correção, `contato`, `conferencia`, `resolucao` e `admissao` para ações na mesma tela. |
+| Sem sessão na área interna | Redirecionar ao login. |
+| Sem função de atendimento | 403; menu oculto não substitui a verificação. |
+| Registro inexistente ou fora do escopo concedido | 404 sem revelar dados do alvo. |
+| Estado/versão mudou durante a operação | 409 com HTML orientando recarregar e conferir; sem escrita parcial ou repetição automática da decisão. |
+| Sessão/CSRF expirado | 419; orientar reabrir formulário, sem reenviar silenciosamente. |
+| Limite de recebimento excedido | 429, mensagem neutra de tentar depois; sem indicar existência de CPF ou cadastro. |
+
+Mensagem de admissão: “Cadastro concluído para acompanhamento. A aprovação para doar ainda depende das próximas etapas.” Arquivamento: “Pedidos arquivados e retirados da análise. O histórico foi preservado.” Erros de resolução devem dizer o requisito faltante, como “Registre o contato que esclareceu a repetição antes de concluir”.
+
+### Consistência, repetição e verificação futura
+
+Admissão e resolução são atômicas: validar todos os alvos, gravar mudanças/vínculos/autoria e atualizar a fonte dos indicadores sem resultado parcial. Em concorrência, apenas uma resolução vence; a outra encontra conflito. Uma retransmissão comprovada da mesma operação não cria novas admissões ou eventos. Novo pedido independente não é descartado só porque tem dados iguais.
+
+Cobertura planejada, **não executada**: entrada pública/interna e validação cruzada dos telefones/WhatsApp; campos técnicos manipulados; permissão e acesso por registro; um alerta com vários motivos; arquivado excluído das comparações; contato sem resposta bloqueando resolução; admissão sem aprovação clínica; arquivamento de ambos e escolha do principal; conflito concorrente sem escrita parcial; revogação da função em sessão aberta. Usar dados fictícios e verificar persistência e resposta, não só status HTTP. SQLite não comprova travas/concorrência MySQL; verificar esse comportamento em banco de testes isolado, nunca recriar o banco local de trabalho.
+
+Compatibilidade: o formulário novo não é o `/register` do Breeze. O cadastro de contas e as contas doadora existentes continuam no código atual; antes de disponibilizar o fluxo público, decidir a retirada do autocadastro Breeze da navegação/rotas e preservar dados existentes. Nenhuma alteração de autenticação foi feita nesta especificação. A exclusão física de conta atual também precisa ser compatibilizada com autoria histórica antes dos vínculos de domínio.

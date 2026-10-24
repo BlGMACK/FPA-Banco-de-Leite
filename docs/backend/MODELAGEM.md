@@ -4,6 +4,8 @@
 
 Fonte principal: [migrations](../../database/migrations). Esta descrição representa o schema declarado pelo código, não uma inspeção atual de cada banco de integrante.
 
+Em **24/10/2026**, foram preparadas seis migrations do recorte administrativo e verificadas em SQLite em memória e, posteriormente, em MariaDB 10.4.32 em banco exclusivo para testes. Elas **não foram aplicadas ao banco de desenvolvimento `banco_de_leite_dev`**. O schema físico novo está em [Recorte administrativo preparado](#recorte-administrativo-preparado-em-24102026); a tabela abaixo descreve a base anterior.
+
 | Tabela | Campos e restrições relevantes | Origem |
 | --- | --- | --- |
 | `users` | `id` PK; `name`; `email` único; `email_verified_at` anulável; `password`; `remember_token` anulável; timestamps. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
@@ -20,9 +22,13 @@ O Laravel também mantém `migrations` como controle das migrações aplicadas; 
 
 ## Model e relações
 
-[User](../../app/Models/User.php) é o único model da aplicação encontrado. Permite atribuição de `name`, `email`, `password` e `role`, oculta senha/token e faz casts de senha e data de verificação. O controller de cadastro não aceita papel enviado pelo formulário; não reutilize entrada inteira de uma requisição para preencher esse model.
+[User](../../app/Models/User.php) permite atribuição em massa somente de `name`, `email` e `password`; `role` foi retirado dessa lista. Oculta senha/token e faz casts de senha e data de verificação. Possui relações com concessões e eventos de permissão e consulta o estado atual da conta para os Gates administrativos.
 
-Há associação lógica entre sessão e conta por `sessions.user_id`, mas a migration não declara `constrained()` nem chave estrangeira. Tokens de recuperação usam e-mail como identificador, sem FK declarada para `users`. Não foram encontrados métodos próprios de relação Eloquent nem entidades de coleta/estoque.
+Há associação lógica entre sessão e conta por `sessions.user_id`, mas a migration não declara `constrained()` nem chave estrangeira. Tokens de recuperação usam e-mail como identificador, sem FK declarada para `users`. Não há entidades de coleta/estoque.
+
+Em 24/10/2026 foram implementados `Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`, `Permissao`, `ConcessaoPermissao` e `EventoPermissao`, em [Models](../../app/Models), com factories fictícias. As três associações com chave composta usam relações `belongsToMany`, sem model com chave primária composta. Metadados JSON dessas associações permanecem no pivot, sem cast próprio.
+
+Os models usam tabelas/chaves explícitas, casts de JSON, booleanos, versões e datas imutáveis; registros sem `updated_at` declaram `UPDATED_AT = null`. Novos models mantêm a proteção padrão contra atribuição em massa de todos os campos. A futura camada de escrita deve validar e atribuir explicitamente os valores; factories não representam validação de dados de negócio. Relações/casts não executam admissão, triagem, validação clínica ou controle de acesso automaticamente.
 
 Conta com papel `doadora` representa autorização, não um cadastro de doadora com dados de saúde. Não há tabela de domínio para esse cadastro.
 
@@ -44,7 +50,7 @@ Antes de reutilizar o desenho, confirmar a identificação da pessoa, a regra de
 
 ## Proposta do fluxo de admissão — não implementada
 
-Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acima; **P** = nova proposta. O [Roadmap](ROADMAP.md) identifica acordos e decisões D1–D12. Todas as tabelas, tipos, cardinalidades e transições abaixo são **P**, mesmo quando materializam uma diretriz G. Não são migrations aprovadas. **PDF indisponível:** não há campos clínicos ou limites de aptidão atribuídos a ele.
+Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acima; **P** = nova proposta. O [Roadmap](ROADMAP.md) identifica acordos e decisões D1–D12. O desenho completo abaixo continua **P**, mesmo quando materializa uma diretriz G. A autorização posterior de 24/10/2026 permitiu preparar apenas o schema administrativo descrito ao final; operações e tabelas clínicas continuam propostas. **PDF indisponível:** não há campos clínicos ou limites de aptidão atribuídos a ele.
 
 ### Escolha recomendada e alternativa — D9
 
@@ -203,3 +209,40 @@ Para os requisitos efetivamente indicados, propor itens vinculados à avaliaçã
 Anexos enviados pelo canal de contato são carregados pelo funcionário autorizado e vinculados ao cadastro, avaliação e item solicitado. Propor metadados de tipo, referência privada ao arquivo, nome original, tamanho, tipo de conteúdo, data de recebimento, canal e funcionário responsável. Preservar versões/substituições sem sobrescrever a evidência usada por decisão. Armazenamento privado e autorização para leitura/download; formato, tamanho máximo, retenção e procedimento de recebimento ainda serão definidos.
 
 O conjunto de atendimento pode conduzir o pedido e contato sem obter automaticamente permissão para acessar relatórios ou anexos clínicos. Definir em D5 quem anexa e quem analisa. A inclusão dessa etapa na documentação não autoriza implementar upload, integrações ou regras clínicas.
+
+## Recorte administrativo preparado em 24/10/2026
+
+**Autorizado pelo usuário:** consolidar o schema, preparar migrations e verificar em banco isolado, sem aplicar ao `banco_de_leite_dev`. **Implementado em arquivos:** seis migrations, onze tabelas novas; nenhuma migration antiga foi editada. **Validado:** integridade e rollback/reaplicação em SQLite `:memory:`; não equivale a validação MySQL nem a módulo operacional.
+
+| Migration | Tabelas e finalidade |
+| --- | --- |
+| [Identificação conferida](../../database/migrations/2026_10_24_045949_create_interessadas_table.php) | `interessadas`: dados de identificação/contato/endereço, declaração de WhatsApp, responsável e instante da conferência; versão para futura concorrência. Sem conta de login. |
+| [Pedidos](../../database/migrations/2026_10_24_045952_create_solicitacoes_table.php) | `solicitacoes`: dados declarados e snapshot original, vínculo opcional à interessada, origem, autoria interna, protocolo e operação únicos, hash da entrada, estado, versão, datas de envio/admissão/arquivamento. |
+| [Contatos](../../database/migrations/2026_10_24_045955_create_contatos_solicitacao_tables.php) | `contatos_solicitacao` e `contato_pedidos`: contato/tentativa e associação aos pedidos abordados; um contato pode esclarecer vários pedidos. |
+| [Conferências e resoluções](../../database/migrations/2026_10_24_045958_create_resolucoes_solicitacao_tables.php) | `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`: resultado da conferência ou resolução, contato de fundamento, funcionário, motivo, principal e alvos tipados por FKs; versões/evidências analisadas. |
+| [Histórico dos pedidos](../../database/migrations/2026_10_24_050002_create_eventos_solicitacao_table.php) | `eventos_solicitacao`: recebimento, análise, correção, conferência, admissão ou arquivamento, com autoria, estados e snapshots pertinentes. |
+| [Permissões internas](../../database/migrations/2026_10_24_050005_create_permissoes_atendimento_tables.php) | `permissoes`, `permissao_user`, `eventos_permissao`: catálogo, concessão atual/revogada por funcionário e histórico de concessões/revogações. Nenhuma permissão ou conta foi inserida. |
+
+### Decisões físicas deste recorte
+
+- IDs inteiros grandes e FKs compatíveis com `users.id`. Vínculos usam restrição de exclusão para preservar autoria e referências, sem cascata destrutiva. UUIDs de protocolo/operação são únicos; CPF, telefone, e-mail e nome **não** são únicos nos pedidos nem usados como autenticação.
+- `solicitacoes.status` admite somente `enviada`, `em_analise`, `admitida` e `arquivada`. Estados de etapas posteriores precisam de nova migration quando forem implementados. A admissão administrativa não cria uma tabela de doadoras aprovadas.
+- Campos de identificação seguem o dicionário; `nome_normalizado` e índices por CPF, telefone e e-mail preparam as comparações. Normalização, validação dos dígitos de CPF, ao menos um telefone e seleção/declaração de WhatsApp serão implementadas na aplicação. As migrations não validam esses cruzamentos.
+- Índice da fila por estado/criação/ID; histórico por pedido/instante/ID. Chaves compostas impedem repetir o mesmo alvo em contato/resolução. A performance deve ser medida com consultas e volume reais antes de ampliar os índices.
+- `operacao_id` e `conteudo_hash` em pedidos/resoluções dão suporte à repetição técnica de operações. Expiração, origem segura da chave, verificação do hash e resposta idempotente ainda exigem lógica; a restrição única sozinha não implementa esse contrato.
+- Contato e resolução são associados por FKs, mas o banco não comprova que houve conversa, que o contato abrange todos os alvos ou que o principal pertence ao conjunto. Verificação de permissões, estados/versões, transação atômica e atualização das flags pertencem à próxima implementação.
+- Uma tabela de resoluções também registra conferências pendentes/pessoas distintas; `contato_id` é anulável para situações ainda aguardando esclarecimento. Contato efetivo deve ser obrigatório na aplicação antes de admissão ou arquivamento por repetição.
+- `permissao_user` tem uma linha por par usuário/permissão, preservando concessão e eventual revogação; eventos registram o histórico. Isso é persistência, não autorização já conectada ao middleware. O catálogo é vazio até uma tarefa explícita de provisão.
+- Histórico e snapshots são dados restritos. A ausência de `updated_at` em registros de evidência não os torna imutáveis no banco: a camada de aplicação deve impedir alterações/exclusões indevidas. Este recorte não implementa correções de identidade canônica, anexos ou auditoria clínica.
+
+### Aplicação, rollback e limites de segurança
+
+As migrations têm `down()` em ordem inversa de dependência. **Rollback elimina as tabelas novas e seus dados**; o teste de reversão usa exclusivamente banco descartável. Não usar rollback como mecanismo de desfazer uma decisão de atendimento.
+
+Quando existirem registros com autoria, as FKs impedem excluir a conta referenciada. O controller de perfil agora trata essa restrição com erro no bag `userDeletion`, preservando a sessão e os dados. Contas sem vínculos ainda podem ser excluídas com senha atual; o encerramento posterior não atualiza o token da conta já removida. Política de desativação de funcionários permanece pendente.
+
+Teste: [AdministrativeSchemaTest](../../tests/Feature/AdministrativeSchemaTest.php), com verificação de ambiente antes de preparar o banco; exige `testing`, ausência de URL externa/configuração em cache e SQLite `:memory:` ou conexão `mysql` local para o nome exato `banco_de_leite_schema_test`. Usa `DatabaseMigrations` para isolar também o teste de DDL, sem depender de rollback transacional no MySQL/MariaDB. Utiliza queries reais para exercitar as restrições e a factory existente para contas fictícias. Fixtures de schema não representam validação de CPF ou dados de negócio.
+
+**Validação adicional autorizada em 24/10/2026:** os 20 testes de schema também passaram no MariaDB 10.4.32, em banco exclusivo, incluindo rollback/reaplicação. Nenhuma migration foi aplicada ao `banco_de_leite_dev`. Ambiente, resultados e limites em [Status](STATUS.md#integração-mariadb-em-banco-exclusivo--24102026).
+
+Fontes de implementação consultadas: [migrations do Laravel 13](https://laravel.com/docs/13.x/migrations) e [testes de banco](https://laravel.com/docs/13.x/database-testing), além do framework instalado. O MCP Boost não estava disponível na sessão; a estrutura de `users` foi consultada somente para leitura. `db:table` não concluiu a apresentação por ausência de `intl`; a leitura alternativa de metadados confirmou as nove colunas sem consultar registros pessoais.
