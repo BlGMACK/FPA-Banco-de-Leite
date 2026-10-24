@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -48,9 +50,23 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        try {
+            $user->getConnection()->transaction(fn () => $user->delete());
+        } catch (QueryException $exception) {
+            $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+            $foreignKeyRestriction = $driverCode === 1451
+                || ($driverCode === 19 && str_contains($exception->getMessage(), 'FOREIGN KEY constraint failed'));
 
-        $user->delete();
+            if (! $foreignKeyRestriction) {
+                throw $exception;
+            }
+
+            throw ValidationException::withMessages([
+                'password' => 'Esta conta possui registros vinculados e não pode ser excluída. Procure a administração.',
+            ])->errorBag('userDeletion');
+        }
+
+        Auth::guard('web')->logoutCurrentDevice();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

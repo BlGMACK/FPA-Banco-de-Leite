@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ConcessaoPermissao;
+use App\Models\ContatoSolicitacao;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -9,6 +11,40 @@ use Tests\TestCase;
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function beforeRefreshingDatabase(): void
+    {
+        $this->requireIsolatedDatabase();
+    }
+
+    public function test_account_with_contact_history_cannot_be_deleted_and_remains_authenticated(): void
+    {
+        $user = User::factory()->funcionario()->create();
+        $contact = ContatoSolicitacao::factory()->for($user, 'registradoPor')->create();
+
+        $this->actingAs($user)->from('/profile')->delete('/profile', ['password' => 'password'])
+            ->assertRedirect('/profile')
+            ->assertSessionHasErrorsIn('userDeletion', [
+                'password' => 'Esta conta possui registros vinculados e não pode ser excluída. Procure a administração.',
+            ]);
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh());
+        $this->assertDatabaseHas('contatos_solicitacao', ['id' => $contact->id, 'registrado_por_user_id' => $user->id]);
+    }
+
+    public function test_revoked_permission_history_also_prevents_account_deletion(): void
+    {
+        $grant = ConcessaoPermissao::factory()->create(['revogada_em' => now()]);
+        $user = $grant->usuario;
+
+        $this->actingAs($user)->from('/profile')->delete('/profile', ['password' => 'password'])
+            ->assertRedirect('/profile')->assertSessionHasErrorsIn('userDeletion', 'password');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh());
+        $this->assertDatabaseHas('permissao_user', ['id' => $grant->id, 'user_id' => $user->id]);
+    }
 
     public function test_profile_page_is_displayed(): void
     {
