@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,7 +67,9 @@ class ProfileController extends Controller
             ])->errorBag('userDeletion');
         }
 
-        Auth::guard('web')->logoutCurrentDevice();
+        /** @var SessionGuard $guard */
+        $guard = Auth::guard('web');
+        $guard->logoutCurrentDevice();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
