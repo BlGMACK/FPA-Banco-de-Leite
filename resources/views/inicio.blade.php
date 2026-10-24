@@ -15,6 +15,7 @@
             <div class="card-body p-4">
                 <h1 class="h3">Banco de Leite Humano</h1>
                 <p>Bem-vindo ao sistema.</p>
+                <p><a class="btn btn-success" href="{{ route('solicitacoes.create') }}">Quero doar leite humano</a></p>
 
                 <button class="btn btn-primary"
                     type="button"

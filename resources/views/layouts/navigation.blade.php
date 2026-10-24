@@ -5,6 +5,9 @@
         <div class="collapse navbar-collapse" id="navegacao">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Painel</a></li>
+                @can('atender-solicitacoes')
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.solicitacoes.*') ? 'active' : '' }}" href="{{ route('interno.solicitacoes.index') }}">Solicitações</a></li>
+                @endcan
                 @if (Auth::user()->isAdmin())
                     <li class="nav-item"><a class="nav-link" href="{{ url('/admin-teste') }}">Teste administrativo</a></li>
                 @endif
