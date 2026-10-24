@@ -68,7 +68,7 @@ Escopo autorizado pelo usuário: models do recorte administrativo, autorização
 - Ambos consultam o banco em cada verificação, sem confiar em relações carregadas ou papel antigo na instância. As futuras rotas internas devem usar `auth` e `can:atender-solicitacoes`, além das pré-condições da operação. Gates não filtram consultas ou protegem automaticamente qualquer rota nova.
 - `Permissao::conceder($funcionario, $responsavel, $motivo)` e `revogar(...)` verificam `gerenciar-permissoes`, exigem motivo e operam somente sobre `atender-solicitacoes`. Concessão exige destinatário funcionário; revogação pode retirar concessão antiga mesmo se o papel mudou. O responsável deve ser obtido da sessão autenticada pelo futuro controller, nunca de um ID enviado pelo cliente.
 - A alteração e seu evento são gravados em transação; a linha do catálogo e o destinatário são bloqueados durante a operação. Pedido de concessão já ativa/revogação já efetiva retorna `false`, sem novo evento. Uma nova concessão após revogação atualiza a linha atual e preserva os eventos anteriores. Não substitui o contrato de idempotência das solicitações.
-- [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara somente o código de atendimento, de forma idempotente; não cria funcionários nem concede acessos. Foi exercitado apenas nos testes, não conectado automaticamente ao `DatabaseSeeder` nem executado no banco local.
+- [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara somente o código de atendimento, de forma idempotente; não cria funcionários nem concede acessos. Foi exercitado nos testes e executado posteriormente no banco local com autorização, sem conexão automática ao `DatabaseSeeder`.
 - `User.role` não aceita atribuição em massa. Alteração administrativa de papéis e criação de contas internas ainda não têm fluxo implementado; factories usam estados explícitos para dados fictícios.
 - Exclusão com vínculos retorna a mensagem “Esta conta possui registros vinculados e não pode ser excluída. Procure a administração.” no bag `userDeletion`, campo `password`, preservando a sessão. A exclusão sem vínculos continua disponível. Não foi implementada desativação de conta.
 
@@ -154,7 +154,7 @@ Todas as permissões precisam de escopo de registros definido em D5 (por exemplo
 | Avaliação | Dados e parecer técnico definidos com o serviço. | Avaliador, versão de triagem e validação de completude. | Avaliação em andamento, aguardando complementação ou concluída. |
 | Decisão | Resultado e justificativa conforme D5/D6/D11. | Decisor, instante, avaliação de origem e habilitação atômica quando aprovada. | Decisão preservada; mensagem à interessada separada da justificativa restrita. |
 
-Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. A proposta técnica de rotas, views, entradas e respostas do primeiro recorte está em [R5](#r5--contrato-técnico-do-primeiro-recorte). Limites clínicos e operações posteriores continuam pendentes. Nenhuma rota de domínio descrita aqui está implementada.
+Transporte mantém Laravel/Blade, formulários, sessão e redirecionamentos. A proposta técnica completa está em [R5](#r5--contrato-técnico-do-primeiro-recorte); o [recorte implementado de recebimento e fila](#recebimento-e-fila-implementados-em-24102026) delimita as rotas disponíveis. Limites clínicos e operações posteriores continuam pendentes.
 
 ### Falhas e critérios para detalhar R5
 
@@ -229,7 +229,24 @@ Relatórios e anexos têm permissões próprias. A função de atendimento não 
 
 ## R5 — Contrato técnico do primeiro recorte
 
-Elaborado em **24/10/2026**, por solicitação do usuário para avançar ao próximo passo. **Estado: proposto, não implementado.** As regras funcionais confirmadas em R1 são a base; nomes de rotas, campos técnicos, views, respostas e mecanismos abaixo são escolhas propostas para revisão. A inspeção de `routes/web.php` e `routes/auth.php` confirmou que essas rotas ainda não existem.
+Elaborado em **24/10/2026**, por solicitação do usuário. **Estado: parcialmente implementado**, conforme recorte abaixo; os demais fluxos permanecem propostos. As regras funcionais confirmadas em R1 são a base; a implementação não equivale a homologação pela equipe.
+
+### Recebimento e fila implementados em 24/10/2026
+
+Implementação autorizada pelo usuário: [SolicitacaoController](../../app/Http/Controllers/SolicitacaoController.php), [StoreSolicitacaoRequest](../../app/Http/Requests/StoreSolicitacaoRequest.php), [Solicitacao](../../app/Models/Solicitacao.php), [views](../../resources/views/solicitacoes) e [rotas](../../routes/web.php).
+
+- Disponíveis: GET `/doar`, POST `/pedidos-de-cadastro`, GET `/pedido-recebido`; GET/POST `/interno/solicitacoes`, GET `/interno/solicitacoes/nova` e GET `/interno/solicitacoes/{solicitacao}`. Os nomes seguem a tabela R5. As views são compartilhadas em `solicitacoes.create`, `recebida`, `index` e `show`, sem duplicar formulários internos/públicos.
+- Mesmo formulário e validação no público/interno: CPF com dígitos verificadores, e-mail, endereço, ao menos um telefone com DDD, seleção de número preenchido e declaração de WhatsApp. Telefones aceitam 10 ou 11 dígitos, com máscara e prefixo brasileiro +55 normalizados; não verifica titularidade, existência do número ou acesso ao WhatsApp. Nome de comparação normaliza caixa/acentos/espaços; grafia informada é preservada no nome de exibição.
+- Campos técnicos enviados pelo cliente não determinam estado, autoria, perfil ou vínculo. O público sempre grava `web` e autor nulo, mesmo com conta autenticada; interno exige canal `telefone/presencial` e usa o funcionário da sessão. Não cria conta nem identidade confirmada. Snapshot `dados_originais` guarda os dados iniciais normalizados e permitidos, não o corpo bruto da requisição.
+- Token opaco `operacao_token` emitido no GET, protegido pela criptografia autenticada do Laravel, válido por duas horas e vinculado à sessão e ao contexto público/interno (incluindo autor interno). O UUID interno vai para `operacao_id`. Token inválido, expirado ou de outro contexto retorna 419. Nova abertura emite outra operação; não usar esse token como consulta/autenticação da interessada.
+- Mesma operação e mesmos dados normalizados redirecionam para o resultado já produzido, sem duplicar pedido/evento. Dados diferentes com a mesma operação retornam 409. Nova operação com identificação repetida é aceita. Pedido e evento de recebimento são gravados na mesma transação; unicidade da operação trata colisão de gravação, sem alegar teste de concorrência real.
+- Público confirma com mensagem neutra e marcador temporário de sessão, sem expor protocolo, CPF, detalhes ou existência de duplicidade. Acesso direto à confirmação mostra orientação genérica. Interno redireciona ao detalhe do pedido.
+- Limites técnicos iniciais: 5 POSTs/minuto por IP no público e 30/minuto por usuário no interno; incluem tentativas inválidas e reenvios. Excesso retorna 429. Valores precisam de avaliação operacional, especialmente em redes compartilhadas. Não substituem proteção de infraestrutura.
+- Fila/detalhe exigem `auth` e `can:atender-solicitacoes`; revogação vale nas próximas requisições. Fila usa filtros permitidos, paginação de 25, ordem por criação/ID (antigos primeiro). Paginação Bootstrap 5; links propagam somente filtros validados. Identificação completa fica no detalhe interno. Abrir uma tela não inicia análise.
+- Um indicador por pedido ativo agrega correspondências por CPF, nome normalizado, e-mail sem distinção de caixa e telefones cruzados. Subconsultas calculam existência para fila/filtro; detalhe lista registros e campos coincidentes. Apenas pedidos `enviada/em_analise` e identidades com pedido `admitida` são alvos. Exclui arquivados, próprio pedido e identidade já vinculada; origem admitida não vira um segundo alvo. Correspondência não decide identidade, não mescla nem altera registros. Detalhe consulta todos os alvos coincidentes; desempenho/limite sob grande volume ainda não medido.
+- Sem edição, contato, conferência resolutiva, arquivamento, admissão ou acompanhamento clínico nesta entrega. O detalhe não apresenta comandos dessas etapas. Interface de concessão de permissões continua pendente.
+
+As migrations administrativas e o catálogo foram aplicados ao `banco_de_leite_dev` após autorização posterior em 24/10/2026. Nenhuma permissão foi concedida automaticamente a funcionários; administradores têm acesso conforme o Gate existente. Outros ambientes ainda exigem preparação do schema antes de disponibilizar esse código. Evidências e limites da ativação em [Status](STATUS.md#ativação-local--24102026) e [Segurança](../SEGURANCA.md).
 
 ### Limites e autorização
 

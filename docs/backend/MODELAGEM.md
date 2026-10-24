@@ -4,7 +4,7 @@
 
 Fonte principal: [migrations](../../database/migrations). Esta descrição representa o schema declarado pelo código, não uma inspeção atual de cada banco de integrante.
 
-Em **24/10/2026**, foram preparadas seis migrations do recorte administrativo e verificadas em SQLite em memória e, posteriormente, em MariaDB 10.4.32 em banco exclusivo para testes. Elas **não foram aplicadas ao banco de desenvolvimento `banco_de_leite_dev`**. O schema físico novo está em [Recorte administrativo preparado](#recorte-administrativo-preparado-em-24102026); a tabela abaixo descreve a base anterior.
+Em **24/10/2026**, foram preparadas seis migrations do recorte administrativo e verificadas em SQLite em memória e, posteriormente, em MariaDB 10.4.32 em banco exclusivo para testes. Após autorização posterior do usuário, foram aplicadas ao banco `banco_de_leite_dev`, preservando as contas existentes; veja [Status](STATUS.md#ativação-local--24102026). O schema físico novo está em [Recorte administrativo preparado](#recorte-administrativo-preparado-em-24102026); a tabela abaixo descreve a base anterior.
 
 | Tabela | Campos e restrições relevantes | Origem |
 | --- | --- | --- |

@@ -149,6 +149,10 @@ R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; reg
 
 ### Preparação da implementação — proposta de sequência em 24/10/2026
 
+Atualização posterior: a ativação local do schema e do catálogo foi concluída com autorização, sem concessões automáticas a funcionários. A revisão visual permanece pendente por indisponibilidade de navegador; veja [Status](STATUS.md#ativação-local--24102026). A próxima etapa funcional permanece contato e decisões administrativas.
+
+Atualização do recorte de recebimento/fila: formulário público e interno, confirmação, fila e detalhe com correspondências foram implementados com testes. Ver [contrato efetivo](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026). Próxima etapa funcional: contato e decisões administrativas fundamentadas (conferência, arquivamento e admissão), mantendo os requisitos de transação/versão do contrato. A aplicação no banco local, revisão visual e homologação continuam separadas da implementação.
+
 **Avanço autorizado nesta interação:** o usuário solicitou preparar o schema/migrations e verificar em banco isolado, sem aplicação ao banco local. Foram criadas seis migrations e testes de integridade: [schema físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026) e [evidências](STATUS.md#verificações-de-24102026--schema-administrativo). Este avanço entrega a persistência preparada, não a implementação completa de R6; autorização nas ações, modelos, fluxos e telas ainda são próximos trabalhos.
 
 Atualização de 24/10/2026: o usuário autorizou e foram implementados os models, Gates e operações de concessão/revogação, com tratamento da exclusão de contas vinculadas. O [contrato implementado](CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026) delimita essa entrega; evidências em Status. O próximo recorte é recebimento/fila e integração da autorização nas rotas, sem considerar R6 concluído.

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreSolicitacaoRequest;
 use App\Models\EventoSolicitacao;
 use App\Models\Solicitacao;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -113,7 +114,7 @@ class SolicitacaoController extends Controller
         $consulta->selectSub(Solicitacao::consultaCorrespondencias(false)->limit(1), 'correspondencia_pedido')
             ->selectSub(Solicitacao::consultaCorrespondencias(true)->limit(1), 'correspondencia_cadastro');
         if ($filtros['com_correspondencias']) {
-            $consulta->where(function ($query): void {
+            $consulta->where(function (Builder $query): void {
                 $query->whereExists(Solicitacao::consultaCorrespondencias(false))
                     ->orWhereExists(Solicitacao::consultaCorrespondencias(true));
             });
@@ -125,11 +126,13 @@ class SolicitacaoController extends Controller
         return view('solicitacoes.index', compact('pedidos', 'filtros'));
     }
 
-    public function show(Solicitacao $solicitacao): View
+    public function show(int $solicitacao): View
     {
+        $pedido = Solicitacao::query()->findOrFail($solicitacao);
+
         return view('solicitacoes.show', [
-            'pedido' => $solicitacao,
-            'correspondencias' => $solicitacao->correspondenciasAtuais(),
+            'pedido' => $pedido,
+            'correspondencias' => $pedido->correspondenciasAtuais(),
         ]);
     }
 }

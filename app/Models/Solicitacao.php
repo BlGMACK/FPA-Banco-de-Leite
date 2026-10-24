@@ -39,7 +39,12 @@ class Solicitacao extends Model
         return $query->where(function (QueryBuilder $dados): void {
             foreach (['cpf', 'nome_normalizado', 'email_contato'] as $campo) {
                 $dados->orWhere(function (QueryBuilder $campoQuery) use ($campo): void {
-                    $campoQuery->where('solicitacoes.'.$campo, '!=', '')->whereColumn('alvo.'.$campo, 'solicitacoes.'.$campo);
+                    $campoQuery->where('solicitacoes.'.$campo, '!=', '');
+                    if ($campo === 'email_contato') {
+                        $campoQuery->whereRaw('LOWER(alvo.email_contato) = LOWER(solicitacoes.email_contato)');
+                    } else {
+                        $campoQuery->whereColumn('alvo.'.$campo, 'solicitacoes.'.$campo);
+                    }
                 });
             }
             foreach (['telefone_fixo', 'telefone_celular'] as $campo) {
@@ -67,7 +72,11 @@ class Solicitacao extends Model
             $query->where(function (Builder $dados): void {
                 foreach (['cpf', 'nome_normalizado', 'email_contato'] as $campo) {
                     if ($this->{$campo} !== null && $this->{$campo} !== '') {
-                        $dados->orWhere($campo, $this->{$campo});
+                        if ($campo === 'email_contato') {
+                            $dados->orWhereRaw('LOWER(email_contato) = ?', [Str::lower($this->{$campo})]);
+                        } else {
+                            $dados->orWhere($campo, $this->{$campo});
+                        }
                     }
                 }
                 $telefones = array_filter([$this->telefone_fixo, $this->telefone_celular]);

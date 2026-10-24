@@ -14,8 +14,9 @@ Levantamento inicial de 22/10/2026, acrescido da preparação do schema administ
 | Acesso por papel | Admin, funcionário e doadora; demonstrações protegidas por middleware. | [middleware](../../app/Http/Middleware/EnsureUserHasRole.php), [rotas web](../../routes/web.php). |
 | Persistência | Contas e tabelas de infraestrutura; MySQL no exemplo compartilhado. | [Modelagem](MODELAGEM.md), [.env.example](../../.env.example). |
 | Testes | Autenticação, cadastro, senha, verificação e perfil, mais testes de exemplo. | [Feature](../../tests/Feature), [Unit](../../tests/Unit), [configuração](../../phpunit.xml). |
-| Schema administrativo preparado | Seis migrations para onze tabelas: identidade, pedidos, contatos, resoluções, histórico e permissões. Não aplicadas ao banco de desenvolvimento. | [Recorte físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026). |
-| Models e autorização administrativa | Oito models com relações/casts e factories; Gates de atendimento e gestão, concessão/revogação com autoria e transação. Ainda sem interface de atendimento ou gestão. | [Contrato implementado](CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026). |
+| Schema administrativo | Seis migrations para onze tabelas: identidade, pedidos, contatos, resoluções, histórico e permissões. Aplicadas ao banco de desenvolvimento após autorização; evidência abaixo. | [Recorte físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026). |
+| Models e autorização administrativa | Oito models com relações/casts e factories; Gates de atendimento e gestão, concessão/revogação com autoria e transação. Ainda sem interface de gestão de permissões. | [Contrato implementado](CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026). |
+| Recebimento e fila | Formulário público/interno, confirmação neutra, token de operação, limitação de envios, fila paginada e detalhe com correspondências atuais restritas à equipe autorizada. | [Recorte implementado](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026). |
 
 O model não implementa `MustVerifyEmail`: a presença do middleware `verified` no painel não torna a verificação obrigatória no estado atual.
 
@@ -76,8 +77,25 @@ Após ativação do servidor e solicitação do usuário, `php vendor/bin/phpuni
 
 A inspeção final confirmou 20 tabelas, 10 migrations e zero registros de aplicação no banco de testes. A estrutura permanece disponível; os dados fictícios foram revertidos pelas transações dos testes. No banco de desenvolvimento, `migrate:status` confirmou as quatro migrations anteriores aplicadas e seis novas pendentes. Detalhes e limites em [Segurança, E-04](../SEGURANCA.md#e-04--reexecução-dos-models-e-autorização-no-mariadb-24102026). Concorrência real e futuros endpoints continuam fora desta evidência.
 
+## Verificações de recebimento e fila — 24/10/2026
+
+- `php vendor/bin/phpunit tests/Feature/SolicitacaoFlowTest.php`: **36 testes, 233 assertions aprovados** no MariaDB 10.4.32 exclusivo `banco_de_leite_schema_test`, com `APP_ENV=testing`, `DB_CONNECTION=mysql`, `DB_DATABASE=banco_de_leite_schema_test` e `DB_URL` vazio.
+- `php vendor/bin/phpunit`: **108 testes, 457 assertions aprovados** em SQLite `:memory:`, com ambiente testing, URL vazia e FKs habilitadas, após os ajustes finais. `php vendor/bin/pint --dirty --format agent`: aprovado.
+- Cobertura e limites em [Segurança, E-05](../SEGURANCA.md#e-05--recebimento-fila-e-correspondências-24102026). Sem revisão visual em navegador, teste de carga ou concorrência real. Não houve alteração de dependências, CSS/JS, `.env` ou aplicação de migrations/seeders no banco de desenvolvimento.
+- Para uso local das rotas novas e da navegação de funcionários, o schema administrativo precisa estar aplicado e as concessões preparadas por operação autorizada. Esta entrega não fez essa ativação.
+
+## Ativação local — 24/10/2026
+
+Após autorização do usuário, foram executados `php artisan migrate --no-interaction` e `php artisan db:seed --class=PermissaoSeeder --no-interaction` em `banco_de_leite_dev`. As seis migrations administrativas foram aplicadas no lote 3; `migrate:status` confirmou as dez migrations aplicadas. Não houve recriação do banco, execução de `DatabaseSeeder` ou mudança de `.env`.
+
+A consulta final confirmou três contas preservadas, um item no catálogo de permissões, zero concessões a funcionários e zero solicitações. Administradores podem acessar o módulo conforme o Gate existente; funcionários dependem de concessão explícita.
+
+Um servidor temporário conectado exclusivamente a `banco_de_leite_schema_test` retornou HTTP 200 em `/doar` e `/pedido-recebido`, e 302 na fila interna sem autenticação. Não foram inseridos dados por essa verificação. A revisão visual não pôde ser realizada: a ferramenta informou que o navegador não estava disponível e listou zero navegadores. Layout, interação autenticada e responsividade continuam pendentes. Esses checks HTTP não substituem os testes funcionais anteriores nem a homologação visual. Evidência de segurança: [E-06](../SEGURANCA.md#e-06--ativação-local-24102026).
+
+As seções anteriores registram o estado na ocasião de cada verificação; suas referências a migrations pendentes foram superadas por esta ativação.
+
 ## Não implementado no código analisado
 
-Ainda não há módulos operacionais de pedidos, cadastro de doadoras, coleta, recebimento, processamento, estoque, distribuição ou relatórios. Schema, models e base de autorização administrativa estão implementados; rotas/telas e regras operacionais de pedidos continuam pendentes. Não há API REST de negócio.
+Recebimento de pedidos, fila e detalhe administrativo estão implementados. Permanecem pendentes as ações de contato, conferência, arquivamento, admissão, acompanhamento clínico, coleta, recebimento de leite, processamento, estoque, distribuição e relatórios. Não há API REST de negócio.
 
 Backend futuro e dependências: [Roadmap](ROADMAP.md). Telas existentes e seus limites: [Arquitetura](../ARQUITETURA.md). Detalhes de integração: [Contratos](CONTRATOS.md).

@@ -42,4 +42,4 @@ Esconder links na navegação não substitui a autorização do servidor. A apli
 
 A página inicial demonstra Bootstrap; o painel apenas confirma a sessão; as páginas de papel demonstram acesso. Elas são apoio ao desenvolvimento, sem aprovação como interface final. Há telas funcionais de autenticação e perfil, mas sua existência também não comprova homologação visual.
 
-Há base de domínio administrativo em models e autorização por Gates, ainda sem telas ou rotas de pedidos. Não foram adicionadas camadas próprias de serviços, repositórios ou API. O funcionamento e os limites da base estão em [Contratos](backend/CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026).
+Há base de domínio administrativo em models e autorização por Gates, além de recebimento, fila e detalhe de pedidos em `SolicitacaoController`, validação em `StoreSolicitacaoRequest` e views `solicitacoes`. Correspondências são consultadas no model `Solicitacao`, sem flags persistidas. Não foram adicionadas camadas próprias de serviços, repositórios ou API. O funcionamento e os limites estão em [Contratos](backend/CONTRATOS.md#recebimento-e-fila-implementados-em-24102026).
