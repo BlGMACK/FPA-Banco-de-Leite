@@ -278,6 +278,11 @@ class AdministrativeSchemaTest extends TestCase
     public function test_rolling_back_and_reapplying_only_administrative_migrations_preserves_existing_users(): void
     {
         $user = User::factory()->create();
+        $dependentes = glob(database_path('migrations/2026_10_26_*'));
+        sort($dependentes);
+        foreach (array_reverse($dependentes) as $arquivo) {
+            (require $arquivo)->down();
+        }
         $files = [
             '2026_10_24_045949_create_interessadas_table.php',
             '2026_10_24_045952_create_solicitacoes_table.php',
@@ -302,6 +307,9 @@ class AdministrativeSchemaTest extends TestCase
 
         $request = $this->request(['registrada_por_user_id' => $user->id, 'canal_origem' => 'presencial']);
         $this->assertDatabaseHas('solicitacoes', ['id' => $request, 'registrada_por_user_id' => $user->id]);
+        foreach ($dependentes as $arquivo) {
+            (require $arquivo)->up();
+        }
     }
 
     private function request(array $overrides = []): int
