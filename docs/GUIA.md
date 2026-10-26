@@ -4,6 +4,12 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 
 ## Estados usados
 
+Avanço posterior em 26/10/2026: schema de agenda preparado em quatro migrations e testes de integridade, com autorização do usuário, sem aplicação ao banco de desenvolvimento. Models, permissão de agenda e fluxo web continuam pendentes; evidências em [Status](backend/STATUS.md).
+
+Atualização de 26/10/2026: o usuário relatou teste manual satisfatório do site após a entrega administrativa. O próximo recorte de agenda e relatório está em [especificação proposta](backend/CONTRATOS.md#próximo-recorte-agenda-e-relatório-de-visita--proposta-em-26102026), com decisões operacionais ainda pendentes. O relato manual e seus limites estão em Status; não substitui as validações pendentes descritas nas etapas anteriores.
+
+Refinamento confirmado pelo usuário: visitas nos dois locais, preferencialmente no domicílio; permissões separadas acumuláveis por funcionário; relatório com rascunho e correções versionadas após finalizar. Contratos distingue esses acordos dos detalhes técnicos e atribuições profissionais ainda propostos.
+
 Estado local mais recente em 24/10/2026: migrations administrativas e catálogo de permissões aplicados com autorização, preservando as três contas existentes e sem concessões automáticas. A revisão visual continua pendente por indisponibilidade de navegador nesta sessão. Veja [ativação local](backend/STATUS.md#ativação-local--24102026); os relatos anteriores preservam o histórico das etapas.
 
 Atualização posterior em 24/10/2026: o schema também foi verificado em MariaDB isolado; models administrativos, Gates e proteção de autoria na exclusão foram implementados. Consulte [Contratos](backend/CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026) e [Status](backend/STATUS.md) para distinguir a base implementada dos fluxos/telas ainda pendentes.
@@ -36,7 +42,7 @@ Para análises ou correções de segurança, comece pelos IDs aplicáveis em [Se
 
 Comece pelo [README](../README.md). Agentes devem ler também [AGENTS.md](../AGENTS.md); [CLAUDE.md](../CLAUDE.md) remete às mesmas instruções. Confira a implementação antes de reutilizar uma afirmação documental.
 
-Não confunda conta de acesso com cadastro de doadora do domínio. O recebimento público/interno, a fila e o detalhe administrativo de solicitações já têm implementação; contato, arquivamento e admissão ainda não. Consulte [Contratos](backend/CONTRATOS.md#recebimento-e-fila-implementados-em-24102026). As telas de apoio não definem a interface final.
+Não confunda conta de acesso com cadastro de doadora do domínio. Recebimento, fila, detalhe, contato, conferência, arquivamento de repetidos e admissão administrativa têm implementação. O acompanhamento inicial mostra visita pendente, sem aprovação para doar. Consulte [Contratos](backend/CONTRATOS.md#atendimento-administrativo-implementado-em-26102026). As telas de apoio não definem a interface final; evidências e limites ficam em Status.
 
 Mudanças de comportamento devem atualizar a documentação afetada **no mesmo pull request**. Registre o estado, a evidência e as limitações; não converta uma proposta em acordo sem decisão identificável.
 

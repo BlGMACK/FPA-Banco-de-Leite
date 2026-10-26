@@ -248,6 +248,132 @@ Implementação autorizada pelo usuário: [SolicitacaoController](../../app/Http
 
 As migrations administrativas e o catálogo foram aplicados ao `banco_de_leite_dev` após autorização posterior em 24/10/2026. Nenhuma permissão foi concedida automaticamente a funcionários; administradores têm acesso conforme o Gate existente. Outros ambientes ainda exigem preparação do schema antes de disponibilizar esse código. Evidências e limites da ativação em [Status](STATUS.md#ativação-local--24102026) e [Segurança](../SEGURANCA.md).
 
+### Atendimento administrativo implementado em 26/10/2026
+
+Após autorização do usuário, o recorte avançou para início explícito de análise, contatos, conferências, resolução de repetições, admissão e consulta de acompanhamento. Fontes: [AtendimentoSolicitacaoController](../../app/Http/Controllers/AtendimentoSolicitacaoController.php), [AtendimentoSolicitacaoRequest](../../app/Http/Requests/AtendimentoSolicitacaoRequest.php), [ResolucaoSolicitacao](../../app/Models/ResolucaoSolicitacao.php) e [views](../../resources/views/solicitacoes). As propostas seguintes continuam como referência de planejamento; esta seção delimita o comportamento efetivo.
+
+- Rotas POST de `analise`, `contatos`, `conferencias`, `resolucoes` e `admissao`, e GET de acompanhamentos, exigem sessão e `atender-solicitacoes`. IDs são consultados após autorização. Não há envio de WhatsApp pelo sistema.
+- Entradas usam `pedidos[]` com `id` e `versao`; decisões podem incluir `cadastros[]` com esses mesmos campos. Limite técnico inicial: 50 registros de cada tipo por operação. Seleções adicionais são explícitas, com Alpine nos formulários. O início da análise aceita somente a origem.
+- Contato registra canal, resultado, destinatário, finalidade, resumo, próxima ação, quando ocorreu e declarações de identidade conferida/dúvida esclarecida. Contato não realizado não aceita essas declarações. Autor vem da sessão. Contato e vínculos são gravados juntos; as versões dos pedidos abordados avançam. Contato não equivale a confirmação automática de canal ou identidade.
+- Decisões exigem contato abrangendo todos os pedidos escolhidos, motivo e versões atuais. Exceto `aguardando_esclarecimento`, exigem contato realizado, identidade conferida e dúvida esclarecida. O pedido principal precisa estar em análise e ter dados obrigatórios e WhatsApp disponível.
+- `pessoas_distintas` preserva o alerta como revisado, com assinatura dos dados de identificação examinados. Mudança desses dados, novo alvo ou registro posterior de dúvida pendente exige nova conferência. A evidência registra pares, campos coincidentes e versões; arquivamento preserva vínculos e histórico, mas retira o pedido das comparações atuais.
+- Resolução admite o principal escolhido e arquiva os demais, ou arquiva os selecionados. Um pedido isolado só pode ser arquivado neste recorte com referência a cadastro já admitido. Não há arquivamento genérico, exclusão ou reabertura. Seleções de resolução precisam corresponder à origem; correspondências não esclarecidas fora do conjunto bloqueiam admissão.
+- A identidade é criada a partir dos dados do principal ou vinculada explicitamente a cadastro existente selecionado e conferido, sem sobrescrevê-lo. Não é escolhida automaticamente por CPF. A operação não cria conta, aprovação clínica ou autorização de coleta.
+- Resolução e admissão usam transação, travas nos pedidos selecionados em ordem de ID, versões, autoria e eventos. `operacao_id` é UUID apresentado no formulário interno: o mesmo identificador, autor, origem e conteúdo repetidos retornam a decisão anterior, sem duplicação; conteúdo diferente retorna 409. O UUID não concede acesso e não substitui sessão, Gate ou CSRF. Contato/análise retransmitidos com versão antiga retornam 409. Não há repetição automática de decisões.
+- Erros de formulário usam bags `contato` e `decisao`; conflitos retornam 409. A tela de acompanhamento mostra origem, autoria e visita pendente; documentos/exames aguardam indicação posterior. Não contém funções clínicas simuladas.
+
+Correção de dados por PATCH, agenda/relatório de visita e anexos continuam pendentes. As travas cobrem os registros selecionados; teste de concorrência real entre conexões, entradas simultâneas novas e desempenho sob volume permanecem pendentes. Datas dos formulários seguem o fuso configurado na aplicação, cuja adequação operacional deve ser revisada antes do uso real. Evidências e limites em [Status](STATUS.md) e [Segurança](../SEGURANCA.md).
+
+### Próximo recorte: agenda e relatório de visita — proposta em 26/10/2026
+
+**Estado:** especificação para revisão, não implementada. O usuário informou que testou o site e não encontrou problemas no fluxo atual; isso não confirma as regras novas abaixo. Fonte do fluxo: relato do usuário (G). A separação de agenda, atendimento e triagem já aparece na proposta de Modelagem (P), inspirada no legado (L). Não há PDF disponível nem critérios clínicos extraídos dele.
+
+**Definições confirmadas pelo usuário em 26/10/2026, após as perguntas de refinamento:** visita nos dois locais, preferencialmente no domicílio para conhecer o ambiente da interessada, podendo ocorrer no Banco conforme a ocasião; funções/permissões separadas, acumuláveis pela mesma pessoa; relatório com rascunho editável e correções em novas versões após finalizar. São acordos de produto com o usuário, não confirmação de cargos profissionais pelo serviço. O restante do desenho abaixo permanece proposto.
+
+**Escopo proposto:** registrar o horário combinado, reagendar/cancelar preservando histórico, registrar realização ou ausência e produzir relatório narrativo versionado. Solicitar documentos/exames, anexar arquivos, avaliar saúde e habilitar doação continuam em entregas posteriores. A solicitação permanece `admitida`; a situação da visita vem dos novos registros, sem ampliar automaticamente seu enum administrativo.
+
+#### Campos e vínculos
+
+| Registro proposto | Campos e origem | Regras propostas |
+| --- | --- | --- |
+| Agendamento | Solicitação admitida, início e fim previstos, local/modalidade, descrição do local, responsável pelo atendimento, autor/data da confirmação, referência ao contato que combinou a visita, versão e eventual agendamento substituído. | O contato deve pertencer ao acompanhamento e ter resultado realizado; mensagem apenas enviada não confirma. Modalidades acordadas: domicílio (preferencial) e Banco. Responsabilidade profissional e capacidade ainda precisam de definição. |
+| Alteração da agenda | Agendamento, ação, motivo, estado anterior/novo, horários anteriores/novos, autor e instante. | Cancelamento, reagendamento e ausência preservam histórico. Motivo é operacional, sem justificativa clínica na agenda. |
+| Atendimento | Agendamento, instante em que a visita ocorreu, profissional responsável e autor/data do registro. | Um atendimento por agendamento; não criar automaticamente quando chega o horário. Rejeitar realização futura ou em agendamento cancelado/substituído. |
+| Relatório da visita | Atendimento, texto narrativo, situação, número da versão, versão anterior, autor e datas de criação/finalização. | Metadados estruturados e texto amplo conforme preferência do usuário. Não adicionar questionário clínico ou campos de exames por pressuposição. |
+
+Identidade e pedido de origem continuam relacionados; não copiar nome/CPF/endereço para um cadastro independente. O local combinado pode ser registrado como descrição histórica da visita, sem atualizar silenciosamente o endereço canônico. Limites de texto, armazenamento de datas e índices ficam para o desenho físico após as decisões funcionais.
+
+**Integração necessária:** o endpoint de contatos atual aceita apenas pedidos ativos e os incrementa por versão. Antes de confirmar agendas, será necessário um fluxo explícito de contato no acompanhamento admitido, com autoria e vínculo, sem reabrir a solicitação nem liberar todas as ações de pedidos para admitidos. O contato prévio de admissão não deve ser presumido como acordo sobre data/local da visita.
+
+#### Estados e transições
+
+| Entidade | Transição proposta | Condição |
+| --- | --- | --- |
+| Agenda | Sem agenda → `confirmado` | Contato esclareceu data/local; solicitação admitida e identidade vinculada. |
+| Agenda | `confirmado` → `substituido` + novo `confirmado` | Reagendamento atômico, com motivo e vínculo ao anterior. |
+| Agenda | `confirmado` → `cancelado` | Motivo e autoria; admissão preservada, sem recusa clínica. |
+| Agenda | `confirmado` → `nao_realizado` | Proposta de nomenclatura para cobrir ambas as modalidades, sem presumir falta da interessada. Registro explícito após o horário e motivo operacional; não automatizar ausência. Submotivos e responsabilidades ainda a definir. |
+| Agenda | `confirmado` → `realizado` | Registrar o fato do atendimento e profissional responsável, na mesma transação. |
+| Relatório | Ausente → `rascunho` → `finalizado` | Ciclo acordado pelo usuário; propor texto não vazio para finalizar. Finalização não é parecer de aptidão. |
+| Relatório | Finalizado → nova versão em rascunho | Correção com motivo, preservando o original; a última versão finalizada permanece distinguível da correção ainda em elaboração. |
+
+Propor no máximo um agendamento confirmado por solicitação e impedir sobreposição do mesmo responsável quando ele for identificado. A política para dois acompanhamentos da mesma interessada, duração, deslocamento e capacidade da equipe precisa ser definida antes de implementar bloqueios de agenda. Não presumir disponibilidade apenas porque há horário livre no sistema.
+
+#### Permissões e apresentação
+
+- **Acordado:** funções de atendimento, agenda e registro profissional separadas, podendo ser acumuladas na mesma conta individual. Representar essa separação por permissões configuráveis, conforme a direção já adotada, sem novos valores de cargo no enum `users.role` e sem compartilhar logins.
+- **Proposta técnica:** manter `atender-solicitacoes` e acrescentar capacidades próprias de agenda e relatório. Atendimento não recebe agenda automaticamente; quem exercer as duas funções recebe ambas por concessão explícita. Códigos e granularidade de leitura/escrita serão fechados no desenho técnico; o catálogo e as operações de concessão atuais ainda aceitam somente atendimento.
+- Relatório permanece restrito a permissão profissional separada. Quem possui apenas agenda vê situação da visita e do relatório, sem receber o texto narrativo. Cargos habilitados, escopo por unidade/atribuição e quem pode finalizar/corrigir continuam a definir; o acordo de acúmulo não concede automaticamente atribuição clínica ao administrador ou a todo funcionário.
+- Acompanhamento exibe próxima visita, histórico operacional e pendências derivadas. O relatório aparece somente para quem puder consultá-lo. Cancelamento/ausência devolvem a indicação de visita a agendar, mantendo a admissão.
+- Documentos/exames continuam “a definir após análise da visita”. Finalizar relatório não solicita exames, não aprova doação e não inicia coleta.
+
+#### Consistência e testes a implementar junto ao código
+
+Escritas com CSRF, autorização, campos permitidos, versões e transação. Reagendamento não pode cancelar o antigo sem criar o novo; realização não pode duplicar atendimento; correção não pode sobrescrever relatório finalizado. Reenvios da mesma operação não duplicam registros. Adotar uma política explícita de fuso para exibição e persistência antes das migrations, com apresentação inequívoca do horário de Marília.
+
+Cobertura proposta: negar acesso sem permissão; impedir leitura clínica por atendimento administrativo; bloquear agenda para pedido não admitido; exigir contato de confirmação válido; testar cancelamento/reagendamento e autoria; ausência sem atendimento fictício; conflitos de versão e sobreposição; realização sem duplicação; relatório vazio e correções versionadas; manter ausência de aprovação clínica após finalizar. Testar persistência em banco exclusivo e concorrência real de confirmações antes de afirmar que a agenda evita reservas simultâneas.
+
+#### Decisões pendentes para fechar o recorte
+
+1. Motivos operacionais e tratamento de visita não realizada, inclusive impedimento no domicílio. Modalidades já acordadas: domicílio preferencial e Banco.
+2. Responsáveis, duração, deslocamento, capacidade e horários sobrepostos. A separação e o acúmulo das permissões já estão acordados.
+3. Profissionais habilitados e escopo para ler, redigir, finalizar e corrigir. Rascunho e novas versões após finalizar já estão acordados.
+4. Encaixe sem agendamento prévio, retorno após visita não realizada/cancelada e vários acompanhamentos da mesma pessoa.
+
+As três questões iniciais receberam resposta explícita do usuário em 26/10/2026, registrada acima. Próximo trabalho técnico: detalhar persistência e autorização da agenda, incluindo contatos após admissão e testes da combinação de permissões. A implementação de regras clínicas depende das definições profissionais restantes; não preencher essas lacunas com critérios inventados.
+
+### Contrato técnico proposto da agenda — 26/10/2026
+
+Este detalhamento atende à autorização de continuar a especificação de persistência/autorização. **Schema preparado após autorização posterior:** quatro migrations e testes de integridade, sem aplicação ao banco de desenvolvimento. **Fluxo web e autorização de agenda ainda não implementados.** Fonte física em [Modelagem](MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026). Primeiro incremento: contato após admissão, confirmação, reagendamento, cancelamento e registro de visita não realizada. Registrar atendimento efetivamente realizado e editar/finalizar relatório ficam no incremento profissional seguinte; a separação evita conceder acesso clínico pela permissão de agenda.
+
+#### Autorização por função
+
+Código técnico proposto: `gerenciar-agenda`, acumulável com `atender-solicitacoes`. Reutilizar catálogo, concessões/revogações e auditoria existentes. Ampliar a lista explícita de códigos administrativos aceitos por `Permissao`; não aceitar qualquer texto enviado como permissão. Seeder adiciona catálogo de forma idempotente e não concede acesso. Administrador conserva alcance administrativo de agenda; funcionário precisa de concessão ativa. Relatório e decisão clínica não participam desse acesso automático.
+
+| Acesso efetivo | Pedidos e decisões administrativas | Agenda e contato após admissão | Texto do relatório |
+| --- | --- | --- | --- |
+| Apenas atendimento | Permitido conforme contrato atual | Negado | Negado |
+| Apenas agenda | Não libera fila/detalhe completo de pedidos | Permitido para acompanhamentos admitidos da unidade | Negado |
+| Atendimento e agenda | Permitido | Permitido | Negado sem futura permissão profissional |
+| Administrador | Permitido | Permitido no escopo administrativo | Depende do futuro contrato profissional |
+| Visitante/doadora | Negado | Negado | Negado |
+
+Quem possui somente agenda recebe uma visão operacional própria: identificação, telefone/WhatsApp, endereço necessário à visita, origem por referência e contatos de acompanhamento. Não reutilizar indiscriminadamente o detalhe atual, que contém justificativas e contatos de análise. Não exigir atendimento como permissão adicional oculta para navegar pela agenda. Revogação deve valer nas próximas requisições; não conceder permissões ao designar um responsável.
+
+#### Rotas web propostas
+
+Todas sob `auth` e `can:gerenciar-agenda`, com consulta dos IDs após autorização, formulários Blade, CSRF e redirecionamentos. Nomes/caminhos são propostas, não URLs disponíveis.
+
+| Método / caminho | Nome | Efeito |
+| --- | --- | --- |
+| GET `/interno/agenda` | `interno.agenda.index` | Lista operacional paginada, filtros de período/modalidade/situação/responsável. |
+| GET `/interno/agenda/acompanhamentos/{solicitacao}` | `interno.agenda.acompanhamentos.show` | Contexto mínimo do admitido, contatos de acompanhamento e histórico da agenda. |
+| POST `/interno/agenda/acompanhamentos/{solicitacao}/contatos` | `interno.agenda.contatos.store` | Registra tentativa/contato no contexto de acompanhamento. |
+| POST `/interno/agenda/acompanhamentos/{solicitacao}/agendamentos` | `interno.agenda.store` | Confirma horário/local combinado, criando reserva. |
+| POST `/interno/agenda/{agendamento}/reagendamentos` | `interno.agenda.reagendamentos.store` | Substitui o compromisso preservando o anterior. |
+| POST `/interno/agenda/{agendamento}/cancelamento` | `interno.agenda.cancelamento.store` | Cancela e libera reserva; preserva admissão. |
+| POST `/interno/agenda/{agendamento}/nao-realizacao` | `interno.agenda.nao-realizacao.store` | Registra fato após horário previsto, motivo e liberação da reserva. |
+
+IDs numéricos e segmentos estáticos diferenciados; sem consulta pública, exclusão física, envio automático de WhatsApp ou calendário externo. Links de agenda entram na navegação pela permissão correspondente. A tela atual de acompanhamento pode apontar para a visão de agenda somente quando autorizada.
+
+#### Entradas, respostas e limites
+
+- Contato: campos operacionais do contato atual, `operacao_id` e versão do pedido exibida. Servidor define contexto, vínculo ao admitido, autor e instante. Não exigir nova conferência de identidade só para registrar uma tentativa; confirmação do compromisso exige contato realizado e declaração explícita de que data/local foram combinados, registrada no evento da agenda.
+- Confirmação: versão do pedido, contato de acompanhamento, modalidade `domicilio|banco`, descrição do local, início/fim locais com fuso fixo apresentado, responsável e `operacao_id`. Preferir domicílio no formulário, permitindo Banco; escolha precisa permanecer explícita. Contato deve pertencer ao mesmo acompanhamento e não pode ter resultado `tentado`, `sem_resposta` ou `numero_incorreto`.
+- Reagendamento: versão do compromisso, novo contato confirmando a alteração, novos dados de agenda, motivo e operação. Cancelamento/não realização: versão, motivo e operação. Motivos não incluem parecer clínico. `responsavel_user_id` deve apontar para conta interna existente; fluxo para desativação e qualificação profissional continua pendente.
+- Não realização não é recusa nem penalidade automática. Encaixe sem agenda, registro retroativo de visita realizada e aprovação para doação não entram neste incremento. Datas de confirmação novas são futuras; ausência só é registrada após o horário combinado. Fuso e validação precisam de testes específicos.
+- Resposta válida: 302 para contexto operacional com mensagem clara. Entrada inválida: 302 com erros e valores seguros; sem sessão: login; sem permissão: 403; ID inexistente/incompatível: 404; versão/reserva/operação em conflito: 409 orientando recarregar; CSRF inválido: 419. Reenvio comprovado não duplica contato/agendamento/evento.
+- Não haverá promessa de disponibilidade automática: duração, deslocamento e capacidade não foram definidos. O bloqueio de sobreposição do mesmo responsável descrito na Modelagem é proposta para revisão; se não adotado, a interface deve sinalizar conflitos e deixar explícita a limitação. Testar concorrência real antes de afirmar garantia contra dupla reserva.
+
+#### Ordem da futura implementação
+
+1. Migrations aditivas e testes de integridade em banco exclusivo; preservar contatos legados como análise.
+2. Catálogo/Gate/concessões de agenda e testes da matriz acima, inclusive usuário com apenas agenda e revogação em sessão aberta.
+3. Contatos de acompanhamento, modelos, transações de reserva e testes de conflito/retransmissão.
+4. Formulários/lista/histórico e revisão visual, mantendo o relatório indisponível até definir o escopo profissional.
+
+As decisões funcionais acordadas não transformam os nomes de tabelas, limites, rotas ou política de sobreposição deste contrato em implementação já aprovada ou executada. Permanecem pontos operacionais de capacidade/encaixes e atribuições profissionais, identificados na seção anterior.
+
 ### Limites e autorização
 
 Entrega: receber pedido sem conta; listar e conferir; registrar contato; resolver repetição; concluir admissão administrativa; consultar acompanhamento com visita pendente. Agendar visita, redigir relatório, anexar exames e aprovar doação são operações de entregas posteriores. A tela inicial de acompanhamento apenas mostra a admissão e as próximas etapas; não oferece botões que simulem funções ainda indisponíveis.

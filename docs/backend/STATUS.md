@@ -17,6 +17,7 @@ Levantamento inicial de 22/10/2026, acrescido da preparação do schema administ
 | Schema administrativo | Seis migrations para onze tabelas: identidade, pedidos, contatos, resoluções, histórico e permissões. Aplicadas ao banco de desenvolvimento após autorização; evidência abaixo. | [Recorte físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026). |
 | Models e autorização administrativa | Oito models com relações/casts e factories; Gates de atendimento e gestão, concessão/revogação com autoria e transação. Ainda sem interface de gestão de permissões. | [Contrato implementado](CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026). |
 | Recebimento e fila | Formulário público/interno, confirmação neutra, token de operação, limitação de envios, fila paginada e detalhe com correspondências atuais restritas à equipe autorizada. | [Recorte implementado](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026). |
+| Atendimento administrativo | Início de análise, contatos, conferências, arquivamento de repetidos, admissão e acompanhamento inicial; decisões com versões, transação, autoria e histórico. | [Contrato efetivo](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026). |
 
 O model não implementa `MustVerifyEmail`: a presença do middleware `verified` no painel não torna a verificação obrigatória no estado atual.
 
@@ -96,6 +97,45 @@ As seções anteriores registram o estado na ocasião de cada verificação; sua
 
 ## Não implementado no código analisado
 
-Recebimento de pedidos, fila e detalhe administrativo estão implementados. Permanecem pendentes as ações de contato, conferência, arquivamento, admissão, acompanhamento clínico, coleta, recebimento de leite, processamento, estoque, distribuição e relatórios. Não há API REST de negócio.
+**Atualização posterior:** o schema da agenda foi preparado e verificado após autorização; veja as evidências abaixo. A especificação inicial citada a seguir foi superada apenas quanto à preparação física. Fluxo web, models e autorização de agenda continuam pendentes.
+
+**Especificação posterior em 26/10/2026:** detalhados o [schema proposto da agenda](MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026) e a [autorização/rotas propostas](CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026). Conferidos no código o contexto atual de contatos, o acesso ao acompanhamento e a restrição do catálogo a atendimento. Alterações apenas documentais nesta especificação; sem testes de aplicação, migrations ou seeders executados. A agenda continua não implementada.
+
+As evidências da entrega administrativa estão na seção seguinte. Implementação não representa homologação visual ou clínica.
+
+Recebimento, fila, contatos, conferências, resolução de repetições, admissão e acompanhamento administrativo inicial estão implementados. Permanecem pendentes correção de dados do pedido, agendamento/relatório de visita, anexos e acompanhamento clínico, coleta, recebimento de leite, processamento, estoque, distribuição e relatórios. Não há API REST de negócio.
 
 Backend futuro e dependências: [Roadmap](ROADMAP.md). Telas existentes e seus limites: [Arquitetura](../ARQUITETURA.md). Detalhes de integração: [Contratos](CONTRATOS.md).
+
+## Verificações de atendimento administrativo — 26/10/2026
+
+**Retorno manual do usuário em 26/10/2026:** informou ter testado o site e que estava funcionando bem, autorizando avançar. Não foram informados cenários, navegador, dispositivos ou matriz de permissões cobertos. Registrar como teste manual relatado do fluxo atual, sem inferir homologação clínica, acessibilidade, responsividade completa ou concorrência.
+
+Entrega autorizada: início da análise, contatos, conferências, resolução de repetições, admissão administrativa e consulta inicial de acompanhamento. Não houve novas migrations, dependências, alterações de `.env`, seeders ou gravações no banco de desenvolvimento nesta etapa. Correção de dados por PATCH permanece pendente.
+
+| Verificação executada após ajustes finais | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit` com `APP_ENV=testing`, `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:` e `DB_URL` vazio | **144 testes, 650 assertions aprovados**. |
+| `php vendor/bin/phpunit tests/Feature/AtendimentoSolicitacaoTest.php` com `APP_ENV=testing`, `DB_CONNECTION=mysql`, `DB_DATABASE=banco_de_leite_schema_test` e `DB_URL` vazio | **36 testes, 193 assertions aprovados** no MariaDB local isolado. A classe usa a guarda de banco e transações de teste. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado após a formatação dos arquivos PHP alterados. |
+| `php artisan route:list --path=interno --no-interaction` | Rotas administrativas registradas, incluindo as cinco escritas e lista/detalhe de acompanhamento. |
+
+Foram testados conflitos sequenciais entre versões, repetição sem duplicar decisão, bloqueio de contatos insuficientes, revisão de correspondências, revogação de permissão, CSRF ativo e reversão integral quando a auditoria falha. A admissão não cria conta nem aprovação clínica. Detalhes em [E-07](../SEGURANCA.md#e-07--atendimento-e-decisões-administrativas-26102026).
+
+Limites: sem teste com conexões simultâneas, carga ou navegador; Blade foi renderizado nos testes, mas a interação Alpine, responsividade e acessibilidade não foram homologadas. A próxima etapa é revisar as telas com a equipe e especificar agendamento/visita e relatório narrativo, incluindo responsáveis, estados e critérios antes da implementação clínica.
+
+## Verificações do schema de agenda — 26/10/2026
+
+Após autorização do usuário, quatro migrations aditivas foram preparadas: contexto/operação dos contatos, agendamentos, reservas e eventos. Fontes em [Modelagem](MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026). Não foram alteradas migrations anteriores. `AdministrativeSchemaTest` foi adaptado para remover/reaplicar primeiro as dependências de agenda ao exercitar rollback do recorte administrativo; o cenário de preservação de contas permanece.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/AgendaSchemaTest.php tests/Feature/AdministrativeSchemaTest.php` em SQLite `:memory:` | **36 testes, 60 assertions aprovados**. |
+| Mesmo comando na conexão `mysql`, banco exclusivo `banco_de_leite_schema_test` | **36 testes, 60 assertions aprovados** no MariaDB local. |
+| `php vendor/bin/phpunit` em SQLite `:memory:` | **160 testes, 676 assertions aprovados**, incluindo os 16 novos casos de schema da agenda. |
+| `php vendor/bin/pint --dirty --format agent` e `git diff --check` | Aprovados. |
+| `php artisan migrate:status --no-interaction` no desenvolvimento | Dez migrations anteriores aplicadas e quatro novas pendentes. Nenhuma migration ou seeder aplicada ao desenvolvimento nesta etapa. |
+
+Os processos de teste receberam `APP_ENV=testing`, `DB_CONNECTION`/`DB_DATABASE` explícitos e `DB_URL` vazio, sem alterar `.env`. `AgendaSchemaTest` usa `DatabaseMigrations`, com guarda do ambiente/banco antes da preparação; os dados são fictícios. Foi corrigido o rollback da tabela com autorreferência: remover sua FK de substituição antes de derrubar a tabela permite o teardown em SQLite com histórico de reagendamento.
+
+Cobertura e limites em [E-08](../SEGURANCA.md#e-08--schema-da-agenda-26102026). A base física não disponibiliza agenda no site: ainda faltam models, catálogo/Gates/concessões, validações, operações transacionais e telas. Não foram testados concorrência real entre conexões, sobreposição de responsáveis, fuso na interface ou regras clínicas. O banco de testes é descartável; rollback de schema com dados reais seria destrutivo e não está autorizado por esses testes.
