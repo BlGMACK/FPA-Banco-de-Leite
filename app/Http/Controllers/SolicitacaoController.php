@@ -128,11 +128,16 @@ class SolicitacaoController extends Controller
 
     public function show(int $solicitacao): View
     {
-        $pedido = Solicitacao::query()->findOrFail($solicitacao);
+        $pedido = Solicitacao::query()->with(['contatos.registradoPor', 'contatos.solicitacoes', 'eventos.autor', 'resolucoes.solicitacoes', 'resolucoes.interessadas'])->findOrFail($solicitacao);
 
         return view('solicitacoes.show', [
             'pedido' => $pedido,
-            'correspondencias' => $pedido->correspondenciasAtuais(),
+            'correspondencias' => $pedido->correspondenciasAtuais()->map(function (array $par) use ($pedido): array {
+                $par['revisada'] = $pedido->correspondenciaRevisada($par['registro'], $par['tipo']);
+
+                return $par;
+            }),
+            'operacaoId' => (string) Str::uuid(),
         ]);
     }
 }

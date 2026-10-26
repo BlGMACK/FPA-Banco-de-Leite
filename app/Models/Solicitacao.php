@@ -21,6 +21,54 @@ class Solicitacao extends Model
 
     protected $table = 'solicitacoes';
 
+    /** @param array<int, array{id: int|string, versao: int|string}> $entradas */
+    public static function bloquearPedidos(array $entradas, int $origem): Collection
+    {
+        $versoes = collect($entradas)->pluck('versao', 'id');
+        abort_unless($versoes->has($origem), 422, 'Inclua o pedido de origem.');
+        $pedidos = static::query()->whereIn('id', $versoes->keys())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+        abort_unless($pedidos->count() === $versoes->count(), 404);
+        foreach ($pedidos as $pedido) {
+            abort_unless(in_array($pedido->status, ['enviada', 'em_analise'], true)
+                && $pedido->versao === (int) $versoes[$pedido->id], 409, 'O pedido mudou. Recarregue a página e confira os dados antes de decidir.');
+        }
+
+        return $pedidos;
+    }
+
+    public function registrarEvento(string $tipo, User $autor, string $estadoAnterior, ?ResolucaoSolicitacao $resolucao = null): void
+    {
+        $evento = new EventoSolicitacao;
+        $evento->forceFill([
+            'solicitacao_id' => $this->id, 'autor_user_id' => $autor->id,
+            'resolucao_id' => $resolucao?->id, 'tipo' => $tipo,
+            'estado_anterior' => $estadoAnterior, 'estado_novo' => $this->status,
+            'dados_novos' => ['versao' => $this->versao, 'interessada_id' => $this->interessada_id],
+            'motivo' => $resolucao?->motivo, 'ocorrido_em' => now(),
+        ])->save();
+    }
+
+    public function assinaturaCorrespondencia(Model $alvo, string $tipo): string
+    {
+        $campos = ['cpf', 'nome_normalizado', 'email_contato', 'telefone_fixo', 'telefone_celular'];
+
+        return hash('sha256', json_encode([$tipo, $alvo->id, $this->only($campos), $alvo->only($campos)], JSON_THROW_ON_ERROR));
+    }
+
+    public function correspondenciaRevisada(Model $alvo, string $tipo): bool
+    {
+        $assinatura = $this->assinaturaCorrespondencia($alvo, $tipo);
+        $resolucoes = $this->relationLoaded('resolucoes') ? $this->resolucoes : $this->resolucoes()->get();
+        foreach ($resolucoes->whereIn('tipo', ['pessoas_distintas', 'aguardando_esclarecimento'])->sortByDesc('id') as $resolucao) {
+            $evidencias = json_decode($resolucao->pivot->evidencias ?? '[]', true);
+            if (in_array($assinatura, $evidencias['pares'] ?? [], true)) {
+                return $resolucao->tipo === 'pessoas_distintas';
+            }
+        }
+
+        return false;
+    }
+
     public static function consultaCorrespondencias(bool $cadastro): QueryBuilder
     {
         $query = DB::table(($cadastro ? 'interessadas' : 'solicitacoes').' as alvo')->select('alvo.id')

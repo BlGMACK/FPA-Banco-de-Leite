@@ -5,6 +5,8 @@
             <a class="btn btn-success" href="{{ route('interno.solicitacoes.create') }}">Registrar solicitação</a>
         </div>
         <p>Possíveis correspondências são indícios para conferência pela equipe, não confirmação de que se trata da mesma pessoa.</p>
+        <p><a href="{{ route('interno.acompanhamentos.index') }}">Cadastros em acompanhamento</a></p>
+        @if(session('status') === 'pedidos-arquivados')<div class="alert alert-success" role="status">Pedidos arquivados e retirados da análise. O histórico foi preservado.</div>@endif
         <form method="GET" action="{{ route('interno.solicitacoes.index') }}" class="row g-3 align-items-end mb-4">
             <div class="col-md-3">
                 <label class="form-label" for="situacao">Situação</label>

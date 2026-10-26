@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,16 @@ Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/solicit
     Route::get('/nova', [SolicitacaoController::class, 'create'])->name('create');
     Route::post('/', [SolicitacaoController::class, 'store'])->middleware('throttle:receber-solicitacoes')->name('store');
     Route::get('/{solicitacao}', [SolicitacaoController::class, 'show'])->whereNumber('solicitacao')->name('show');
+    Route::post('/{solicitacao}/analise', [AtendimentoSolicitacaoController::class, 'analise'])->whereNumber('solicitacao')->name('analise.store');
+    Route::post('/{solicitacao}/contatos', [AtendimentoSolicitacaoController::class, 'contato'])->whereNumber('solicitacao')->name('contatos.store');
+    foreach (['conferencias', 'resolucoes', 'admissao'] as $acao) {
+        Route::post('/{solicitacao}/'.$acao, [AtendimentoSolicitacaoController::class, 'decisao'])->whereNumber('solicitacao')->name($acao.'.store');
+    }
+});
+
+Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/acompanhamentos')->name('interno.acompanhamentos.')->group(function (): void {
+    Route::get('/', [AtendimentoSolicitacaoController::class, 'index'])->name('index');
+    Route::get('/{solicitacao}', [AtendimentoSolicitacaoController::class, 'show'])->whereNumber('solicitacao')->name('show');
 });
 
 Route::get('/dashboard', function () {

@@ -22,6 +22,7 @@
                 <strong>{{ $correspondencia['tipo'] === 'pedido' ? 'Pedido' : 'Cadastro concluído administrativamente' }} #{{ $correspondencia['registro']->id }}</strong>
                 — {{ $correspondencia['registro']->nome_completo }}.
                 <span>Dados coincidentes: {{ implode(', ', $correspondencia['campos']) }}.</span>
+                @if($correspondencia['revisada'])<span class="badge text-bg-info">Conferido: pessoas distintas</span>@endif
                 @if($correspondencia['tipo'] === 'pedido')
                     <a href="{{ route('interno.solicitacoes.show', $correspondencia['registro']->id) }}">Ver pedido relacionado</a>
                 @endif
@@ -29,5 +30,6 @@
         @empty
             <p class="text-body-secondary">Nenhuma correspondência atual para este pedido.</p>
         @endforelse
+        @include('solicitacoes.atendimento')
     </div>
 </x-app-layout>
