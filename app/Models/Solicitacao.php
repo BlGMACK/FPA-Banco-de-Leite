@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -188,5 +189,15 @@ class Solicitacao extends Model
     public function eventos(): HasMany
     {
         return $this->hasMany(EventoSolicitacao::class, 'solicitacao_id');
+    }
+
+    public function agendamentos(): HasMany
+    {
+        return $this->hasMany(Agendamento::class, 'solicitacao_id');
+    }
+
+    public function reservaAgenda(): HasOne
+    {
+        return $this->hasOne(ReservaAgenda::class, 'solicitacao_id');
     }
 }
