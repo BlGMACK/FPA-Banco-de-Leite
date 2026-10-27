@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
                 : Limit::perMinute(5)->by('publico:'.$request->ip());
         });
         Gate::define(Permissao::ATENDER_SOLICITACOES, fn (User $user): bool => $user->podeAtenderSolicitacoes());
+        Gate::define(Permissao::GERENCIAR_AGENDA, fn (User $user): bool => $user->podeGerenciarAgenda());
         Gate::define('gerenciar-permissoes', fn (User $user): bool => $user->podeGerenciarPermissoes());
     }
 }

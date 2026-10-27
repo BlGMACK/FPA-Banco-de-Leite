@@ -186,8 +186,9 @@ class EmployeeAuthorizationTest extends TestCase
         $this->seed(PermissaoSeeder::class);
         $this->seed(PermissaoSeeder::class);
 
-        $this->assertDatabaseCount('permissoes', 1);
+        $this->assertDatabaseCount('permissoes', 2);
         $this->assertDatabaseHas('permissoes', ['codigo' => Permissao::ATENDER_SOLICITACOES]);
+        $this->assertDatabaseHas('permissoes', ['codigo' => Permissao::GERENCIAR_AGENDA]);
         $this->assertDatabaseCount('permissao_user', 0);
         $this->assertDatabaseCount('users', 0);
     }

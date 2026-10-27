@@ -44,6 +44,16 @@ class User extends Authenticatable
 
     public function podeAtenderSolicitacoes(): bool
     {
+        return $this->possuiPermissaoAdministrativa(Permissao::ATENDER_SOLICITACOES);
+    }
+
+    public function podeGerenciarAgenda(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::GERENCIAR_AGENDA);
+    }
+
+    private function possuiPermissaoAdministrativa(string $codigo): bool
+    {
         $usuario = $this->exists ? static::query()->find($this->getKey()) : null;
 
         if ($usuario?->isAdmin()) {
@@ -52,7 +62,7 @@ class User extends Authenticatable
 
         return $usuario?->isFuncionario()
             && $usuario->concessoes()->whereNull('revogada_em')
-                ->whereHas('permissao', fn (Builder $query): Builder => $query->where('codigo', Permissao::ATENDER_SOLICITACOES))
+                ->whereHas('permissao', fn (Builder $query): Builder => $query->where('codigo', $codigo))
                 ->exists();
     }
 

@@ -17,6 +17,8 @@ class Permissao extends Model
 
     public const ATENDER_SOLICITACOES = 'atender-solicitacoes';
 
+    public const GERENCIAR_AGENDA = 'gerenciar-agenda';
+
     protected $table = 'permissoes';
 
     public function conceder(User $funcionario, User $responsavel, string $motivo): bool
@@ -42,12 +44,12 @@ class Permissao extends Model
             $destinatario = User::query()->lockForUpdate()->findOrFail($funcionario->getKey());
             Gate::forUser($responsavel)->authorize('gerenciar-permissoes');
 
-            if ($permissao->codigo !== self::ATENDER_SOLICITACOES) {
+            if (! in_array($permissao->codigo, [self::ATENDER_SOLICITACOES, self::GERENCIAR_AGENDA], true)) {
                 throw ValidationException::withMessages(['permissao' => 'Permissão fora do recorte administrativo.']);
             }
 
             if (! $revogar && ! $destinatario->isFuncionario()) {
-                throw ValidationException::withMessages(['funcionario' => 'A função de atendimento só pode ser concedida a funcionários.']);
+                throw ValidationException::withMessages(['funcionario' => 'Permissões administrativas só podem ser concedidas a funcionários.']);
             }
 
             $concessao = $permissao->concessoes()->where('user_id', $destinatario->id)->first();

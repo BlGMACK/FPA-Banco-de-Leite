@@ -30,4 +30,12 @@ class PermissaoFactory extends Factory
             'nome' => 'Atendimento de solicitações',
         ]);
     }
+
+    public function agenda(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'codigo' => Permissao::GERENCIAR_AGENDA,
+            'nome' => 'Gestão da agenda',
+        ]);
+    }
 }
