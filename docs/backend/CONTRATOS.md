@@ -324,7 +324,35 @@ As três questões iniciais receberam resposta explícita do usuário em 26/10/2
 
 ### Contrato técnico proposto da agenda — 26/10/2026
 
+**Atualização de implementação:** os models `Agendamento`, `ReservaAgenda` e `EventoAgendamento`, suas factories e o Gate `gerenciar-agenda` foram implementados após autorização do usuário. Solicitação e contato possuem relações com a agenda. Models mantêm proteção de atribuição em massa; os vínculos/casts não executam confirmação, reagendamento ou validações operacionais. Não há endpoints/telas de agenda nesta entrega.
+
+O catálogo em `PermissaoSeeder` agora prepara atendimento e agenda, sem conceder acessos nem criar usuários. `Permissao::conceder/revogar` aceita explicitamente os dois códigos, com autoria, motivo e histórico; demais códigos continuam rejeitados. Admin tem acesso administrativo à agenda; funcionário depende de concessão ativa; doadora e visitante não recebem acesso. Atendimento e agenda são independentes e acumuláveis. A verificação consulta o papel/concessão atuais, inclusive com instância de usuário previamente carregada. Nenhum Gate clínico foi criado.
+
+Nesta etapa, migrations e seeder **não foram executados no banco de desenvolvimento**. A preparação do catálogo não está conectada automaticamente ao `DatabaseSeeder`. Evidências em [Status](STATUS.md); a matriz de acesso abaixo está exercitada por testes de Gates e middleware em rota exclusiva de teste, não por endpoints de agenda em produção. As descrições seguintes preservam a proposta do fluxo web ainda pendente.
+
 Este detalhamento atende à autorização de continuar a especificação de persistência/autorização. **Schema preparado após autorização posterior:** quatro migrations e testes de integridade, sem aplicação ao banco de desenvolvimento. **Fluxo web e autorização de agenda ainda não implementados.** Fonte física em [Modelagem](MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026). Primeiro incremento: contato após admissão, confirmação, reagendamento, cancelamento e registro de visita não realizada. Registrar atendimento efetivamente realizado e editar/finalizar relatório ficam no incremento profissional seguinte; a separação evita conceder acesso clínico pela permissão de agenda.
+
+#### Operações de backend implementadas em 26/10/2026
+
+Após autorização para a próxima etapa, foram implementadas operações nos models, conforme a convenção administrativa existente. **Ainda não há controllers, rotas ou formulários de agenda:** os caminhos propostos abaixo continuam indisponíveis. Esta entrega não altera contatos de análise nem habilita ações clínicas.
+
+| Operação disponível no código | Entrada principal | Efeito |
+| --- | --- | --- |
+| `ContatoSolicitacao::registrarAcompanhamento` | Pedido, autor, UUID, versão do pedido, canal/resultado/destinatário/finalidade/resumo/próxima ação e horário local do contato | Contato com contexto e autor definidos no servidor, vínculo único ao pedido admitido, atualização da versão sem reabrir análise. |
+| `Agendamento::confirmar` | Pedido, autor, UUID, versão do pedido, contato realizado, responsável interno, modalidade/local, início/fim locais, motivo e declaração de combinação | Cria compromisso, reserva e evento atomicamente. |
+| `Agendamento::reagendar` | Compromisso, autor, UUID, versão do compromisso e novos dados/contato/motivo | Preserva o anterior como substituído, cria sucessor e troca a reserva na mesma transação. |
+| `Agendamento::cancelar` | Compromisso, autor, UUID, versão e motivo | Cancela, libera reserva e mantém admissão/histórico. |
+| `Agendamento::registrarNaoRealizacao` | Compromisso, autor, UUID, versão e motivo | Registra não realização após o início previsto, libera reserva e mantém admissão; não cria atendimento clínico. |
+
+Todas verificam `gerenciar-agenda`, inclusive antes de retornar um resultado repetido. Campos recebidos são validados por lista explícita; contexto, autoria, estados e vínculos são controlados no servidor. Erros de campos geram `ValidationException`; conflitos de versão, reserva, estado ou conteúdo de operação geram 409. A adaptação dessas exceções aos formulários e CSRF pertence ao próximo recorte web.
+
+Horários de entrada usam `Y-m-d\TH:i`, interpretados em `America/Sao_Paulo` e persistidos em UTC, sem alterar o fuso global da aplicação. Contato futuro é rejeitado; confirmação/reagendamento exige início futuro e fim posterior. Reagendamento exige outro contato realizado do mesmo acompanhamento, ocorrido após a confirmação anterior (comparação com precisão de minuto, igual à entrada). Declarar o acordo não envia mensagens nem verifica WhatsApp automaticamente.
+
+**Decisão do usuário nesta etapa:** bloquear e avisar sobre compromissos sobrepostos do mesmo funcionário. Implementado intervalo `[início, fim)`: compromissos adjacentes e horários distintos no mesmo dia são permitidos. A mensagem de validação informa que o funcionário já tem compromisso naquele horário. Deslocamento, capacidade de equipe e sobreposição de acompanhamentos diferentes da mesma interessada continuam sob definição/controle operacional; não são bloqueios adicionais implementados.
+
+As operações travam responsáveis em ordem de ID, depois pedido, compromisso e reserva, e consultam conflitos com leitura bloqueante. Assim, também serializam confirmações para o mesmo responsável quando ainda não existem reservas. Pedido admite uma única reserva atual. UUID/hash incluem operação, origem, autor e dados validados; retransmissão idêntica retorna o contato/evento anterior, inclusive após passar o horário do compromisso, sem duplicação. Reenvio não ignora revogação da permissão. Nova operação com versão antiga é conflito, sem repetição automática.
+
+Evidências de testes, incluindo os cenários de conexões independentes realmente executados, ficam em Status. Nenhuma migration/seeder aplicada ao desenvolvimento nesta entrega. Sem envio real de mensagens, agenda no navegador, relatório ou aprovação para doar.
 
 #### Autorização por função
 

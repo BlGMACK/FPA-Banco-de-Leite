@@ -4,6 +4,8 @@ Levantamento inicial de 22/10/2026, acrescido da preparação do schema administ
 
 ## Implementado
 
+Atualização mais recente: contatos após admissão e operações transacionais da agenda disponíveis no backend, ainda sem endpoints/telas. Veja [verificações das operações](#verificações-das-operações-de-agenda--26102026).
+
 | Área | O que existe | Fonte |
 | --- | --- | --- |
 | Sessão | Login, logout, regeneração de sessão e limitação por e-mail/IP após cinco falhas de login. | [LoginRequest](../../app/Http/Requests/Auth/LoginRequest.php), [controller](../../app/Http/Controllers/Auth/AuthenticatedSessionController.php). |
@@ -97,6 +99,8 @@ As seções anteriores registram o estado na ocasião de cada verificação; sua
 
 ## Não implementado no código analisado
 
+**Atualização da base de agenda:** models/factories, autorização `gerenciar-agenda` e operações transacionais já foram implementados; evidências nas seções abaixo. As referências históricas a esses itens como pendentes foram superadas. Endpoints e telas de agenda permanecem pendentes, assim como a aplicação do schema/catálogo ao banco de desenvolvimento.
+
 **Atualização posterior:** o schema da agenda foi preparado e verificado após autorização; veja as evidências abaixo. A especificação inicial citada a seguir foi superada apenas quanto à preparação física. Fluxo web, models e autorização de agenda continuam pendentes.
 
 **Especificação posterior em 26/10/2026:** detalhados o [schema proposto da agenda](MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026) e a [autorização/rotas propostas](CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026). Conferidos no código o contexto atual de contatos, o acesso ao acompanhamento e a restrição do catálogo a atendimento. Alterações apenas documentais nesta especificação; sem testes de aplicação, migrations ou seeders executados. A agenda continua não implementada.
@@ -139,3 +143,32 @@ Após autorização do usuário, quatro migrations aditivas foram preparadas: co
 Os processos de teste receberam `APP_ENV=testing`, `DB_CONNECTION`/`DB_DATABASE` explícitos e `DB_URL` vazio, sem alterar `.env`. `AgendaSchemaTest` usa `DatabaseMigrations`, com guarda do ambiente/banco antes da preparação; os dados são fictícios. Foi corrigido o rollback da tabela com autorreferência: remover sua FK de substituição antes de derrubar a tabela permite o teardown em SQLite com histórico de reagendamento.
 
 Cobertura e limites em [E-08](../SEGURANCA.md#e-08--schema-da-agenda-26102026). A base física não disponibiliza agenda no site: ainda faltam models, catálogo/Gates/concessões, validações, operações transacionais e telas. Não foram testados concorrência real entre conexões, sobreposição de responsáveis, fuso na interface ou regras clínicas. O banco de testes é descartável; rollback de schema com dados reais seria destrutivo e não está autorizado por esses testes.
+
+## Verificações de models e autorização da agenda — 26/10/2026
+
+Após autorização, implementados `Agendamento`, `ReservaAgenda` e `EventoAgendamento`, factories, relações com solicitações/contatos e Gate `gerenciar-agenda`. O seeder de catálogo e a concessão/revogação auditada agora contemplam atendimento e agenda. Não foram criadas rotas, telas, operações de reserva ou permissões clínicas. Fonte do comportamento em [Contratos](CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/AgendaModelsAuthorizationTest.php tests/Feature/EmployeeAuthorizationTest.php` em SQLite `:memory:` | **35 testes, 148 assertions aprovados**. |
+| Mesmo comando em MariaDB local exclusivo `banco_de_leite_schema_test` | **35 testes, 148 assertions aprovados**. |
+| `php vendor/bin/phpunit` em SQLite `:memory:` | **175 testes, 757 assertions aprovados**. |
+| `php vendor/bin/pint --dirty --format agent` e `git diff --check` | Aprovados. |
+
+Processos com `APP_ENV=testing`, conexão/banco explicitamente definidos e `DB_URL` vazio; classes protegidas pela guarda de banco isolado. A nova classe usa `RefreshDatabase`. Testes cobrem relações/casts, proteção de atribuição em massa, reserva sem ID incremental, histórico preservado após liberar reserva, autorização independente/acumulada, catálogo idempotente, revogação e autoria. O endpoint usado para testar middleware foi registrado somente dentro do teste.
+
+Nenhuma migration/seeder ou concessão executada no desenvolvimento; nenhuma alteração de `.env`, dependências ou dados reais. Sem teste de navegador, concorrência entre conexões ou operação real de agenda. Próximo recorte: contatos após admissão e confirmação/reagendamento/cancelamento transacionais, seguidos de telas, com os limites operacionais registrados em Contratos. Evidência de segurança: [E-09](../SEGURANCA.md#e-09--models-e-autorização-da-agenda-26102026).
+
+## Verificações das operações de agenda — 26/10/2026
+
+Após autorização para avançar, implementados contatos após admissão e confirmação, reagendamento, cancelamento e registro de não realização. O usuário confirmou o bloqueio de sobreposição do funcionário; horários distintos no mesmo dia continuam permitidos. Regras efetivas em [Contratos](CONTRATOS.md#operações-de-backend-implementadas-em-26102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit` em SQLite `:memory:` | **199 testes: 197 aprovados, 2 ignorados, 858 assertions**. Os dois ignorados exigem MariaDB para concorrência real. |
+| `php vendor/bin/phpunit tests/Feature/AgendaOperationsTest.php tests/Feature/AgendaConcurrencyTest.php` no MariaDB exclusivo `banco_de_leite_schema_test` | **24 testes e 117 assertions aprovados**. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Processos com `APP_ENV=testing`, conexão/banco explicitamente definidos e `DB_URL` vazio, sem alteração do `.env`. A guarda de isolamento precede a preparação do banco. Os testes concorrentes usam dois processos PHP e uma barreira transacional; uma primeira tentativa encontrou timeout na sincronização do teste, corrigido com sinalização por arquivos temporários removidos ao finalizar. A reexecução dos dois casos passou, assim como a execução conjunta acima.
+
+Não foram aplicados migrations/seeders ao desenvolvimento nem alteradas dependências ou dados reais. Não há envio automático de WhatsApp. Limites e cobertura em [E-10](../SEGURANCA.md#e-10--operações-e-concorrência-da-agenda-26102026). Próximo recorte: endpoints e formulários Blade de acompanhamento/agenda, com autorização, erros de validação/conflito e apresentação do histórico. Relatório e etapas clínicas continuam fora desta entrega.

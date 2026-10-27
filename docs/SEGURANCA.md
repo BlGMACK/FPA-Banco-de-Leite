@@ -56,6 +56,23 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 
 ## Evidências registradas
 
+### E-10 — operações e concorrência da agenda, 26/10/2026
+
+- Itens: SEG-02, SEG-09, SEG-10 e SEG-16. Fontes: `Agendamento`, `ContatoSolicitacao`, [AgendaOperationsTest](../tests/Feature/AgendaOperationsTest.php) e [AgendaConcurrencyTest](../tests/Feature/AgendaConcurrencyTest.php), alterações locais ainda sem commit.
+- Implementados contatos de acompanhamento e confirmação/reagendamento/cancelamento/não realização, com Gate antes de qualquer repetição, validação explícita, autoria do servidor, versões, UUID/hash e transação incluindo auditoria. Falha na auditoria reverte as demais gravações. Admissão não se converte em aprovação clínica.
+- Bloqueio de sobreposição autorizado pelo usuário: trava dos responsáveis em ordem estável, consulta de intervalos confirmados e mensagem de conflito. Horários adjacentes são permitidos; deslocamento continua manual.
+- `AgendaOperationsTest`: 22 testes e 101 assertions aprovados em SQLite e MariaDB. Cobrem entradas inválidas, contato incompatível, replay/conflito, permissão revogada, conversão de fuso, sobreposição, versões, histórico e rollback.
+- `AgendaConcurrencyTest`: 2 testes e 16 assertions aprovados no MariaDB exclusivo `banco_de_leite_schema_test`, com processos/conexões independentes. Disputas por mesmo responsável/horário entre pedidos distintos e pelo mesmo pedido com responsáveis distintos resultam em uma confirmação e um bloqueio. Esses testes são ignorados em SQLite antes de preparar o banco.
+- Validação restrita a essas operações e dois cenários concorrentes. Não cobre todas as combinações concorrentes de reagendamento/cancelamento, carga, interface, CSRF em endpoints futuros ou regras clínicas. Revisão por outra pessoa pendente. Resultados completos em [Status](backend/STATUS.md#verificações-das-operações-de-agenda--26102026).
+
+### E-09 — models e autorização da agenda, 26/10/2026
+
+- Implementados `Agendamento`, `ReservaAgenda` e `EventoAgendamento`, com proteção de atribuição em massa, relações e casts. Factories produzem dados fictícios relacionados; liberar a reserva via model não exclui agenda/histórico nem concede acesso ao responsável designado.
+- Gate `gerenciar-agenda` separado de atendimento. Admin tem alcance administrativo; funcionário depende do código concedido e ativo; visitante/doadora são negados, inclusive doadora com concessão indevida. Não há bypass global para relatórios ou aprovação clínica.
+- Catálogo idempotente prepara dois códigos sem criar funcionários/concessões. Concessão/revogação mantém lista explícita de códigos, motivo, autor e auditoria transacional. Verificados acúmulo, revogação independente, reativação sem duplicação, papel atualizado apesar de instância antiga e bloqueio de autoconcessão.
+- [AgendaModelsAuthorizationTest](../tests/Feature/AgendaModelsAuthorizationTest.php) e [EmployeeAuthorizationTest](../tests/Feature/EmployeeAuthorizationTest.php): 35 testes e 148 assertions aprovados em SQLite e MariaDB exclusivo. A rota de agenda usada para verificar middleware existe somente dentro do teste. Não representa endpoint disponibilizado na aplicação.
+- Nenhuma migration/seeder no desenvolvimento, nenhum acesso concedido a contas existentes e nenhuma permissão clínica criada. Operações transacionais da agenda, concorrência real e interface continuam pendentes. Resultados da suíte completa em [Status](backend/STATUS.md#verificações-de-models-e-autorização-da-agenda--26102026).
+
 ### E-08 — schema da agenda, 26/10/2026
 
 Fontes: [AgendaSchemaTest](../tests/Feature/AgendaSchemaTest.php), quatro migrations identificadas em [Modelagem](backend/MODELAGEM.md#desenho-físico-proposto-para-agenda--26102026) e [Status](backend/STATUS.md#verificações-do-schema-de-agenda--26102026).

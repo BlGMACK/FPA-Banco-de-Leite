@@ -4,6 +4,10 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 
 ## Estados usados
 
+Atualização mais recente: operações transacionais de agenda e contatos após admissão implementados no backend. O usuário confirmou bloqueio de sobreposição do responsável. Rotas e telas ainda estão pendentes; consulte [Contratos](backend/CONTRATOS.md#operações-de-backend-implementadas-em-26102026) e Status. Nenhuma dessas entregas representa aprovação clínica.
+
+Atualização posterior em 26/10/2026: models e autorização de agenda implementados, incluindo permissão independente e acumulável com atendimento. O fluxo web da agenda continua pendente; schema/catálogo não foram aplicados ao desenvolvimento nesta entrega. Consulte [Contratos](backend/CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026) e Status para o recorte efetivo.
+
 Avanço posterior em 26/10/2026: schema de agenda preparado em quatro migrations e testes de integridade, com autorização do usuário, sem aplicação ao banco de desenvolvimento. Models, permissão de agenda e fluxo web continuam pendentes; evidências em [Status](backend/STATUS.md).
 
 Atualização de 26/10/2026: o usuário relatou teste manual satisfatório do site após a entrega administrativa. O próximo recorte de agenda e relatório está em [especificação proposta](backend/CONTRATOS.md#próximo-recorte-agenda-e-relatório-de-visita--proposta-em-26102026), com decisões operacionais ainda pendentes. O relato manual e seus limites estão em Status; não substitui as validações pendentes descritas nas etapas anteriores.

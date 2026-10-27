@@ -36,6 +36,10 @@ A aplicação é um monólito web Laravel com páginas renderizadas por Blade e 
 
 ## Backend e frontend
 
+A base de agenda inclui models de agendamento, reserva e evento, sem rotas próprias ainda. O Gate `gerenciar-agenda` é independente de `atender-solicitacoes`; ambos utilizam concessões auditadas existentes. As capacidades podem ser acumuladas, sem ampliar o enum de papéis e sem acesso clínico automático. Catálogo/Gates não substituem a futura autorização dos endpoints de agenda.
+
+As operações transacionais estão em `Agendamento` (confirmar, reagendar, cancelar e registrar não realização) e `ContatoSolicitacao::registrarAcompanhamento`. Validam permissão, estado, versão e contato; preservam histórico e bloqueiam sobreposição do responsável. Ainda não estão expostas por controllers ou telas. Detalhes em [Contratos](backend/CONTRATOS.md#operações-de-backend-implementadas-em-26102026).
+
 O navegador recebe HTML, envia formulários com proteção CSRF e acompanha redirecionamentos. O backend autentica, valida, verifica permissões e persiste. O frontend exibe valores, erros e mensagens de sessão e oferece interações locais. Os detalhes do intercâmbio estão em [Contratos](backend/CONTRATOS.md).
 
 Esconder links na navegação não substitui a autorização do servidor. A aplicação usa middleware nas rotas de teste e condições Blade na navegação.
