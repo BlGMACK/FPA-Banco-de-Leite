@@ -2,6 +2,8 @@
 
 ## Natureza e estado
 
+Próximo recorte especificado: [atendimento e relatório narrativo](#atendimento-e-relatório-narrativo--especificação-de-28102026). Ciclos de rascunho/correção e decisões R1–R3 de acesso estão acordados com o usuário. O desenho técnico permanece proposto; não há implementação desse módulo.
+
 Regra vigente: [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026). Não há autocadastro nem conta de doadora. Rotas de agenda e criação interna estão descritas nas respectivas entregas abaixo; schema de contas ainda aguarda aplicação local por indisponibilidade do MySQL.
 
 A superfície atual e suas convenções abaixo são **implementadas, extraídas do código**; não representam aceite formal de produto. A seção de admissão ao final é **proposta**, baseada nas diretrizes informadas pelo usuário em 23/10/2026. Acordos precisam de decisão identificada. A integração atual usa HTML Blade, formulários e sessão, sem API REST de negócio.
@@ -524,3 +526,77 @@ O usuário determinou a retirada integral do acesso de doadoras e autorizou a re
 - A pessoa define sua própria senha pela recuperação por e-mail já existente. O cadastro não envia automaticamente convite, não inicia sessão da pessoa criada e não troca a sessão do operador. Entrega real de e-mail depende da configuração operacional; não foi homologada nesta tarefa.
 - A migration `2026_10_27_202742_restrict_users_to_internal_accounts` remove contas antigas com papel `doadora`, suas sessões de banco e tokens de recuperação; restringe o enum a `admin|funcionario`, sem padrão implícito, e acrescenta autoria da criação. Não altera interessadas, solicitações ou dados clínicos. FKs continuam ativas: vínculo inesperado impede a exclusão, sem apagar histórico em cascata. `down()` não restaura contas excluídas.
 - Seeder de desenvolvimento passa a criar somente admin/funcionário; catálogo inclui a permissão nova sem concedê-la automaticamente. Referências anteriores deste documento a autocadastro ou perfil doadora são histórico superado por esta decisão.
+
+## Atendimento e relatório narrativo — especificação de 28/10/2026
+
+**Estado:** detalhamento solicitado pelo usuário após ativar a agenda; proposta funcional/técnica, ainda sem código ou migrations. Origem **G**: relatos e respostas do usuário; **L**: distinção entre visita, triagem e avaliação descrita na documentação do legado; **P**: decisões de desenho propostas aqui. Não foi fornecido PDF e nenhuma regra profissional ou de aptidão foi inferida dele.
+
+### Acordos e limites
+
+- **G:** visita preferencialmente domiciliar, também possível no Banco; relatório narrativo amplo; rascunho editável e correções versionadas depois de finalizar; uma mesma pessoa pode acumular permissões; documentos/exames somente após visita e análise, quando indicados.
+- **P:** registrar a visita ocorrida e o relatório em um recorte próprio, preservando a cadeia solicitação → interessada e agendamento → atendimento → relatório → versões. O relatório não cria automaticamente ficha de triagem, avaliação de saúde, exigência de exame, aprovação de doação ou autorização de coleta. A separação de avaliação e triagem vem de L; os nomes e campos abaixo são novos.
+- Não entram: anexos, prescrições/requisitos de exames, assinatura digital certificada, recusa clínica, encaixes sem agenda, registro de várias visitas no mesmo agendamento ou edição/exclusão de histórico finalizado. Nome e data do autor representam autoria no sistema, não certificação de habilitação profissional.
+
+### Registro da realização e integração com a agenda
+
+1. **P:** a pessoa autorizada abre um agendamento confirmado vinculado a pedido admitido e à reserva atual. Informa início/fim efetivos da visita (horário de Marília), responsável efetivo e confirma que a visita ocorreu. O instante de gravação e o autor vêm da sessão/servidor, separados da data do fato.
+2. **P:** os instantes efetivos não podem estar no futuro; fim deve ser posterior ao início. Para este primeiro recorte, não registrar início anterior à confirmação do compromisso. Não exigir igualdade com o horário previsto: atraso ou variação de duração podem ser registrados. Mudança de responsável/modalidade/local em relação ao combinado exige justificativa operacional. Atendimento sem agenda anterior permanece pendente de regra própria.
+3. **P:** mesma transação registra atendimento único, marca agendamento `realizado`, libera a reserva, incrementa versões e cria relatório em rascunho vazio. A conclusão depende de declaração explícita; relógio, abertura de página ou passagem do fim previsto não criam atendimento.
+4. **P:** cancelado, substituído ou não realizado não podem gerar atendimento por esse endpoint. Equívoco em registro de não realização ou realização exige fluxo futuro de retificação com histórico, não edição silenciosa.
+5. **P:** ajustar a fila atual para não colocar novamente em “aguardando agendamento” quem já tem atendimento realizado. Sem visita e sem reserva: aguardando agenda. Com reserva: visita agendada. Com atendimento: visita realizada, relatório pendente/finalizado, conforme acesso. Novo retorno depois da primeira visita fica fora deste recorte, até definir sua motivação e vínculo; o backend também deve impedir nova confirmação nesse mesmo acompanhamento enquanto essa regra não existir.
+
+A mudança do item 5 é necessária porque `AgendaController::index` usa atualmente ausência de `reservaAgenda` como filtro, e `Agendamento::confirmar` não consulta atendimentos. Essas regras precisam evoluir juntas. A solicitação permanece `admitida`; realizar visita não conclui a avaliação.
+
+### Conteúdo, rascunho e versões
+
+**P:** formulário com um campo narrativo em texto simples, limite inicial de 30.000 caracteres. Pode conter as orientações prestadas, situação relatada e observações do ambiente conforme atuação autorizada, sem questionário clínico obrigatório inventado. Rascunho pode estar vazio; finalização exige texto com conteúdo após remover espaços. Renderizar escapado, preservando quebras de linha; sem editor HTML, upload ou exportação neste recorte.
+
+| Ação proposta | Pré-condição e resultado |
+| --- | --- |
+| Registrar realização | Cria atendimento e primeiro rascunho; não finaliza relatório. |
+| Salvar rascunho | Permissão de escrita e revisão atual; preserva autoria de criação e registra último editor/data. O salvamento não é assinatura/finalização. |
+| Finalizar | Texto não vazio, permissão e revisão atuais; cria versão imutável numerada com texto completo, autor e instante. |
+| Iniciar correção | Existe versão finalizada e não há correção aberta; exige motivo e copia a última finalizada para novo rascunho de trabalho. |
+| Salvar/finalizar correção | Não altera o texto finalizado anterior. A finalização acrescenta versão seguinte com referência à base e motivo; mantém as anteriores consultáveis mediante autorização. |
+
+**P:** no máximo um rascunho ativo por relatório. Enquanto a correção está aberta, a versão finalizada anterior continua sendo a vigente; não apresentar rascunho como resultado final. O botão de cancelar correção não entra inicialmente: descarte, anulação e retenção de rascunhos exigem regra própria. Recuperação de cada salvamento intermediário não está prometida; versões preservadas referem-se às finalizações.
+
+### Permissões: decisões confirmadas em 28/10/2026
+
+| Questão | Resposta explícita do usuário (G) | Efeito no desenho |
+| --- | --- | --- |
+| R1: leitura separada da escrita/finalização? | Separar leitura e escrita/finalização. | Duas capacidades concedíveis; consulta não permite editar ou finalizar. Detalhe de leitura de rascunhos segue proposta abaixo. |
+| R2: administrador tem acesso automático? | Administrador com acesso automático. | Prever acesso explícito do admin às capacidades deste módulo, sem concessão adicional. Não criar bypass global para capacidades clínicas futuras. |
+| R3: escrita permite continuar/corrigir relatório de outro autor? | Sim, qualquer profissional autorizado. | Não restringir escrita ao autor original. Registrar cada editor/finalizador e exigir motivo na correção, preservando versões e autoria anterior. |
+
+**P — aplicação técnica dos acordos:** a capacidade de escrita cobre registrar realização, manter rascunho e finalizar/corrigir, incluindo a leitura necessária a essas ações; não exige uma segunda concessão oculta para editar. Leitura isolada consulta versões finalizadas e histórico, sem acesso ao rascunho em elaboração. O alcance da leitura de rascunhos é proposta técnica, não resposta adicional presumida do usuário. A separação de um revisor obrigatório ou de um lançador administrativo depende de regra adicional do Banco. Os códigos sugeridos são `consultar-relatorios-visita` e `registrar-relatorios-visita`; nenhum foi criado. Atribuir profissional a uma agenda não concede essas permissões.
+
+| Acesso proposto a partir de R1–R3 | Finalizados/histórico | Rascunho | Registrar, editar, finalizar e corrigir |
+| --- | --- | --- | --- |
+| Admin | Sim | Sim | Sim, inclusive de outro autor |
+| Funcionário apenas com leitura | Sim | Não | Não |
+| Funcionário com escrita (com ou sem concessão de leitura) | Sim | Sim | Sim, inclusive de outro autor |
+| Apenas agenda/atendimento, sem capacidades de relatório | Somente situação operacional, sem conteúdo | Não | Não |
+| Visitante ou funcionário sem capacidades aplicáveis | Não | Não | Não |
+
+Atendimento administrativo e agenda, isoladamente, continuam sem acesso ao texto, rascunhos ou motivos narrativos de correção. Podem ver somente a situação operacional da visita/relatório. Proposta de unidade única: leitor autorizado consulta finalizados da unidade; escritor autorizado atua nos relatórios da unidade conforme R3. Concessões a funcionários devem ser explícitas, auditadas e revogáveis; admin tem acesso automático conforme R2. Acesso ao software não atesta competência profissional. Quais integrantes receberão as capacidades deve ser confirmado pela equipe, sem inventar cargos ou credenciais.
+
+### Telas, operações e segurança propostas
+
+- Lista própria de atendimentos/relatórios, com filtros fechados de situação/responsável e paginação; detalhe e edição sob autenticação e capacidade adequada. Quem só possui permissão de relatório não deve depender implicitamente de `gerenciar-agenda`: precisa de contexto mínimo próprio da visita.
+- GETs não criam rascunhos nem assumem atendimento. Escritas separadas para realização, salvar, finalizar e abrir correção; Laravel/Blade, CSRF e IDs consultados somente após autorização. Não introduzir API REST.
+- Entradas controladas: realização usa versão do agendamento; relatório usa revisão do registro. Todas as escritas têm UUID, hash de conteúdo validado, autor e alvo. Repetição idêntica autorizada não duplica versões; alteração de conteúdo com mesma operação ou revisão antiga retorna 409, sem sobrescrita automática.
+- Travas/transação seguem ordem consistente com a agenda existente (responsável, solicitação, agendamento, atendimento/relatório). Cancelamento versus realização e duas finalizações precisam de testes com conexões independentes; resultado deve ser uma operação válida e um conflito, sem registro parcial.
+- Autorização antecede inclusive replay. Não colocar texto clínico em URLs, logs, eventos da agenda, notificações ou histórico administrativo. Eventos do relatório guardam metadados de operação; o conteúdo fica nas tabelas restritas de relatório e versões. Mensagens de erro não expõem texto de terceiros.
+- Datas efetivas entram em `America/Sao_Paulo` e persistem em UTC, como a agenda; não reinterpretar datas legadas. Não há integração externa ou envio automático.
+
+### Critérios de aceite planejados (não executados)
+
+1. Permissões e escopo conforme R1–R3; visitante/funcionário sem concessão não leem nem escrevem, revogação vale na requisição seguinte e agenda/atendimento não recebem texto sensível.
+2. Realização única por agendamento válido; datas inválidas, versão antiga, cancelamento simultâneo e falha na auditoria não deixam atendimento/reserva/eventos parcialmente alterados.
+3. Rascunho vazio permitido, finalização vazia negada; cada finalização cria versão imutável; correção preserva a vigente anterior até finalizar e exige motivo/base corretos.
+4. Reenvios, duas finalizações e dois salvamentos concorrentes não duplicam nem apagam trabalho silenciosamente. Erros mantêm dados somente para usuário e contexto ainda autorizados.
+5. Fila/agenda não reabrem implicitamente quem já foi atendida. Solicitação continua admitida; não surgem aprovação, exames ou coleta automáticos.
+6. HTML escapado, CSRF, atribuição em massa e URL direta protegidos; datas/fuso, histórico e separação de conteúdo comprovados em testes. Migrations e concorrência em banco exclusivo; revisão visual posterior em navegador.
+
+O desenho físico proposto está em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026). R1–R3 foram respondidas explicitamente pelo usuário em 28/10/2026; isso fecha as decisões funcionais de acesso, sem converter os detalhes técnicos propostos em implementação ou homologação.

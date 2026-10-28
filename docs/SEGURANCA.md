@@ -56,6 +56,16 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 
 ## Evidências registradas
 
+### Planejamento de segurança do relatório — 28/10/2026 (sem implementação)
+
+Contratos/Modelagem propõem acesso separado do atendimento administrativo/agenda, validação por registro, autorização antes de replay, CSRF, texto escapado, versões finalizadas imutáveis e auditoria sem cópia do conteúdo clínico. R1–R3 confirmadas pelo usuário: leitura separada de escrita/finalização, acesso automático do admin e atuação de escritores autorizados em relatórios de outros autores. Implementar a exceção do admin explicitamente para este módulo, sem bypass global para capacidades futuras. Manter autoria original e de cada alteração, motivo de correção e versões anteriores.
+
+Testes planejados: matriz de acesso e revogação, exposição de texto entre módulos, relação atendimento/agendamento/versão-base, datas/fuso, finalização vazia, versões/replay, falha de auditoria e concorrência entre realização/cancelamento e salvamentos/finalizações. **Nenhum desses controles novos está implementado ou validado**; os testes existentes da agenda não os comprovam. Retenção, retificação de atendimento indevido e profissionais habilitados continuam pendentes.
+
+### E-14 — ativação local da agenda, 28/10/2026
+
+Aplicadas as quatro migrations de agenda em `banco_de_leite_dev`, lote 5, após autorização para avançar. Contagens anteriores/posteriores preservaram duas contas e uma solicitação, sem concessões automáticas; nenhuma migration pendente. `AgendaWebTest` e `AgendaConcurrencyTest` passaram no MariaDB exclusivo: **11 testes, 109 assertions**. Não houve recriação do desenvolvimento nem inserção de dados fictícios nele. Revisão visual não executada: ferramenta sem navegador disponível. Resultados e limites em [Status](backend/STATUS.md#ativação-local-da-agenda--28102026).
+
 ### E-13 — aplicação local das contas internas, 28/10/2026
 
 Reexecução autorizada após ativação do servidor: migration de retirada aplicada isoladamente em `banco_de_leite_dev` e `PermissaoSeeder` executado. Consultas de leitura confirmaram um admin, um funcionário, zero contas de doadora, enum obrigatório com apenas os dois papéis internos e sem padrão, três permissões no catálogo e zero concessões. Quatro migrations da agenda continuam pendentes. Sem recriação do banco, `DatabaseSeeder`, concessões automáticas ou teste de interface. A falha de conexão de E-12 está resolvida para esta aplicação; detalhes e limitação de `db:table` em [Status](backend/STATUS.md#aplicação-das-contas-internas--28102026).

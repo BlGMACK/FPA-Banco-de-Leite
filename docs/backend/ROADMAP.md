@@ -185,3 +185,11 @@ Verificação: inspeção estática dos documentos, código atual e schema local
 ## Atualização de acesso — 27/10/2026
 
 O usuário confirmou retirada do autocadastro e de todas as contas de doadora. Acesso interno exclusivo de admin/funcionário; criação de funcionários por admin ou funcionário com permissão específica. Implementados formulário interno, autoria e recuperação de senha para primeira definição, sem conceder permissões automaticamente. Ainda não há interface de concessão/revogação ou desativação de funcionários; isso requer recorte próprio. Entrega real de e-mail e revisão visual permanecem pendentes. A condição anterior de decidir sobre a permanência do Breeze público foi resolvida: `/register` foi removido.
+
+## Recorte de atendimento e relatório — 28/10/2026
+
+Após ativação local da agenda, o usuário autorizou trabalhar na etapa de definição do atendimento e relatório. [Contrato detalhado](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026) e [persistência proposta](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026) preparados sem implementar módulo ou alterar banco. Narrativa ampla, rascunho e versões após finalizar já são acordos; campos físicos e operações agora descritos são propostas.
+
+R1–R3 confirmadas pelo usuário em 28/10/2026: leitura separada de escrita/finalização; administrador com acesso automático; qualquer profissional autorizado para escrita pode continuar/corrigir relatório de outro autor, com autoria e versões preservadas. Não inferir habilitações profissionais ou cargos reais. Realização com data efetiva, uma visita por agendamento, texto simples, imutabilidade e tratamento da fila após visita estão propostos para revisão.
+
+R1–R3 fechadas e contrato atualizado. Próximo recorte de implementação: migrations e testes de integridade em banco exclusivo; depois permissões/models/transações, telas/testes de integração e ativação local autorizada/revisão manual. A construção posterior depende de autorização do recorte, não apenas desta posição no roadmap. Exames, anexos, decisão clínica, retornos e encaixes continuam fora dessa sequência inicial.

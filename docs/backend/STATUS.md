@@ -1,5 +1,21 @@
 # Status do backend
 
+## Especificação de atendimento e relatório — 28/10/2026
+
+Detalhados contratos, proposta de persistência, transições, integração à fila/agenda e cenários de teste. Conferidos no código: `Agendamento` ainda não registra realização; a fila usa ausência de reserva; `Permissao` aceita somente três códigos administrativos e concessões apenas a funcionários; `User` dá acesso administrativo automático a admin. Essas regras não foram ampliadas silenciosamente para relatórios.
+
+Questões R1–R3 respondidas pelo usuário em 28/10/2026: leitura separada da escrita/finalização, acesso automático do admin e continuidade/correção por qualquer profissional autorizado. Matriz de acesso atualizada em Contratos, distinguindo acordos de detalhes técnicos propostos. Origem dos acordos e ausência de PDF identificadas. Alterações somente em Markdown; sem testes de aplicação, migrations, seeders ou mudanças no banco nesta especificação. As verificações anteriores da agenda não validam o módulo proposto. Próximo recorte: preparar migrations e testes isolados após autorização de implementação.
+
+## Ativação local da agenda — 28/10/2026
+
+Após autorização para o próximo passo, aplicadas exclusivamente as quatro migrations da agenda com `php artisan migrate` e quatro opções `--path` explícitas, sem recriação do banco ou execução de seeders. `migrate:status --no-interaction` confirmou todas as 15 migrations aplicadas; as quatro da agenda estão no lote 5.
+
+Consultas de contagem antes/depois em `banco_de_leite_dev` confirmaram preservação de duas contas internas e uma solicitação; interessadas, contatos e concessões permaneceram zerados. As três tabelas novas de agenda estão vazias. Nenhum dado fictício foi inserido no desenvolvimento, nenhuma permissão foi concedida e não houve alteração de `.env` ou dependências.
+
+Reexecução em `banco_de_leite_schema_test`, com `APP_ENV=testing`, `DB_CONNECTION=mysql`, `DB_DATABASE` explícito e `DB_URL` vazio: `php vendor/bin/phpunit tests/Feature/AgendaWebTest.php tests/Feature/AgendaConcurrencyTest.php`, **11 testes e 109 assertions aprovados**. Cobre fluxo web e os dois cenários concorrentes existentes, não carga nem todas as combinações de operações. Sem mudança de código, a suíte completa não foi repetida.
+
+Inventário da ferramenta de UI novamente retornou zero navegadores; revisão visual/responsividade e teste manual local continuam pendentes. Admin já possui acesso pelo Gate; funcionário depende da concessão explícita. Próximo recorte: detalhar atendimento/relatório e permissões profissionais antes de implementar, preservando rascunho e versões após finalização já acordados. Não houve commit nesta etapa.
+
 ## Aplicação das contas internas — 28/10/2026
 
 Após o usuário reativar o servidor e autorizar nova tentativa, a migration `2026_10_27_202742_restrict_users_to_internal_accounts` foi aplicada isoladamente em `banco_de_leite_dev`, lote 4, usando `migrate --path=database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php --no-interaction`. A pendência de conexão registrada em 27/10 foi resolvida.
