@@ -230,4 +230,9 @@ class Agendamento extends Model
     {
         return $this->hasMany(EventoAgendamento::class, 'agendamento_id');
     }
+
+    public function atendimento(): HasOne
+    {
+        return $this->hasOne(Atendimento::class, 'agendamento_id');
+    }
 }
