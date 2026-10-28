@@ -46,8 +46,6 @@ class EmployeeAuthorizationTest extends TestCase
             'employee without grant' => ['funcionario', false, false, false, false],
             'employee with active grant' => ['funcionario', true, false, true, false],
             'employee revoked' => ['funcionario', true, true, false, false],
-            'donor' => ['doadora', false, false, false, false],
-            'donor with stray grant' => ['doadora', true, false, false, false],
         ];
     }
 
@@ -90,7 +88,7 @@ class EmployeeAuthorizationTest extends TestCase
     public function test_current_database_role_overrides_a_stale_admin_instance(): void
     {
         $admin = User::factory()->admin()->create();
-        User::query()->whereKey($admin->id)->update(['role' => 'doadora']);
+        User::query()->whereKey($admin->id)->update(['role' => 'funcionario']);
 
         $this->assertFalse(Gate::forUser($admin)->allows('gerenciar-permissoes'));
         $this->assertFalse(Gate::forUser($admin)->allows(Permissao::ATENDER_SOLICITACOES));
@@ -142,7 +140,6 @@ class EmployeeAuthorizationTest extends TestCase
     public static function invalidGrants(): array
     {
         return [
-            'donor' => ['doadora', 'atender-solicitacoes', 'Motivo', 'funcionario'],
             'admin' => ['admin', 'atender-solicitacoes', 'Motivo', 'funcionario'],
             'clinical permission' => ['funcionario', 'aprovar-doacao', 'Motivo', 'permissao'],
             'blank reason' => ['funcionario', 'atender-solicitacoes', '  ', 'motivo'],
@@ -186,7 +183,7 @@ class EmployeeAuthorizationTest extends TestCase
         $this->seed(PermissaoSeeder::class);
         $this->seed(PermissaoSeeder::class);
 
-        $this->assertDatabaseCount('permissoes', 2);
+        $this->assertDatabaseCount('permissoes', 3);
         $this->assertDatabaseHas('permissoes', ['codigo' => Permissao::ATENDER_SOLICITACOES]);
         $this->assertDatabaseHas('permissoes', ['codigo' => Permissao::GERENCIAR_AGENDA]);
         $this->assertDatabaseCount('permissao_user', 0);
@@ -198,9 +195,9 @@ class EmployeeAuthorizationTest extends TestCase
         $this->post('/register', [
             'name' => 'Pessoa Fictícia', 'email' => 'nova@example.test',
             'password' => 'password', 'password_confirmation' => 'password', 'role' => 'admin',
-        ])->assertRedirect(route('dashboard', absolute: false));
+        ])->assertNotFound();
 
-        $this->assertDatabaseHas('users', ['email' => 'nova@example.test', 'role' => 'doadora']);
+        $this->assertDatabaseMissing('users', ['email' => 'nova@example.test']);
         $this->assertFalse(Gate::allows('gerenciar-permissoes'));
     }
 
@@ -208,11 +205,11 @@ class EmployeeAuthorizationTest extends TestCase
     {
         $user = User::factory()->create();
         $user->fill(['name' => 'Nome Atualizado', 'role' => 'admin'])->save();
-        $this->assertSame('doadora', $user->fresh()->role);
+        $this->assertSame('funcionario', $user->fresh()->role);
 
         $this->actingAs($user)->patch('/profile', [
             'name' => 'Nome Atualizado', 'email' => $user->email, 'role' => 'admin',
         ])->assertRedirect('/profile');
-        $this->assertSame('doadora', $user->fresh()->role);
+        $this->assertSame('funcionario', $user->fresh()->role);
     }
 }

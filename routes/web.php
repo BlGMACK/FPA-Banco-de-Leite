@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
+use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,11 @@ Route::middleware(['auth', 'can:gerenciar-agenda'])->prefix('interno/agenda')->n
     }
 });
 
+Route::middleware(['auth', 'can:criar-funcionarios'])->prefix('interno/funcionarios')->name('interno.funcionarios.')->group(function (): void {
+    Route::get('/novo', [FuncionarioController::class, 'create'])->name('create');
+    Route::post('/', [FuncionarioController::class, 'store'])->name('store');
+});
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -55,20 +61,6 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
-});
-
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin-teste', function () {
-        return view('teste-papel', ['papel' => 'Administração']);
-    });
-});
-
-Route::middleware(['auth', 'role:admin,funcionario'])->group(function () {
-    Route::get('/interno-teste', function () {
-        return view('teste-papel', [
-            'papel' => 'Administração ou Funcionário',
-        ]);
-    });
 });
 
 require __DIR__.'/auth.php';

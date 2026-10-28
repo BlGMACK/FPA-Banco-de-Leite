@@ -174,14 +174,14 @@ class AgendaOperationsTest extends TestCase
         $this->assertDatabaseCount('agendamentos', 0);
     }
 
-    public function test_contact_from_other_request_and_donor_as_responsible_are_rejected(): void
+    public function test_contact_from_other_request_and_missing_responsible_are_rejected(): void
     {
         $pedido = $this->pedido();
         $autor = User::factory()->admin()->create();
         $dados = $this->dados($pedido, $autor);
         $outroContato = $this->contato($this->pedido());
         $this->invalid(fn () => Agendamento::confirmar($pedido->id, $autor, array_replace($dados, ['contato_id' => $outroContato->id])), 'contato_id');
-        $this->invalid(fn () => Agendamento::confirmar($pedido->id, $autor, array_replace($dados, ['responsavel_user_id' => User::factory()->create()->id])), 'responsavel_user_id');
+        $this->invalid(fn () => Agendamento::confirmar($pedido->id, $autor, array_replace($dados, ['responsavel_user_id' => 999999])), 'responsavel_user_id');
         $this->assertDatabaseCount('agendamentos', 0);
     }
 

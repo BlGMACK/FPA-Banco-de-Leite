@@ -14,31 +14,23 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
-{
-    // Um usuário de cada papel, com senha previsível — só para
-    // desenvolvimento local. Usados para testar manualmente se o
-    // middleware de permissão realmente bloqueia quem não deveria entrar.
-    User::factory()->create([
-        'name' => 'Admin Teste',
-        'email' => 'admin@teste.com',
-        'role' => 'admin',
-        'password' => bcrypt('senha123'),
-    ]);
+    {
+        // Contas internas com senha previsível — só para
+        // desenvolvimento local. Usados para testar manualmente se o
+        // middleware de permissão realmente bloqueia quem não deveria entrar.
+        User::factory()->create([
+            'name' => 'Admin Teste',
+            'email' => 'admin@teste.com',
+            'role' => 'admin',
+            'password' => bcrypt('senha123'),
+        ]);
 
-    User::factory()->create([
-        'name' => 'Funcionário Teste',
-        'email' => 'funcionario@teste.com',
-        'role' => 'funcionario',
-        'password' => bcrypt('senha123'),
-    ]);
+        User::factory()->create([
+            'name' => 'Funcionário Teste',
+            'email' => 'funcionario@teste.com',
+            'role' => 'funcionario',
+            'password' => bcrypt('senha123'),
+        ]);
 
-    User::factory()->create([
-        'name' => 'Doadora Teste',
-        'email' => 'doadora@teste.com',
-        'role' => 'doadora',
-        'password' => bcrypt('senha123'),
-    ]);
-}
-
-    
+    }
 }

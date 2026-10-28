@@ -35,7 +35,6 @@ class AgendaModelsAuthorizationTest extends TestCase
             'agenda' => ['funcionario', false, true, false, true],
             'ambas' => ['funcionario', true, true, true, true],
             'admin' => ['admin', false, false, true, true],
-            'doadora com concessão indevida' => ['doadora', false, true, false, false],
         ];
     }
 
@@ -92,7 +91,7 @@ class AgendaModelsAuthorizationTest extends TestCase
     public function test_current_role_and_existence_override_stale_user_for_agenda(): void
     {
         $usuario = User::factory()->admin()->create();
-        User::whereKey($usuario->id)->update(['role' => 'doadora']);
+        User::whereKey($usuario->id)->update(['role' => 'funcionario']);
         $this->assertFalse($usuario->podeGerenciarAgenda());
         User::whereKey($usuario->id)->delete();
         $this->assertFalse($usuario->podeGerenciarAgenda());
@@ -113,11 +112,11 @@ class AgendaModelsAuthorizationTest extends TestCase
         }
     }
 
-    public function test_agenda_cannot_be_granted_to_donor(): void
+    public function test_agenda_grants_are_only_for_employees_not_admins(): void
     {
         $agenda = Permissao::factory()->agenda()->create();
         try {
-            $agenda->conceder(User::factory()->create(), User::factory()->admin()->create(), 'Tentativa');
+            $agenda->conceder(User::factory()->admin()->create(), User::factory()->admin()->create(), 'Tentativa');
             $this->fail('Destinatário inválido deveria ser rejeitado.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('funcionario', $exception->errors());

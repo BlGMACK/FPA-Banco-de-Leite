@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureInternalAccount;
 use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [EnsureInternalAccount::class]);
         // "role" é o nome curto usado nas rotas: ->middleware('role:admin').
         // Sem esse alias, teríamos que escrever o nome completo da classe
         // em cada rota — o alias só torna isso mais legível.

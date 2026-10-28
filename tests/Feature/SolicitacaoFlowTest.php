@@ -188,18 +188,18 @@ class SolicitacaoFlowTest extends TestCase
     public function test_unauthorized_roles_cannot_read_or_write_requests(string $role): void
     {
         $pedido = Solicitacao::factory()->create();
-        $this->actingAs(User::factory()->create(['role' => $role]));
-        $this->get('/interno/solicitacoes')->assertForbidden();
-        $this->get('/interno/solicitacoes/nova')->assertForbidden();
-        $this->get('/interno/solicitacoes/'.$pedido->id)->assertForbidden()->assertDontSee($pedido->cpf);
-        $this->get('/interno/solicitacoes/999999')->assertForbidden();
-        $this->post('/interno/solicitacoes', [])->assertForbidden();
+        $user = User::factory()->create(['role' => $role]);
+        $this->actingAs($user)->get('/interno/solicitacoes')->assertForbidden();
+        $this->actingAs($user)->get('/interno/solicitacoes/nova')->assertForbidden();
+        $this->actingAs($user)->get('/interno/solicitacoes/'.$pedido->id)->assertForbidden()->assertDontSee($pedido->cpf);
+        $this->actingAs($user)->get('/interno/solicitacoes/999999')->assertForbidden();
+        $this->actingAs($user)->post('/interno/solicitacoes', [])->assertForbidden();
         $this->assertDatabaseCount('solicitacoes', 1);
     }
 
     public static function deniedRoles(): array
     {
-        return ['donor' => ['doadora'], 'employee without grant' => ['funcionario']];
+        return ['employee without grant' => ['funcionario']];
     }
 
     public function test_guest_is_redirected_from_private_routes(): void

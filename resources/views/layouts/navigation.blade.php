@@ -11,12 +11,9 @@
                 @can('gerenciar-agenda')
                     <li class="nav-item"><a class="nav-link" href="{{ route('interno.agenda.index') }}">Agenda</a></li>
                 @endcan
-                @if (Auth::user()->isAdmin())
-                    <li class="nav-item"><a class="nav-link" href="{{ url('/admin-teste') }}">Teste administrativo</a></li>
-                @endif
-                @if (Auth::user()->isAdmin() || Auth::user()->isFuncionario())
-                    <li class="nav-item"><a class="nav-link" href="{{ url('/interno-teste') }}">Teste interno</a></li>
-                @endif
+                @can('criar-funcionarios')
+                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.funcionarios.create') }}">Cadastrar funcionário</a></li>
+                @endcan
             </ul>
             <div class="d-flex flex-wrap align-items-center gap-3 py-2">
                 <span class="small text-body-secondary">{{ Auth::user()->name }}</span>

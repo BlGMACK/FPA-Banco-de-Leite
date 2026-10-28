@@ -1,5 +1,6 @@
 <x-guest-layout>
-    <h1 class="h4 mb-4">Entrar</h1>
+    <h1 class="h4 mb-3">Acesso da equipe</h1>
+    <p class="text-body-secondary small">Acesso exclusivo para funcionários e administradores do Banco de Leite. Solicite sua conta à equipe responsável.</p>
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -45,5 +46,5 @@
             </x-primary-button>
         </div>
     </form>
-    <p class="mt-4 mb-0 small">Ainda não tem conta? <a href="{{ route('register') }}">Cadastre-se</a></p>
+    <p class="mt-4 mb-0 small">Quer doar leite humano? <a href="{{ route('solicitacoes.create') }}">Envie sua solicitação sem criar uma conta.</a></p>
 </x-guest-layout>

@@ -66,6 +66,11 @@ class User extends Authenticatable
                 ->exists();
     }
 
+    public function podeCriarFuncionarios(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::CRIAR_FUNCIONARIOS);
+    }
+
     // Métodos auxiliares de leitura — usados tanto pelo middleware quanto
     // pelas views Blade (ex.: @if($user->isAdmin()) para esconder um botão).
     // Mantêm o nome do papel ("admin", "funcionario"...) como o único lugar
@@ -78,10 +83,5 @@ class User extends Authenticatable
     public function isFuncionario(): bool
     {
         return $this->role === 'funcionario';
-    }
-
-    public function isDoadora(): bool
-    {
-        return $this->role === 'doadora';
     }
 }
