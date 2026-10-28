@@ -145,7 +145,7 @@ class AtendimentoSolicitacaoTest extends TestCase
         $this->assertDatabaseCount('interessadas', 1);
         $this->assertDatabaseCount('users', $contas);
         $this->assertDatabaseHas('eventos_solicitacao', ['tipo' => 'admissao', 'autor_user_id' => $autor->id, 'solicitacao_id' => $pedido->id]);
-        $this->get('/interno/acompanhamentos/'.$pedido->id)->assertOk()->assertSee('pendente de agendamento')->assertSee('A aprovação para doar ainda depende');
+        $this->get('/interno/acompanhamentos/'.$pedido->id)->assertOk()->assertSee('consultar programação com a equipe de agenda')->assertSee('A aprovação para doar ainda depende');
         $this->get('/interno/acompanhamentos')->assertOk()->assertSee($pedido->nome_completo);
         $this->post('/interno/solicitacoes/'.$pedido->id.'/admissao', $dados)->assertRedirect();
         $this->assertDatabaseCount('interessadas', 1);

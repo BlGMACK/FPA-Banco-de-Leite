@@ -8,6 +8,9 @@
                 @can('atender-solicitacoes')
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.solicitacoes.*') ? 'active' : '' }}" href="{{ route('interno.solicitacoes.index') }}">Solicitações</a></li>
                 @endcan
+                @can('gerenciar-agenda')
+                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.agenda.index') }}">Agenda</a></li>
+                @endcan
                 @if (Auth::user()->isAdmin())
                     <li class="nav-item"><a class="nav-link" href="{{ url('/admin-teste') }}">Teste administrativo</a></li>
                 @endif

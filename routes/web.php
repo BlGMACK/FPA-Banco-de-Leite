@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SolicitacaoController;
@@ -29,6 +30,16 @@ Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/solicit
 Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/acompanhamentos')->name('interno.acompanhamentos.')->group(function (): void {
     Route::get('/', [AtendimentoSolicitacaoController::class, 'index'])->name('index');
     Route::get('/{solicitacao}', [AtendimentoSolicitacaoController::class, 'show'])->whereNumber('solicitacao')->name('show');
+});
+
+Route::middleware(['auth', 'can:gerenciar-agenda'])->prefix('interno/agenda')->name('interno.agenda.')->group(function (): void {
+    Route::get('/', [AgendaController::class, 'index'])->name('index');
+    Route::get('/acompanhamentos/{solicitacao}', [AgendaController::class, 'show'])->whereNumber('solicitacao')->name('acompanhamentos.show');
+    Route::post('/acompanhamentos/{solicitacao}/contatos', [AgendaController::class, 'contato'])->whereNumber('solicitacao')->name('contatos.store');
+    Route::post('/acompanhamentos/{solicitacao}/agendamentos', [AgendaController::class, 'store'])->whereNumber('solicitacao')->name('store');
+    foreach (['reagendamentos', 'cancelamento', 'nao-realizacao'] as $acao) {
+        Route::post('/{agendamento}/'.$acao, [AgendaController::class, 'alterar'])->whereNumber('agendamento')->name($acao.'.store');
+    }
 });
 
 Route::get('/dashboard', function () {
