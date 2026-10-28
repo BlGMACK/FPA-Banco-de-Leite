@@ -1,5 +1,13 @@
 # Status do backend
 
+## Aplicação das contas internas — 28/10/2026
+
+Após o usuário reativar o servidor e autorizar nova tentativa, a migration `2026_10_27_202742_restrict_users_to_internal_accounts` foi aplicada isoladamente em `banco_de_leite_dev`, lote 4, usando `migrate --path=database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php --no-interaction`. A pendência de conexão registrada em 27/10 foi resolvida.
+
+Executado também `db:seed --class=PermissaoSeeder --no-interaction`, conforme a atualização de catálogo já prevista. Consultas posteriores confirmaram uma conta admin, uma funcionário e nenhuma doadora; enum `admin|funcionario`, obrigatório e sem padrão; três códigos no catálogo e zero concessões a funcionários. Nenhuma conta interna foi recriada e não houve `migrate:fresh` ou `DatabaseSeeder`.
+
+`migrate:status` confirmou a aplicação e as quatro migrations da agenda ainda pendentes. `db:table users` não concluiu por falta da extensão PHP `intl`; a conferência de contas/coluna/catálogo foi feita por consultas somente de leitura, sem exibir dados pessoais. Sem alteração de código ou repetição da suíte de testes nesta aplicação. As evidências anteriores de testes continuam registradas abaixo. Não houve commit nesta etapa.
+
 Levantamento inicial de 22/10/2026, acrescido da preparação do schema administrativo em 24/10/2026. **Implementado** indica presença no código; **validado** exige evidência de execução identificada. Este levantamento não homologou o sistema.
 
 ## Fluxo web da agenda — 27/10/2026

@@ -4,6 +4,8 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 
 ## Estados usados
 
+Atualização local em 28/10/2026: migration de retirada das contas de doadora e catálogo de permissões aplicados com autorização. Confirmadas somente as duas contas internas existentes, sem concessões automáticas. As quatro migrations de agenda continuam pendentes. Evidência em [Status](backend/STATUS.md#aplicação-das-contas-internas--28102026); os relatos de conexão indisponível abaixo são históricos.
+
 Decisão vigente de acesso em 27/10/2026: **não existem contas nem área autenticada de doadora**. O público envia solicitações sem conta; autenticação é exclusiva de `admin` e `funcionario`. Autocadastro foi removido. Administradores e funcionários com `criar-funcionarios` cadastram funcionários, sem conceder permissões nem criar administradores. A migration de retirada remove contas antigas e o valor `doadora` do enum atual; referências nas migrations anteriores e nas evidências históricas não autorizam recriar esse acesso. Consulte Contratos e Status para implementação e aplicação local.
 
 Atualização em 27/10/2026: a agenda recebeu rotas e telas Blade de lista, contatos, confirmação, reagendamento, cancelamento, não realização e histórico, protegidas por `gerenciar-agenda`. A revisão visual e a ativação do schema/catálogo no desenvolvimento permanecem pendentes. Detalhes e resultados em [Status](backend/STATUS.md#fluxo-web-da-agenda--27102026); os registros abaixo preservam as etapas anteriores.

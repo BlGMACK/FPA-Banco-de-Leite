@@ -56,6 +56,10 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 
 ## Evidências registradas
 
+### E-13 — aplicação local das contas internas, 28/10/2026
+
+Reexecução autorizada após ativação do servidor: migration de retirada aplicada isoladamente em `banco_de_leite_dev` e `PermissaoSeeder` executado. Consultas de leitura confirmaram um admin, um funcionário, zero contas de doadora, enum obrigatório com apenas os dois papéis internos e sem padrão, três permissões no catálogo e zero concessões. Quatro migrations da agenda continuam pendentes. Sem recriação do banco, `DatabaseSeeder`, concessões automáticas ou teste de interface. A falha de conexão de E-12 está resolvida para esta aplicação; detalhes e limitação de `db:table` em [Status](backend/STATUS.md#aplicação-das-contas-internas--28102026).
+
 ### E-12 — acesso exclusivamente interno, 27/10/2026
 
 - Decisão explícita do usuário: sem contas/área autenticada de doadora, sem autocadastro; criação de funcionário por admin ou funcionário com permissão específica. Login e redefinição selecionam somente papéis internos; middleware web revalida existência/papel e encerra sessão inválida. Removidos controller/view/rotas de registro público, helper doadora, conta doadora do seeder e telas/links de demonstração.
