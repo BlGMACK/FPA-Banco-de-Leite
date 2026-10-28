@@ -4,6 +4,10 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 
 ## Estados usados
 
+Decisão vigente de acesso em 27/10/2026: **não existem contas nem área autenticada de doadora**. O público envia solicitações sem conta; autenticação é exclusiva de `admin` e `funcionario`. Autocadastro foi removido. Administradores e funcionários com `criar-funcionarios` cadastram funcionários, sem conceder permissões nem criar administradores. A migration de retirada remove contas antigas e o valor `doadora` do enum atual; referências nas migrations anteriores e nas evidências históricas não autorizam recriar esse acesso. Consulte Contratos e Status para implementação e aplicação local.
+
+Atualização em 27/10/2026: a agenda recebeu rotas e telas Blade de lista, contatos, confirmação, reagendamento, cancelamento, não realização e histórico, protegidas por `gerenciar-agenda`. A revisão visual e a ativação do schema/catálogo no desenvolvimento permanecem pendentes. Detalhes e resultados em [Status](backend/STATUS.md#fluxo-web-da-agenda--27102026); os registros abaixo preservam as etapas anteriores.
+
 Atualização mais recente: operações transacionais de agenda e contatos após admissão implementados no backend. O usuário confirmou bloqueio de sobreposição do responsável. Rotas e telas ainda estão pendentes; consulte [Contratos](backend/CONTRATOS.md#operações-de-backend-implementadas-em-26102026) e Status. Nenhuma dessas entregas representa aprovação clínica.
 
 Atualização posterior em 26/10/2026: models e autorização de agenda implementados, incluindo permissão independente e acumulável com atendimento. O fluxo web da agenda continua pendente; schema/catálogo não foram aplicados ao desenvolvimento nesta entrega. Consulte [Contratos](backend/CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026) e Status para o recorte efetivo.

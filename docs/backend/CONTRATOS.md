@@ -2,6 +2,8 @@
 
 ## Natureza e estado
 
+Regra vigente: [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026). Não há autocadastro nem conta de doadora. Rotas de agenda e criação interna estão descritas nas respectivas entregas abaixo; schema de contas ainda aguarda aplicação local por indisponibilidade do MySQL.
+
 A superfície atual e suas convenções abaixo são **implementadas, extraídas do código**; não representam aceite formal de produto. A seção de admissão ao final é **proposta**, baseada nas diretrizes informadas pelo usuário em 23/10/2026. Acordos precisam de decisão identificada. A integração atual usa HTML Blade, formulários e sessão, sem API REST de negócio.
 
 Fontes: [rotas web](../../routes/web.php), [rotas de autenticação](../../routes/auth.php), [controllers Auth](../../app/Http/Controllers/Auth), [ProfileController](../../app/Http/Controllers/ProfileController.php) e [views](../../resources/views).
@@ -16,8 +18,8 @@ Requisições que esperam JSON têm tratamento de erros previsto em [bootstrap/a
 
 | Acesso | Método e caminho | Entrada / saída ou efeito |
 | --- | --- | --- |
-| Público | GET `/` | View `inicio`, demonstração Bootstrap. |
-| Visitante (`guest`) | GET/POST `/register` | View `auth.register`; POST recebe `name`, `email`, `password`, `password_confirmation`; cria conta e autentica; redireciona ao painel. |
+| Público | GET `/` | View `inicio`, acesso à solicitação sem conta e ao login da equipe. |
+| Público | GET/POST `/register` | Removidos; resposta 404. |
 | Visitante | GET/POST `/login` | View `auth.login`; POST recebe `email`, `password` e `remember` opcional; autentica e regenera sessão; destino pretendido ou painel. |
 | Visitante | GET/POST `/forgot-password` | View `auth.forgot-password`; POST recebe `email`; solicita link; volta com status ou erro. |
 | Visitante | GET `/reset-password/{token}`, POST `/reset-password` | View `auth.reset-password` recebe `request`; POST recebe `token`, `email`, `password`, `password_confirmation`; sucesso redireciona ao login. |
@@ -31,8 +33,6 @@ Requisições que esperam JSON têm tratamento de erros previsto em [bootstrap/a
 | Autenticado | GET `/verify-email/{id}/{hash}` | URL assinada, limite `6,1`; marca verificação e redireciona com `?verified=1`. |
 | Autenticado | POST `/email/verification-notification` | Limite `6,1`; solicita notificação ou redireciona se já verificado. |
 | Autenticado | POST `/logout` | Encerra/invalida sessão e volta ao início. |
-| Admin | GET `/admin-teste` | View `teste-papel`, variável `papel`. Apoio de desenvolvimento. |
-| Admin ou funcionário | GET `/interno-teste` | Mesma view com descrição do grupo. Apoio de desenvolvimento. |
 
 [bootstrap/app.php](../../bootstrap/app.php) também registra GET `/up` como health check do framework, sem contrato de domínio.
 
@@ -50,14 +50,13 @@ Cadastro e atualização de perfil exigem nome e e-mail, com limite de 255 carac
 
 A integração do modal usa eventos `open-modal`/`close-modal`, identificador `confirm-user-deletion` e atributos `data-blh-modal`/`data-show`: [JavaScript](../../resources/js/app.js), [componente](../../resources/views/components/modal.blade.php), [formulário](../../resources/views/profile/partials/delete-user-form.blade.php).
 
-[User](../../app/Models/User.php) não implementa `MustVerifyEmail`; portanto, não se deve prometer bloqueio de acesso por e-mail não verificado. O padrão de novo cadastro é `doadora`, definido no banco; não há campo de papel no contrato público.
+[User](../../app/Models/User.php) não implementa `MustVerifyEmail`; portanto, não se deve prometer bloqueio de acesso por e-mail não verificado. Contas são internas, criadas por operador autorizado; o servidor fixa funcionário. O schema novo não tem padrão implícito de papel.
 
-| Rota de apoio | Admin | Funcionário | Doadora | Sem sessão |
+| Criação de funcionário | Admin | Funcionário com permissão | Funcionário sem permissão | Sem sessão |
 | --- | --- | --- | --- | --- |
-| `/admin-teste` | Permitido | 403 | 403 | Login |
-| `/interno-teste` | Permitido | Permitido | 403 | Login |
+| GET formulário / POST criação | Permitido | Permitido | 403 | Login |
 
-A matriz descreve o código do [middleware](../../app/Http/Middleware/EnsureUserHasRole.php), sem afirmar execução de teste completo. Esconder um item no menu não autoriza o usuário no servidor. Papéis não definem ainda permissões de módulos futuros.
+A matriz é exercitada por `FuncionarioCreationTest`. Rotas de demonstração foram removidas. Esconder um item no menu não autoriza o usuário no servidor; permissões de módulos continuam independentes.
 
 ## Base de models e autorização implementada em 24/10/2026
 
@@ -368,9 +367,20 @@ Código técnico proposto: `gerenciar-agenda`, acumulável com `atender-solicita
 
 Quem possui somente agenda recebe uma visão operacional própria: identificação, telefone/WhatsApp, endereço necessário à visita, origem por referência e contatos de acompanhamento. Não reutilizar indiscriminadamente o detalhe atual, que contém justificativas e contatos de análise. Não exigir atendimento como permissão adicional oculta para navegar pela agenda. Revogação deve valer nas próximas requisições; não conceder permissões ao designar um responsável.
 
-#### Rotas web propostas
+#### Fluxo web da agenda implementado em 27/10/2026
 
-Todas sob `auth` e `can:gerenciar-agenda`, com consulta dos IDs após autorização, formulários Blade, CSRF e redirecionamentos. Nomes/caminhos são propostas, não URLs disponíveis.
+Após autorização do usuário, as sete rotas da tabela abaixo foram implementadas em `routes/web.php`, com `AgendaController` e views `agenda.*`. A tabela preserva a origem da proposta; agora descreve caminhos disponíveis no código, sujeitos à ativação das migrations/catálogo no ambiente local.
+
+- A lista pagina compromissos (25 por página), com filtros validados de início/fim, modalidade, situação e responsável. Datas delimitam dias de Marília, convertidos para UTC; a seleção inclui intervalos que cruzam o período. Uma lista separada pagina admitidas sem reserva atual, inclusive após cancelamento/não realização. Os filtros de compromissos não afetam essa lista.
+- Detalhe somente para pedido admitido com identidade vinculada. Contatos de acompanhamento e histórico paginados separadamente (15 por página); contatos de análise, CPF e justificativas administrativas não são apresentados. Quem possui somente agenda navega por essa visão sem precisar de atendimento. Links administrativos exigem a permissão correspondente.
+- Formulários com CSRF e UUID, versão exibida e declaração explícita do combinado. As regras permanecem nos métodos transacionais; o controller aceita somente campos conhecidos. Valores escalares permitidos retornam ao formulário que falhou, com bags `contato`, `confirmacao`, `reagendamento`, `cancelamento` e `nao_realizacao`. Arrays inválidos não são refletidos em campos textuais.
+- Sobreposição aparece como erro no formulário; conflitos de versão/operação retornam HTML 409 orientando reabrir e conferir. A view de erro também atende conflitos existentes, com orientação genérica fora da agenda. Contato enviado não gera mensagem automática.
+- A navegação tem link Agenda para usuários autorizados. O acompanhamento administrativo aponta para a agenda mediante permissão, sem afirmar que toda visita continua não agendada. Relatório e decisões clínicas continuam indisponíveis.
+- Validação HTTP automatizada registrada em Status. Revisão visual/responsividade pendente: nenhum navegador disponível na ferramenta nesta sessão. Não houve aplicação de migrations ou catálogo ao desenvolvimento.
+
+#### Rotas web da agenda
+
+Todas sob `auth` e `can:gerenciar-agenda`, com consulta dos IDs após autorização, formulários Blade, CSRF e redirecionamentos. Nomes/caminhos implementados conforme a tabela.
 
 | Método / caminho | Nome | Efeito |
 | --- | --- | --- |
@@ -504,3 +514,13 @@ Admissão e resolução são atômicas: validar todos os alvos, gravar mudanças
 Cobertura planejada, **não executada**: entrada pública/interna e validação cruzada dos telefones/WhatsApp; campos técnicos manipulados; permissão e acesso por registro; um alerta com vários motivos; arquivado excluído das comparações; contato sem resposta bloqueando resolução; admissão sem aprovação clínica; arquivamento de ambos e escolha do principal; conflito concorrente sem escrita parcial; revogação da função em sessão aberta. Usar dados fictícios e verificar persistência e resposta, não só status HTTP. SQLite não comprova travas/concorrência MySQL; verificar esse comportamento em banco de testes isolado, nunca recriar o banco local de trabalho.
 
 Compatibilidade: o formulário novo não é o `/register` do Breeze. O cadastro de contas e as contas doadora existentes continuam no código atual; antes de disponibilizar o fluxo público, decidir a retirada do autocadastro Breeze da navegação/rotas e preservar dados existentes. Nenhuma alteração de autenticação foi feita nesta especificação. A exclusão física de conta atual também precisa ser compatibilizada com autoria histórica antes dos vínculos de domínio.
+## Contas exclusivamente internas — decisão e implementação de 27/10/2026
+
+O usuário determinou a retirada integral do acesso de doadoras e autorizou a remoção das contas antigas. **O frontend não deve criar cadastro/login/área de doadora.** A interessada utiliza `/doar` sem conta; solicitações e identidades do domínio permanecem independentes de `users`.
+
+- `/register` GET/POST retorna 404; controller e view de autocadastro foram removidos. Login e recuperação/redefinição de senha aceitam exclusivamente contas internas. Sessões sem usuário interno válido são encerradas com 403 antes do acesso web.
+- `GET /interno/funcionarios/novo` (`interno.funcionarios.create`) e `POST /interno/funcionarios` (`interno.funcionarios.store`) exigem sessão e `criar-funcionarios`. Admin tem a capacidade; funcionários precisam de concessão explícita, revogável e auditada pela administração.
+- Entrada: nome e e-mail válidos/únicos. Servidor fixa `role=funcionario`, senha aleatória não divulgada e `criado_por_user_id`. Campos de papel, senha, autoria ou permissões enviados pelo cliente não são aplicados. Não há criação de admin nem concessão de capacidades por esse formulário.
+- A pessoa define sua própria senha pela recuperação por e-mail já existente. O cadastro não envia automaticamente convite, não inicia sessão da pessoa criada e não troca a sessão do operador. Entrega real de e-mail depende da configuração operacional; não foi homologada nesta tarefa.
+- A migration `2026_10_27_202742_restrict_users_to_internal_accounts` remove contas antigas com papel `doadora`, suas sessões de banco e tokens de recuperação; restringe o enum a `admin|funcionario`, sem padrão implícito, e acrescenta autoria da criação. Não altera interessadas, solicitações ou dados clínicos. FKs continuam ativas: vínculo inesperado impede a exclusão, sem apagar histórico em cascata. `down()` não restaura contas excluídas.
+- Seeder de desenvolvimento passa a criar somente admin/funcionário; catálogo inclui a permissão nova sem concedê-la automaticamente. Referências anteriores deste documento a autocadastro ou perfil doadora são histórico superado por esta decisão.

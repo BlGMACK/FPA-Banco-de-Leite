@@ -149,7 +149,9 @@ R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; reg
 
 ### Preparação da implementação — proposta de sequência em 24/10/2026
 
-**Operações da agenda em 26/10/2026:** contatos após admissão, confirmação, reagendamento, cancelamento e não realização implementados no backend, com validação, Gate, versão, operação única e transação. Usuário confirmou bloqueio de sobreposição do mesmo funcionário; horários distintos no mesmo dia permanecem permitidos e deslocamento é manual. Próximo recorte: endpoints e telas operacionais de agenda, acessíveis também a quem tem apenas `gerenciar-agenda`, sem dados clínicos. Aplicação de migrations/catálogo ao desenvolvimento continua separada.
+**Fluxo web da agenda em 27/10/2026:** endpoints e telas operacionais implementados, incluindo filtros, admitidas sem reserva, contatos e histórico. Acesso independente para `gerenciar-agenda`, sem dados de análise inicial ou clínica. Próximos passos: ativação autorizada do schema/catálogo no desenvolvimento e revisão visual/manual; depois, detalhar o recorte de atendimento/relatório e permissões profissionais antes de programá-lo. Evidências e limitações em Status.
+
+**Operações da agenda em 26/10/2026:** contatos após admissão, confirmação, reagendamento, cancelamento e não realização implementados no backend, com validação, Gate, versão, operação única e transação. Usuário confirmou bloqueio de sobreposição do mesmo funcionário; horários distintos no mesmo dia permanecem permitidos e deslocamento é manual. A integração às telas foi entregue na atualização acima. Aplicação de migrations/catálogo ao desenvolvimento continua separada.
 
 **Base de models/autorização da agenda em 26/10/2026:** implementados três models, factories, relações, catálogo/Gate `gerenciar-agenda` e extensão da concessão/revogação auditada. Testes verificam acesso separado/acumulado e revogação. Não aplicados schema/catálogo ao desenvolvimento; não há interface de agenda. Próximo recorte: contatos após admissão e operações transacionais de confirmação/reagendamento/cancelamento, com testes e telas conforme Contratos. Capacidade/sobreposição e atribuições clínicas continuam com as pendências já registradas.
 
@@ -180,3 +182,6 @@ Atualização de 24/10/2026: o usuário autorizou e foram implementados os model
 Visita, relatório, documentos/exames e decisão clínica continuam na sequência funcional, mas fora desta primeira entrega. Pendências de cargos clínicos não impedem especificar a entrada administrativa; a implantação dessa entrada ainda exige autorização por função, proteção da autoria, definição operacional dos limites de recebimento e revisão do contrato.
 
 Verificação: inspeção estática dos documentos, código atual e schema local legado. Sem execução do fluxo, validação clínica ou conteúdo de PDF consultado.
+## Atualização de acesso — 27/10/2026
+
+O usuário confirmou retirada do autocadastro e de todas as contas de doadora. Acesso interno exclusivo de admin/funcionário; criação de funcionários por admin ou funcionário com permissão específica. Implementados formulário interno, autoria e recuperação de senha para primeira definição, sem conceder permissões automaticamente. Ainda não há interface de concessão/revogação ou desativação de funcionários; isso requer recorte próprio. Entrega real de e-mail e revisão visual permanecem pendentes. A condição anterior de decidir sobre a permanência do Breeze público foi resolvida: `/register` foi removido.

@@ -1,6 +1,6 @@
 # FPA — Banco de Leite Humano
 
-Aplicação web Laravel para a migração do sistema do Banco de Leite Humano de Marília. A base atual contém autenticação, perfil e demonstrações de controle de acesso por papel. Os módulos de negócio ainda não estão implementados no código analisado.
+Aplicação web Laravel e Blade do Banco de Leite Humano de Marília. Possui solicitação pública sem conta, atendimento administrativo e agenda. O acesso autenticado é exclusivo de funcionários e administradores; não existe autocadastro nem conta de doadora. Consulte `docs/GUIA.md` e `docs/backend/STATUS.md` para funcionalidades, ativação local e limites de validação.
 
 A arquitetura atual usa PHP, Laravel, Blade, Bootstrap e MySQL/MariaDB. As telas de apoio ao desenvolvimento não representam a interface final.
 

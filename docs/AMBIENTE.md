@@ -59,7 +59,7 @@ O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `data
 
 ### Dados fictícios opcionais
 
-Em um banco local novo, o [seeder](../database/seeders/DatabaseSeeder.php) pode ser executado com `php artisan db:seed --no-interaction`. Ele cria três contas fictícias, uma por papel. Consulte o arquivo para os dados de demonstração; não os use em produção. O seeder usa `create` e não é idempotente: repeti-lo com esses e-mails existentes pode causar conflito de unicidade. Verifique antes e não apague tabelas para contornar o conflito.
+Em um banco local novo, o [seeder](../database/seeders/DatabaseSeeder.php) pode ser executado com `php artisan db:seed --no-interaction`. Ele cria duas contas fictícias internas: admin e funcionário. Não cria contas de doadora. Consulte o arquivo para os dados de demonstração; não os use em produção. O seeder usa `create` e não é idempotente: repeti-lo com esses e-mails existentes pode causar conflito de unicidade. Verifique antes e não apague tabelas para contornar o conflito. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
 
 ## Execução
 

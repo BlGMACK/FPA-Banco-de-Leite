@@ -56,6 +56,23 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 
 ## Evidências registradas
 
+### E-12 — acesso exclusivamente interno, 27/10/2026
+
+- Decisão explícita do usuário: sem contas/área autenticada de doadora, sem autocadastro; criação de funcionário por admin ou funcionário com permissão específica. Login e redefinição selecionam somente papéis internos; middleware web revalida existência/papel e encerra sessão inválida. Removidos controller/view/rotas de registro público, helper doadora, conta doadora do seeder e telas/links de demonstração.
+- Nova capacidade `criar-funcionarios` com concessão/revogação auditada existente. A criação não aceita papel, senha conhecida, autoria ou permissões do cliente; grava autoria e gera senha aleatória não divulgada. Primeira definição pela recuperação por e-mail, sem autenticar a nova conta ou mudar a sessão do operador.
+- Migration elimina contas antigas, sessões e tokens correspondentes; enum atual aceita apenas admin/funcionário sem padrão. FKs não são desativadas: vínculo histórico inesperado bloqueia a remoção e reverte a limpeza de sessões/tokens. Rollback estrutural não recupera contas apagadas.
+- `InternalAccountsSchemaTest`, `FuncionarioCreationTest` e `InternalAccessTest`: **18 testes, 101 assertions aprovados no MariaDB exclusivo**. Suíte SQLite completa: **221 testes, 219 aprovados, 2 ignorados, 1.031 assertions**. Dois testes antigos foram adaptados ao novo domínio (admin não recebe concessão de funcionário; responsável inexistente é rejeitado). O teste de upgrade é o único que cria papel antigo, para comprovar sua remoção.
+- A tentativa de ativação local foi recusada por conexão MySQL indisponível, inclusive fora do sandbox. Não houve exclusão no desenvolvimento nem execução do catálogo nessa tentativa. A revisão estática anterior contou uma conta por papel sem expor seus dados. Não houve teste de entrega real de e-mail ou revisão visual. Persistem definição de desativação/gestão de funcionários, proteção contra perda do último administrador e interface de concessões; nenhuma política foi inventada para esses pontos.
+- Evidência em alterações locais e testes citados; Pint e suíte completos aprovados. Não representa auditoria exaustiva de todos os riscos do sistema.
+
+### E-11 — integração web da agenda, 27/10/2026
+
+- Itens: SEG-02, SEG-03, SEG-04, SEG-05, SEG-09, SEG-10 e SEG-16. Fontes: `AgendaController`, rotas `interno.agenda.*`, views `agenda.*` e `errors.409`, [AgendaWebTest](../tests/Feature/AgendaWebTest.php). Alterações locais ainda sem commit.
+- As sete rotas exigem sessão e `gerenciar-agenda` antes de consultar IDs. A visão operacional não apresenta CPF, contatos/justificativas de análise ou informações clínicas; acesso a atendimento permanece separado. Revogação é verificada nas próximas requisições.
+- Escritas passam somente campos conhecidos aos métodos transacionais existentes; autor, contexto e estado continuam controlados no servidor. Erros usam bags separados e preservam apenas entradas escalares permitidas. Formulários usam CSRF; histórico e texto livre usam saída escapada. Filtros têm valores/colunas fixos e datas locais convertidas em UTC.
+- `AgendaWebTest`: 9 testes e 93 assertions aprovados no MariaDB exclusivo `banco_de_leite_schema_test`. Cobertura: sessão/permissão nas sete rotas, revogação, detalhe fora de estado/inexistente, isolamento de análise, escape HTML, contato/confirmação e retransmissão, campos técnicos ignorados, erros de formulário, conflito 409, reagendamento/cancelamento/não realização, filtro por período local e CSRF real com middleware ativo.
+- A confirmação concorrente continua coberta pela evidência E-10; esta etapa não repetiu essa prova nem ampliou a garantia para todas as combinações concorrentes. Sem teste de carga, revisão visual ou homologação clínica. A ferramenta de UI retornou zero navegadores disponíveis. Resultados da regressão e limites em [Status](backend/STATUS.md#fluxo-web-da-agenda--27102026). Revisão por outra pessoa pendente.
+
 ### E-10 — operações e concorrência da agenda, 26/10/2026
 
 - Itens: SEG-02, SEG-09, SEG-10 e SEG-16. Fontes: `Agendamento`, `ContatoSolicitacao`, [AgendaOperationsTest](../tests/Feature/AgendaOperationsTest.php) e [AgendaConcurrencyTest](../tests/Feature/AgendaConcurrencyTest.php), alterações locais ainda sem commit.

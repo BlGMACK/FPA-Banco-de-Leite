@@ -2,18 +2,38 @@
 
 Levantamento inicial de 22/10/2026, acrescido da preparação do schema administrativo em 24/10/2026. **Implementado** indica presença no código; **validado** exige evidência de execução identificada. Este levantamento não homologou o sistema.
 
+## Fluxo web da agenda — 27/10/2026
+
+Implementação autorizada da próxima etapa: sete rotas em `interno/agenda`, `AgendaController`, lista paginada com filtros, admitidas sem reserva, detalhe operacional, formulários de contato/confirmação/reagendamento/cancelamento/não realização e histórico. Menu e link no acompanhamento respeitam permissões. Não inclui relatório, anexos, decisões clínicas nem mensagens automáticas.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit` com SQLite `:memory:` | **208 testes: 206 aprovados, 2 ignorados, 951 assertions**. Os dois ignorados são os testes de concorrência que exigem MariaDB. |
+| `php vendor/bin/phpunit tests/Feature/AgendaWebTest.php` no MariaDB local exclusivo `banco_de_leite_schema_test` | **9 testes, 93 assertions aprovados**. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado. |
+| `php artisan route:list --path=interno/agenda --no-interaction` | Sete rotas registradas. |
+| `php artisan migrate:status --no-interaction` no desenvolvimento | Dez migrations aplicadas; quatro migrations da agenda ainda pendentes. Consulta somente, sem aplicar migrations/seeders. |
+
+Testes executados com `APP_ENV=testing`, conexão/banco explícitos e `DB_URL` vazio, protegidos pela guarda de isolamento. A primeira regressão identificou uma expectativa antiga do texto “pendente de agendamento”; ela foi atualizada para a orientação de consultar a programação, mantendo as demais verificações de admissão e ausência de aprovação clínica. A verificação de erros após redirecionamento preserva explicitamente o cookie de sessão entre as requisições do teste, conforme a sessão JSON configurada. Reexecução completa aprovada conforme tabela.
+
+Revisão visual e responsividade **não executadas**: inventário da ferramenta retornou zero navegadores. As respostas HTML foram verificadas pelos testes HTTP, incluindo escape e mensagens de erro, sem substituir revisão visual. Nenhuma alteração de `.env`, dependências, schema ou dados de desenvolvimento. Sem commit nesta etapa. Cobertura e limites em [E-11](../SEGURANCA.md#e-11--integração-web-da-agenda-27102026).
+
+Próximo passo: ativação autorizada das quatro migrations e do catálogo no desenvolvimento, seguida de teste manual da agenda. Depois, detalhar atendimento/relatório e permissões profissionais antes de implementar esse recorte.
+
 ## Implementado
 
-Atualização mais recente: contatos após admissão e operações transacionais da agenda disponíveis no backend, ainda sem endpoints/telas. Veja [verificações das operações](#verificações-das-operações-de-agenda--26102026).
+Atualização de acesso em 27/10/2026: autocadastro e conta de doadora retirados do código ativo. Login/reset e sessões exigem conta interna; formulário de funcionário exige admin ou `criar-funcionarios`, com autoria e sem permissões automáticas. A migration de exclusão das contas antigas foi testada, mas **não aplicada no desenvolvimento: conexão MySQL recusada** nas duas tentativas. Assim, a conta antiga permanece fisicamente no banco até a aplicação, embora seu acesso esteja bloqueado pelo código.
+
+Atualização mais recente: contatos após admissão e operações transacionais da agenda integrados a rotas/telas Blade. Veja [fluxo web](#fluxo-web-da-agenda--27102026). Ativação local do schema/catálogo e revisão visual permanecem pendentes.
 
 | Área | O que existe | Fonte |
 | --- | --- | --- |
 | Sessão | Login, logout, regeneração de sessão e limitação por e-mail/IP após cinco falhas de login. | [LoginRequest](../../app/Http/Requests/Auth/LoginRequest.php), [controller](../../app/Http/Controllers/Auth/AuthenticatedSessionController.php). |
-| Cadastro | Nome, e-mail e senha; autenticação após cadastro. Papel padrão do banco é doadora; o formulário não escolhe papel. | [controller](../../app/Http/Controllers/Auth/RegisteredUserController.php), [migration de papel](../../database/migrations/2026_10_04_000001_add_role_to_users_table.php). |
+| Contas internas | Autocadastro removido. Admin ou funcionário com permissão cria funcionário com nome/e-mail, autoria e senha aleatória; a pessoa define a senha via recuperação por e-mail. Schema atualizado elimina papel doadora e padrão implícito. Aplicação local pendente. | [controller](../../app/Http/Controllers/FuncionarioController.php), [migration](../../database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php). |
 | Perfil | Consulta, edição de nome/e-mail, troca de senha e exclusão com senha atual; conta com vínculos é preservada, com erro no formulário e sessão mantida. | [ProfileController](../../app/Http/Controllers/ProfileController.php), [ProfileUpdateRequest](../../app/Http/Requests/ProfileUpdateRequest.php), [PasswordController](../../app/Http/Controllers/Auth/PasswordController.php). |
 | Recuperação de senha | Solicitação e redefinição por token usando o broker Laravel. | [rotas](../../routes/auth.php), [controllers](../../app/Http/Controllers/Auth). |
 | E-mail | Rotas e lógica de verificação presentes; obrigatoriedade não ativada no model. | [User](../../app/Models/User.php), [rotas](../../routes/auth.php). |
-| Acesso por papel | Admin, funcionário e doadora; demonstrações protegidas por middleware. | [middleware](../../app/Http/Middleware/EnsureUserHasRole.php), [rotas web](../../routes/web.php). |
+| Acesso interno | Admin e funcionário, Gates por capacidade; sessões sem conta interna válida são encerradas. | [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [rotas web](../../routes/web.php). |
 | Persistência | Contas e tabelas de infraestrutura; MySQL no exemplo compartilhado. | [Modelagem](MODELAGEM.md), [.env.example](../../.env.example). |
 | Testes | Autenticação, cadastro, senha, verificação e perfil, mais testes de exemplo. | [Feature](../../tests/Feature), [Unit](../../tests/Unit), [configuração](../../phpunit.xml). |
 | Schema administrativo | Seis migrations para onze tabelas: identidade, pedidos, contatos, resoluções, histórico e permissões. Aplicadas ao banco de desenvolvimento após autorização; evidência abaixo. | [Recorte físico](MODELAGEM.md#recorte-administrativo-preparado-em-24102026). |
@@ -99,7 +119,7 @@ As seções anteriores registram o estado na ocasião de cada verificação; sua
 
 ## Não implementado no código analisado
 
-**Atualização da base de agenda:** models/factories, autorização `gerenciar-agenda` e operações transacionais já foram implementados; evidências nas seções abaixo. As referências históricas a esses itens como pendentes foram superadas. Endpoints e telas de agenda permanecem pendentes, assim como a aplicação do schema/catálogo ao banco de desenvolvimento.
+**Atualização da base de agenda:** models/factories, autorização `gerenciar-agenda`, operações transacionais e endpoints/telas já foram implementados; evidências nas seções abaixo. As referências históricas a esses itens como pendentes foram superadas. Revisão visual e aplicação do schema/catálogo ao banco de desenvolvimento permanecem pendentes.
 
 **Atualização posterior:** o schema da agenda foi preparado e verificado após autorização; veja as evidências abaixo. A especificação inicial citada a seguir foi superada apenas quanto à preparação física. Fluxo web, models e autorização de agenda continuam pendentes.
 
