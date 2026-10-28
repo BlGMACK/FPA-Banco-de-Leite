@@ -55,6 +55,11 @@ class AgendaSchemaTest extends TestCase
 
     public function test_upgrade_and_rollback_preserve_existing_contacts_users_and_requests(): void
     {
+        $dependentes = glob(database_path('migrations/2026_10_28_*'));
+        sort($dependentes);
+        foreach (array_reverse($dependentes) as $arquivo) {
+            (require $arquivo)->down();
+        }
         $arquivos = glob(database_path('migrations/2026_10_26_*'));
         sort($arquivos);
         foreach (array_reverse($arquivos) as $arquivo) {
@@ -76,6 +81,9 @@ class AgendaSchemaTest extends TestCase
         $this->assertDatabaseHas('solicitacoes', ['id' => $pedido->id]);
         $this->assertFalse(Schema::hasColumn('contatos_solicitacao', 'contexto'));
         foreach ($arquivos as $arquivo) {
+            (require $arquivo)->up();
+        }
+        foreach ($dependentes as $arquivo) {
             (require $arquivo)->up();
         }
     }

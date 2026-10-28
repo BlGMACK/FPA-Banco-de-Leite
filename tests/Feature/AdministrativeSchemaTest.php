@@ -278,7 +278,10 @@ class AdministrativeSchemaTest extends TestCase
     public function test_rolling_back_and_reapplying_only_administrative_migrations_preserves_existing_users(): void
     {
         $user = User::factory()->create();
-        $dependentes = glob(database_path('migrations/2026_10_26_*'));
+        $dependentes = array_merge(
+            glob(database_path('migrations/2026_10_26_*')),
+            glob(database_path('migrations/2026_10_28_*')),
+        );
         sort($dependentes);
         foreach (array_reverse($dependentes) as $arquivo) {
             (require $arquivo)->down();
