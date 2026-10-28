@@ -1,5 +1,38 @@
 # Status do backend
 
+## Models de relatório e validação MariaDB — 28/10/2026
+
+O usuário autorizou repetir a validação, implementar os models e fazer commits por finalidade. Implementados `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento`, suas factories, relações/casts e `Agendamento::atendimento()`. Campos narrativos/motivos e hash de evento são omitidos na serialização padrão; atribuição em massa segue bloqueada. Não foram implementados Gates, operações transacionais ou telas de relatório. Detalhes em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaSchemaTest.php tests/Feature/AgendaSchemaTest.php tests/Feature/AdministrativeSchemaTest.php tests/Feature/InternalAccountsSchemaTest.php --stop-on-error`, MariaDB exclusivo | **67 testes, 115 assertions aprovados**. Resolve a pendência de conexão/validação registrada abaixo. |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaModelsTest.php tests/Feature/AgendaModelsAuthorizationTest.php`, SQLite `:memory:` | **22 testes, 130 assertions aprovados**. |
+| Mesmas classes de models com `--stop-on-error`, MariaDB exclusivo | **22 testes, 130 assertions aprovados**. |
+| `php vendor/bin/pint --dirty --format agent` e `git diff --check` | Aprovados; avisos de normalização CRLF/LF não são falhas. |
+
+Todos os testes rodaram com `APP_ENV=testing`, conexão e banco explícitos no processo e `DB_URL` vazio. MariaDB usou somente `banco_de_leite_schema_test`; SQLite usou memória. Não foram aplicados migrations/seeders no desenvolvimento, não houve alteração de `.env`, dependências ou concessões. As factories são fixtures, não operações de negócio nem seeders de dados reais.
+
+Cobertura nova dos models: vínculos até a identidade original, autores distintos, casts de datas/números, relações de base/correções/eventos, ausência de `updated_at` em evidências, bloqueio de atribuição em massa e omissão de narrativa na serialização com relações carregadas. Não comprova finalização, imutabilidade contra escrita explícita, permissões do relatório ou concorrência; esses fluxos ainda não existem. Próximo recorte: autorização de leitura/escrita conforme os acordos, seguida das operações transacionais e integração com a fila/agenda.
+
+## Schema de atendimento e relatório — 28/10/2026
+
+Após autorização explícita, preparadas cinco migrations novas: quatro tabelas para atendimento, rascunho, versões e eventos; ampliação dos enums da agenda com realização. Nenhuma migration anterior foi editada, nenhum model/Gate/endpoint foi adicionado e o banco de desenvolvimento não recebeu alterações. Detalhes e limites em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026).
+
+Verificações executadas com `APP_ENV=testing`, `DB_URL` vazio e conexão/banco explicitamente definidos no processo, sem editar `.env`:
+
+| Comando / ambiente | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaSchemaTest.php tests/Feature/AgendaSchemaTest.php tests/Feature/AdministrativeSchemaTest.php tests/Feature/InternalAccountsSchemaTest.php`, SQLite `:memory:` | 62 testes e 110 assertions aprovados. Execução anterior à inclusão dos cinco casos adicionais de enum inválido. |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaSchemaTest.php tests/Feature/AgendaOperationsTest.php tests/Feature/AgendaWebTest.php`, SQLite `:memory:` | 60 testes e 240 assertions aprovados, incluindo a versão final dos 29 cenários de schema do relatório e regressão das operações/telas existentes da agenda. |
+| Quatro classes de schema no MariaDB `banco_de_leite_schema_test` | Execução interrompida diante da indisponibilidade de conexão. Sem resultado válido. |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaSchemaTest.php --stop-on-error`, MariaDB exclusivo, fora do sandbox | Falhou no primeiro teste antes de preparar o schema: conexão recusada em `127.0.0.1:3306`, SQLSTATE 2002; zero assertions. Validação MariaDB pendente. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Os testes verificam unicidade de atendimento/relatório/operação/numeração, referências inexistentes, proteção do agendamento e da versão-base, texto UTF-8 de 30.000 caracteres, rejeição de estados não previstos, rollback/reaplicação preservando dados anteriores e rollback de transação de teste por operação duplicada. Testes antigos de reversão foram adaptados à ordem das novas dependências. O downgrade da agenda recusa registros de realização; o rollback das tabelas novas elimina conteúdo e não é restauração de dados.
+
+Limites: o teste transacional não implementa nem valida a futura operação de realização. Não há validação de permissões, imutabilidade na aplicação, concorrência de relatórios, finalização/correção ou interface neste recorte. A guarda exige banco descartável; não houve aplicação de migrations/seeders no desenvolvimento, alteração de dependências ou commit. Próximo trabalho: repetir a validação MariaDB quando o servidor estiver disponível; depois implementar models e permissões no recorte autorizado seguinte.
+
 ## Especificação de atendimento e relatório — 28/10/2026
 
 Detalhados contratos, proposta de persistência, transições, integração à fila/agenda e cenários de teste. Conferidos no código: `Agendamento` ainda não registra realização; a fila usa ausência de reserva; `Permissao` aceita somente três códigos administrativos e concessões apenas a funcionários; `User` dá acesso administrativo automático a admin. Essas regras não foram ampliadas silenciosamente para relatórios.

@@ -529,6 +529,10 @@ O usuário determinou a retirada integral do acesso de doadoras e autorizou a re
 
 ## Atendimento e relatório narrativo — especificação de 28/10/2026
 
+**Base de models implementada em recorte posterior autorizado:** as quatro entidades agora têm relações, casts e factories, conforme Modelagem. A relação de agenda com atendimento está disponível no código, sem alterar a fila ou registrar visitas automaticamente. A serialização padrão omite textos/motivos narrativos e hash; acesso PHP continua possível e deve ser autorizado na próxima etapa. Nenhuma permissão, rota ou operação de relatório foi adicionada. A preservação de versões é uma exigência do fluxo futuro, não uma garantia já implementada por esses models.
+
+**Atualização de implementação:** o usuário autorizou preparar as migrations. Cinco arquivos implementam somente a persistência descrita em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026), com testes de schema. Não há operações, permissões ou interface de relatório disponíveis, nem aplicação ao banco de desenvolvimento. A matriz acordada e as regras operacionais abaixo continuam sendo a referência para a próxima etapa; FKs e enums não as implementam sozinhos.
+
 **Estado:** detalhamento solicitado pelo usuário após ativar a agenda; proposta funcional/técnica, ainda sem código ou migrations. Origem **G**: relatos e respostas do usuário; **L**: distinção entre visita, triagem e avaliação descrita na documentação do legado; **P**: decisões de desenho propostas aqui. Não foi fornecido PDF e nenhuma regra profissional ou de aptidão foi inferida dele.
 
 ### Acordos e limites

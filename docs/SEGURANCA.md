@@ -1,5 +1,18 @@
 # Acompanhamento de segurança
 
+## Models de relatório e MariaDB — evidência posterior de 28/10/2026
+
+- SEG-02, SEG-09 e SEG-16: models mantêm bloqueio padrão de atribuição em massa e relações explícitas de autoria. Textos de relatório/rascunho, motivos narrativos e hash não aparecem em serialização automática, inclusive nas relações carregadas. `$hidden` não protege leitura direta em PHP nem substitui autorização.
+- Schema validado no MariaDB exclusivo: **67 testes e 115 assertions aprovados**. A falha de conexão anterior foi resolvida. Models novos e regressão da base de agenda: **22 testes e 130 assertions aprovados em cada ambiente**, SQLite em memória e MariaDB exclusivo. Comandos e escopo em [Status](backend/STATUS.md#models-de-relatório-e-validação-mariadb--28102026).
+- Sem migrations/seeders no desenvolvimento, concessões, novos endpoints ou dados reais. Permanecem pendentes Gates de relatório, transações, finalização/correções, imutabilidade na aplicação e testes concorrentes. Relações Eloquent e casts não validam coerência entre todos os vínculos nem habilitação profissional.
+
+## Schema de relatório — evidência de 28/10/2026
+
+- Itens SEG-09, SEG-10 e SEG-16, limitados à persistência. Cinco migrations novas e [RelatorioVisitaSchemaTest](../tests/Feature/RelatorioVisitaSchemaTest.php) implementam/testam FKs restritivas, unicidades e enums. Os eventos guardam metadados, sem colunas de narrativa; texto e motivo de correção ficam no relatório/versões. Isso não impede vazamento por código futuro nem torna registros imutáveis contra SQL direto.
+- SQLite: schema novo e regressão de agenda aprovados (60 testes, 240 assertions); quatro classes de schema também passaram antes dos cinco casos finais de enum inválido (62 testes, 110 assertions). Evidências e comandos em [Status](backend/STATUS.md#schema-de-atendimento-e-relatório--28102026).
+- MariaDB exclusivo: conexão recusada, inclusive na tentativa fora do sandbox; validação pendente. Nenhuma alteração no banco de desenvolvimento. Guarda de isolamento executada antes da preparação dos testes.
+- Rollback da ampliação da agenda recusa histórico de realização. Rollbacks das tabelas novas são destrutivos; não são política de backup/recuperação. Permissões de leitura/escrita, imutabilidade das versões na aplicação, coerência entre referências, controle de concorrência e ausência de narrativa em logs/respostas continuam pendentes da implementação funcional. Não tratar esta evidência como aprovação de segurança do módulo.
+
 ## E-06 — Ativação local (24/10/2026)
 
 - Com autorização do usuário, seis migrations aditivas e somente `PermissaoSeeder` foram executados em `banco_de_leite_dev`. Status final: dez migrations aplicadas, três contas, um item de catálogo, zero concessões e zero solicitações. Sem recriação do banco, alteração de credenciais ou concessão automática de acesso.
