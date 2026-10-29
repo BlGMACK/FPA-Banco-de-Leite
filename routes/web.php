@@ -4,6 +4,7 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RelatorioVisitaController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,3 +65,15 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth', 'can:consultar-relatorios-visita'])->prefix('interno/relatorios')->name('interno.relatorios.')->group(function (): void {
+    Route::get('/', [RelatorioVisitaController::class, 'index'])->name('index');
+    Route::get('/{relatorio}', [RelatorioVisitaController::class, 'show'])->whereNumber('relatorio')->name('show');
+    Route::middleware('can:registrar-relatorios-visita')->group(function (): void {
+        Route::get('/visitas/{agendamento}', [RelatorioVisitaController::class, 'create'])->whereNumber('agendamento')->name('visitas.create');
+        Route::post('/visitas/{agendamento}', [RelatorioVisitaController::class, 'store'])->whereNumber('agendamento')->name('visitas.store');
+        foreach (['rascunho', 'finalizar', 'correcao'] as $acao) {
+            Route::post('/{relatorio}/'.$acao, [RelatorioVisitaController::class, 'update'])->whereNumber('relatorio')->name($acao);
+        }
+    });
+});

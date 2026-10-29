@@ -11,6 +11,9 @@
                 @can('gerenciar-agenda')
                     <li class="nav-item"><a class="nav-link" href="{{ route('interno.agenda.index') }}">Agenda</a></li>
                 @endcan
+                @can('consultar-relatorios-visita')
+                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.relatorios.index') }}">Relatórios de visita</a></li>
+                @endcan
                 @can('criar-funcionarios')
                     <li class="nav-item"><a class="nav-link" href="{{ route('interno.funcionarios.create') }}">Cadastrar funcionário</a></li>
                 @endcan
