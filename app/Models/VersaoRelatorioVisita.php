@@ -19,6 +19,16 @@ class VersaoRelatorioVisita extends Model
 
     protected $hidden = ['texto', 'motivo_correcao'];
 
+    protected static function booted(): void
+    {
+        static::updating(function (): void {
+            throw new \LogicException('Versões finalizadas não podem ser alteradas. Registre uma correção.');
+        });
+        static::deleting(function (): void {
+            throw new \LogicException('Versões finalizadas não podem ser excluídas.');
+        });
+    }
+
     protected function casts(): array
     {
         return ['numero' => 'integer', 'finalizado_em' => 'immutable_datetime'];
