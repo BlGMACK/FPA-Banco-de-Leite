@@ -231,7 +231,7 @@ Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequênc
 - **Depois de habilitada:** a habilitação pode ser **suspensa** (temporária, com retorno possível) ou **encerrada** (definitiva), ambas com motivo e histórico.
 - **Nova tentativa:** quem foi considerada não apta ou não habilitada pode enviar **novo pedido**. A equipe vê o histórico anterior no alerta de correspondência, sem aprovação nem recusa automáticas.
 
-**Pendências.** Lista real de exames e documentos (confirmado até agora: exame de sangue) e prazos por tipo, a obter com o Banco de Leite; o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9, decisão técnica a propor); formatos e tamanho máximo de arquivo; retenção dos anexos.
+**Pendências.** Lista real de exames e documentos (confirmado até agora: exame de sangue) e prazos por tipo, a obter com o Banco de Leite; o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9; recomendação técnica no [desenho proposto](MODELAGEM.md#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026)); formatos e tamanho máximo de arquivo; retenção dos anexos.
 
 ## Atualização de acesso — 27/10/2026
 

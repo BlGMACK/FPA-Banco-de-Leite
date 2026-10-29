@@ -338,3 +338,33 @@ Estender `agendamentos.status` com `realizado` por nova migration e suportar eve
 Ao evoluir a lista de pendências, combinar ausência de reserva com ausência de atendimento realizado. Bloquear também a nova confirmação para acompanhamento já atendido até definir retornos, evitando que apenas a tela imponha a regra. Manter histórico de agendamentos cancelados/substituídos disponível conforme o acesso atual.
 
 Preparação futura deve testar upgrade com registros existentes, restrições/FKs, rollback estrutural e concorrência no banco exclusivo. Rollback que remove texto/versionamento é destrutivo e não é plano de recuperação de dados reais. Correção de fato registrado indevidamente, retenção e descarte de rascunhos continuam pendentes; não apagar nem reescrever versões para simulá-los.
+
+## Desenho físico proposto para avaliação, exames e documentos — 29/10/2026
+
+**Estado: proposta técnica para revisão, não implementada.** Materializa as regras [acordadas em 29/10/2026](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). Nomes de tabelas, campos e limites são propostos; a implementação depende de autorização e da lista real de exames (o catálogo pode começar só com "Exame de sangue" e "Outro exame").
+
+### Estruturas
+
+| Estrutura | Campos principais | Finalidade e integridade |
+| --- | --- | --- |
+| `tipos_exame` | `codigo` único, `nome`, `categoria` (`exame` ou `documento`), `validade_dias` (anulável; 30 por padrão para exames), `exige_numero` (CNS), `ativo`, `ordem`. | Catálogo **fixo**, preenchido por seeder idempotente versionado no código, sem tela de edição. Tipos usados nunca são apagados, só desativados para novas avaliações. |
+| `avaliacoes` | `atendimento_id` único/FK; `estado` (`aguardando_analise`, `em_aguardo`, `liberada_exames`, `nao_apta`, `habilitada`, `habilitada_temporariamente`, `nao_habilitada`); `possui_plano_saude` (anulável); `versao`; timestamps. | Uma avaliação por visita realizada, criada quando o relatório tem a primeira versão publicada. Liga identidade, visita e relatório sem duplicar dados. |
+| `decisoes_avaliacao` | `avaliacao_id`; `etapa` (`analise_relatorio` ou `habilitacao`); `resultado`; `motivo`; `condicao` e `valida_ate` (habilitação temporária); `versao_relatorio_id` analisada; `autor_user_id`; `decidido_em`; `operacao_id` único; `conteudo_hash`. | Histórico imutável das decisões, com autoria e fundamento. Uma nova decisão não apaga a anterior. |
+| `itens_avaliacao` | `avaliacao_id`; `tipo_exame_id` (anulável apenas para "Outro"); `nome_outro`/`detalhes_outro`; `estado` (`nao_solicitado`, `solicitado`, `recebido`, `aceito`, `precisa_complementar`); `numero_documento` (CNS, validado); `realizado_em` (obrigatório ao marcar recebido); `valido_ate`; `prorrogacoes` (0 a 2); `versao`; timestamps. | Ao liberar para exames, a transação cria **um item por tipo ativo** em `nao_solicitado`, garantindo que nenhum fique sem estado. Único (`avaliacao_id`, `tipo_exame_id`) para tipos do catálogo; "Outro" pode repetir. |
+| `eventos_item_avaliacao` | `item_id`; `acao` (`solicitacao`, `recebimento`, `aceite`, `complementacao`, `prorrogacao`, `novo_pedido`); estados anterior/novo; `motivo`; `autor_user_id`; `ocorrido_em`; `operacao_id` único. | Auditoria de cada mudança de estado, prorrogação e novo pedido. |
+| `anexos_item_avaliacao` | `item_id`; `caminho` no disco privado; `nome_original`; `tipo_conteudo`; `tamanho`; `sha256`; `enviado_por_user_id`; `enviado_em`; `substituido_por_id` (anulável). | Arquivos nunca são sobrescritos nem servidos por URL pública: o download passa por controller com Gate. Um novo arquivo substitui o anterior na exibição, mas o anterior fica preservado. |
+| `habilitacoes` (D9) | `interessada_id`; `avaliacao_id`; `tipo` (`definitiva` ou `temporaria`); `inicio_em`; `valida_ate`; `estado` (`ativa`, `suspensa`, `encerrada`); eventos de suspensão, retomada e encerramento com motivo. | **Recomendação para D9:** em vez de uma tabela "doadoras" com cópia dos dados, a habilitação é um registro próprio ligado à identidade já conferida. Futuros módulos de coleta consultam a habilitação vigente. Suporta suspensão e encerramento, e uma nova habilitação após novo pedido. |
+
+### Regras propostas nas operações
+
+- **Permissões:** `consultar-exames` (leitura de itens e anexos), `registrar-exames` (inclui consulta; solicita, anexa, atualiza estados, prorroga) e `avaliar-doadoras` (inclui consulta de exames e de relatórios publicados; decide a análise e a habilitação). Admin com acesso explícito, como nos demais módulos.
+- **Análise do relatório:** permitida com relatório publicado e avaliação em `aguardando_analise` ou `em_aguardo`. `liberada_exames` cria os itens; `nao_apta` encerra o acompanhamento; `em_aguardo` exige motivo.
+- **Transições de item:** `nao_solicitado → solicitado → recebido → aceito`, ou `recebido → precisa_complementar → solicitado`. Voltar a `nao_solicitado` só antes de qualquer recebimento, com motivo. CNS só aceito com número válido.
+- **Validade:** `valido_ate = realizado_em + validade_dias`. Item vencido recebe sinalização, sem mudança automática de estado. Prorrogar soma 30 dias, exige motivo e é limitado a 2 vezes; "novo pedido" volta o item a `solicitado` preservando anexos e histórico.
+- **Decisão de habilitação:** só com ao menos um item solicitado, todos os solicitados `aceito` e nenhum vencido, verificados sob trava na mesma transação da decisão.
+- **Anexos:** disco `local` (`storage/app/private`), nome gerado, validação de tipo real (proposta: PDF, JPEG, PNG) e tamanho máximo (proposta: 10 MB, a confirmar), resposta com `no-store`.
+- **Concorrência e reenvio:** mesmas convenções dos recortes anteriores (`operacao_id`, hash, `versao`, travas em ordem estável, 409 em conflito).
+
+### Pendências antes de implementar
+
+Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; retenção dos anexos; aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).
