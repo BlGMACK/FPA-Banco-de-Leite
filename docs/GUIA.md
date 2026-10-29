@@ -1,40 +1,32 @@
 # Guia da documentação
 
-A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contratos receberam propostas de admissão em 23/10/2026. Em 24/10/2026, foram detalhados R5 e, após autorização do usuário, preparadas migrations do schema administrativo verificadas em SQLite em memória, sem aplicação ao MySQL local. Consulte Modelagem e Status para o recorte e os limites. O código e as migrations são evidências de implementação; ideias e arquivos antigos não comprovam funcionalidades disponíveis.
+## Situação em 29/10/2026
+
+O primeiro fluxo (solicitação até habilitação para doar) está implementado até o **relatório de visita**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas e relatório narrativo com rascunho, finalização e correções versionadas. As 20 migrations estão aplicadas no banco de desenvolvimento e a suíte automatizada passa (302 testes, 4 ignorados por exigirem MariaDB).
+
+Ainda não existem: documentos/exames, avaliação de saúde, decisão e habilitação; interface de concessão de permissões; correção de dados do pedido; coleta, estoque e distribuição. A revisão visual das telas internas continua pendente.
+
+O retrato completo, com fontes e evidências, está no [Estado atual do Status](backend/STATUS.md#estado-atual--29102026). O código e as migrations são as evidências de implementação; ideias, propostas e arquivos antigos não comprovam funcionalidades disponíveis.
+
+### Decisão vigente de acesso
+
+**Não existem contas nem área autenticada de doadora.** O público envia solicitações sem conta; autenticação é exclusiva de `admin` e `funcionario`. Autocadastro foi removido. Administradores e funcionários com `criar-funcionarios` cadastram funcionários, sem conceder permissões nem criar administradores. Permissões são separadas e acumuláveis por funcionário; o admin tem acesso automático. Referências ao papel doadora em migrations antigas e evidências históricas não autorizam recriar esse acesso. Detalhes em [Contratos](backend/CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026).
+
+### Linha do tempo resumida
+
+| Data | Entrega |
+| --- | --- |
+| 22/10/2026 | Levantamento da base Laravel/Breeze adaptada a Bootstrap e da documentação. |
+| 23/10/2026 | Primeiro fluxo e diretrizes acordados a partir do guia transmitido pelo usuário ([R1](backend/ROADMAP.md#r1--solicitação-até-habilitação-para-doar)). |
+| 24/10/2026 | Schema administrativo, models, Gates, recebimento público e fila; aplicação local. |
+| 26/10/2026 | Atendimento administrativo e admissão; base e operações transacionais da agenda. |
+| 27/10/2026 | Telas da agenda; contas exclusivamente internas e cadastro de funcionários. |
+| 28/10/2026 | Ativação local da agenda; especificação, schema, models e operações dos relatórios de visita. |
+| 29/10/2026 | Ativação local dos relatórios e telas Blade de relatório; build de assets aprovado. |
+
+Cada etapa, com comandos, resultados e limites, está no [histórico do Status](backend/STATUS.md#histórico-de-verificações).
 
 ## Estados usados
-
-Ativação local em 29/10/2026: as cinco migrations de relatório foram aplicadas no desenvolvimento (lote 6) e o catálogo foi atualizado para cinco permissões, sem concessões automáticas. As 20 migrations estão aplicadas; contas e solicitação existentes foram preservadas. A pendência de schema indicada nos relatos anteriores está resolvida. Próximo recorte: telas/rotas Blade de relatório e sua validação. Evidência em [Status](backend/STATUS.md#ativação-local-dos-relatórios--29102026).
-
-Operações de relatório implementadas em 28/10/2026: Gates separados de leitura/escrita, realização transacional, rascunho, finalização e correção versionada, com testes em SQLite e MariaDB exclusivo. A agenda reconhece visitas realizadas e impede novo agendamento nesse acompanhamento. Ainda não há telas/rotas de relatório; antes de usar a agenda atualizada no desenvolvimento, aplicar as cinco migrations de relatório e atualizar o catálogo em etapa de ativação autorizada. Nada foi aplicado ao desenvolvimento neste recorte. Contratos e Status detalham os limites.
-
-Avanço posterior em 28/10/2026: implementados os quatro models de atendimento/relatório, relações com a agenda, casts e factories. Proteção padrão de atribuição em massa mantida; narrativa omitida da serialização automática. Permissões e operações do relatório continuam pendentes. Consulte [Status](backend/STATUS.md) para as verificações e o limite de ativação local.
-
-Implementação autorizada em 28/10/2026: preparadas cinco migrations para atendimento, rascunho, versões, eventos e estado de realização da agenda. A aplicação foi limitada aos bancos de testes; o desenvolvimento não recebeu essas migrations. Models, permissões, transações e telas do relatório continuam pendentes. Evidências e limites em [Status](backend/STATUS.md#schema-de-atendimento-e-relatório--28102026).
-
-Especificação em 28/10/2026: atendimento e relatório narrativo detalhados em Contratos e Modelagem. O usuário confirmou leitura separada de escrita/finalização, acesso automático do admin e continuidade/correção por qualquer profissional com escrita autorizada, preservando autoria e versões. R1–R3 estão acordadas; campos, persistência e detalhes de operação permanecem propostos. Nenhum código, migration ou dado foi alterado nesse recorte documental.
-
-Ativação da agenda em 28/10/2026: quatro migrations aplicadas no desenvolvimento, lote 5; não há migrations pendentes. Dados anteriores preservados, sem concessões automáticas. Fluxo web e concorrência revalidados em MariaDB exclusivo (11 testes). Revisão visual pendente por ausência de navegador. Próximo recorte: detalhar atendimento/relatório e permissões profissionais antes de implementar.
-
-Atualização local em 28/10/2026: migration de retirada das contas de doadora e catálogo de permissões aplicados com autorização. Confirmadas somente as duas contas internas existentes, sem concessões automáticas. As quatro migrations de agenda continuam pendentes. Evidência em [Status](backend/STATUS.md#aplicação-das-contas-internas--28102026); os relatos de conexão indisponível abaixo são históricos.
-
-Decisão vigente de acesso em 27/10/2026: **não existem contas nem área autenticada de doadora**. O público envia solicitações sem conta; autenticação é exclusiva de `admin` e `funcionario`. Autocadastro foi removido. Administradores e funcionários com `criar-funcionarios` cadastram funcionários, sem conceder permissões nem criar administradores. A migration de retirada remove contas antigas e o valor `doadora` do enum atual; referências nas migrations anteriores e nas evidências históricas não autorizam recriar esse acesso. Consulte Contratos e Status para implementação e aplicação local.
-
-Atualização em 27/10/2026: a agenda recebeu rotas e telas Blade de lista, contatos, confirmação, reagendamento, cancelamento, não realização e histórico, protegidas por `gerenciar-agenda`. A revisão visual e a ativação do schema/catálogo no desenvolvimento permanecem pendentes. Detalhes e resultados em [Status](backend/STATUS.md#fluxo-web-da-agenda--27102026); os registros abaixo preservam as etapas anteriores.
-
-Atualização mais recente: operações transacionais de agenda e contatos após admissão implementados no backend. O usuário confirmou bloqueio de sobreposição do responsável. Rotas e telas ainda estão pendentes; consulte [Contratos](backend/CONTRATOS.md#operações-de-backend-implementadas-em-26102026) e Status. Nenhuma dessas entregas representa aprovação clínica.
-
-Atualização posterior em 26/10/2026: models e autorização de agenda implementados, incluindo permissão independente e acumulável com atendimento. O fluxo web da agenda continua pendente; schema/catálogo não foram aplicados ao desenvolvimento nesta entrega. Consulte [Contratos](backend/CONTRATOS.md#contrato-técnico-proposto-da-agenda--26102026) e Status para o recorte efetivo.
-
-Avanço posterior em 26/10/2026: schema de agenda preparado em quatro migrations e testes de integridade, com autorização do usuário, sem aplicação ao banco de desenvolvimento. Models, permissão de agenda e fluxo web continuam pendentes; evidências em [Status](backend/STATUS.md).
-
-Atualização de 26/10/2026: o usuário relatou teste manual satisfatório do site após a entrega administrativa. O próximo recorte de agenda e relatório está em [especificação proposta](backend/CONTRATOS.md#próximo-recorte-agenda-e-relatório-de-visita--proposta-em-26102026), com decisões operacionais ainda pendentes. O relato manual e seus limites estão em Status; não substitui as validações pendentes descritas nas etapas anteriores.
-
-Refinamento confirmado pelo usuário: visitas nos dois locais, preferencialmente no domicílio; permissões separadas acumuláveis por funcionário; relatório com rascunho e correções versionadas após finalizar. Contratos distingue esses acordos dos detalhes técnicos e atribuições profissionais ainda propostos.
-
-Estado local mais recente em 24/10/2026: migrations administrativas e catálogo de permissões aplicados com autorização, preservando as três contas existentes e sem concessões automáticas. A revisão visual continua pendente por indisponibilidade de navegador nesta sessão. Veja [ativação local](backend/STATUS.md#ativação-local--24102026); os relatos anteriores preservam o histórico das etapas.
-
-Atualização posterior em 24/10/2026: o schema também foi verificado em MariaDB isolado; models administrativos, Gates e proteção de autoria na exclusão foram implementados. Consulte [Contratos](backend/CONTRATOS.md#base-de-models-e-autorização-implementada-em-24102026) e [Status](backend/STATUS.md) para distinguir a base implementada dos fluxos/telas ainda pendentes.
 
 | Estado | Significado |
 | --- | --- |
@@ -43,20 +35,20 @@ Atualização posterior em 24/10/2026: o schema também foi verificado em MariaD
 | Implementado | Existe no código ou na configuração versionada, com referência à fonte. |
 | Validado | Há uma verificação identificada, com data, ambiente e limites. Não equivale a homologação do produto. |
 
-As instruções de documentação e limites de atuação solicitadas pelo usuário são **acordadas para esta entrega**. O primeiro fluxo e suas diretrizes estruturais estão **acordados conforme relato do usuário em 23/10/2026**, com origem registrada em [R1](backend/ROADMAP.md). Campos funcionais de abertura, alerta agregado, função de atendimento, WhatsApp, resolução de repetição após contato, exclusão de arquivados das comparações e admissão administrativa seguida de visita/relatório antes da solicitação de documentos/exames receberam definições adicionais do usuário, registradas no Roadmap. Tipos/limites, relações, estados técnicos, demais desfechos dos alertas, permissões técnicas, novas convenções e prioridades continuam **propostos para revisão**. Não há ata ou homologação do serviço consultada.
+As instruções de documentação e limites de atuação solicitadas pelo usuário são **acordadas**. O primeiro fluxo e suas diretrizes estruturais estão **acordados conforme relato do usuário em 23/10/2026**, com origem registrada em [R1](backend/ROADMAP.md). Campos de abertura, alerta agregado, função de atendimento, WhatsApp, resolução de repetição após contato, exclusão de arquivados das comparações, visitas no domicílio ou no Banco, permissões acumuláveis, bloqueio de sobreposição na agenda e o ciclo do relatório (rascunho, finalização, correções versionadas, leitura separada da escrita, acesso do admin e continuidade por qualquer profissional autorizado) receberam definições do usuário, registradas no Roadmap e em Contratos. Demais desfechos, atribuições profissionais, critérios clínicos, novas convenções e prioridades continuam **propostos para revisão**. Não há ata ou homologação do serviço consultada.
 
 ## Ordem de leitura
 
 1. [Ambiente](AMBIENTE.md): preparar e executar a aplicação.
 2. [Arquitetura](ARQUITETURA.md): entender backend, frontend e fluxo web.
 3. [Padrões](PADROES.md): regras existentes, propostas e limites.
-4. [Status do backend](backend/STATUS.md): implementação e evidências.
+4. [Status do backend](backend/STATUS.md): estado atual, evidências e pendências.
 5. [Modelagem](backend/MODELAGEM.md): tabelas e pendências.
 6. [Contratos](backend/CONTRATOS.md): integração Laravel e Blade.
 7. [Roadmap](backend/ROADMAP.md): propostas futuras e dependências.
 8. [Segurança](SEGURANCA.md): controles, reforços, testes pendentes e evidências por assunto.
 
-Cada assunto tem um documento principal acima. Evite repetir instruções nos demais: use links.
+Cada assunto tem um documento principal acima. Evite repetir instruções nos demais: use links. Ao concluir uma etapa, atualize o **Estado atual** do Status e acrescente o registro datado ao histórico, em vez de empilhar avisos no topo dos demais documentos.
 
 Para análises ou correções de segurança, comece pelos IDs aplicáveis em [Segurança](SEGURANCA.md), confira suas fontes no código e atualize as evidências junto com a mudança. O checklist orienta a revisão e não autoriza, por si só, implementar todos os itens pendentes.
 
@@ -64,7 +56,7 @@ Para análises ou correções de segurança, comece pelos IDs aplicáveis em [Se
 
 Comece pelo [README](../README.md). Agentes devem ler também [AGENTS.md](../AGENTS.md); [CLAUDE.md](../CLAUDE.md) remete às mesmas instruções. Confira a implementação antes de reutilizar uma afirmação documental.
 
-Não confunda conta de acesso com cadastro de doadora do domínio. Recebimento, fila, detalhe, contato, conferência, arquivamento de repetidos e admissão administrativa têm implementação. O acompanhamento inicial mostra visita pendente, sem aprovação para doar. Consulte [Contratos](backend/CONTRATOS.md#atendimento-administrativo-implementado-em-26102026). As telas de apoio não definem a interface final; evidências e limites ficam em Status.
+Não confunda conta de acesso com cadastro de doadora do domínio. Admissão administrativa, visita realizada e relatório finalizado não aprovam ninguém para doar; não há aprovação clínica no sistema. As telas de apoio não definem a interface final; evidências e limites ficam em Status.
 
 Mudanças de comportamento devem atualizar a documentação afetada **no mesmo pull request**. Registre o estado, a evidência e as limitações; não converta uma proposta em acordo sem decisão identificável.
 

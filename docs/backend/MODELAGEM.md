@@ -4,12 +4,24 @@
 
 Fonte principal: [migrations](../../database/migrations). Esta descrição representa o schema declarado pelo código, não uma inspeção atual de cada banco de integrante.
 
-Em **24/10/2026**, foram preparadas seis migrations do recorte administrativo e verificadas em SQLite em memória e, posteriormente, em MariaDB 10.4.32 em banco exclusivo para testes. Após autorização posterior do usuário, foram aplicadas ao banco `banco_de_leite_dev`, preservando as contas existentes; veja [Status](STATUS.md#ativação-local--24102026). O schema físico novo está em [Recorte administrativo preparado](#recorte-administrativo-preparado-em-24102026); a tabela abaixo descreve a base anterior.
+### Inventário em 29/10/2026
+
+São 20 migrations, todas aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`). Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
+
+| Recorte | Tabelas | Lote local | Detalhe |
+| --- | --- | --- | --- |
+| Base Laravel | `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` | 1 | Tabela abaixo |
+| Papel de acesso | coluna `users.role` | 2 (criação), 4 (restrição a `admin\|funcionario` e autoria `criado_por_user_id`) | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Administrativo | `interessadas`, `solicitacoes`, `contatos_solicitacao`, `contato_pedidos`, `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`, `eventos_solicitacao`, `permissoes`, `permissao_user`, `eventos_permissao` | 3 | [Recorte administrativo](#recorte-administrativo-preparado-em-24102026) |
+| Agenda | contexto em `contatos_solicitacao`; `agendamentos`, `reservas_agenda`, `eventos_agendamento` | 5 | [Agenda](#desenho-físico-proposto-para-agenda--26102026) |
+| Visita e relatório | `atendimentos`, `relatorios_visita`, `versoes_relatorio_visita`, `eventos_atendimento`; estado `realizado` na agenda | 6 | [Atendimento e relatório](#persistência-proposta-para-atendimento-e-relatório--28102026) |
+
+As seções seguintes foram escritas a cada etapa e mantêm o desenho, as decisões e os limites de cada recorte; avisos de “sem aplicação ao desenvolvimento” nelas descrevem a data do registro. A tabela abaixo descreve a base Laravel.
 
 | Tabela | Campos e restrições relevantes | Origem |
 | --- | --- | --- |
 | `users` | `id` PK; `name`; `email` único; `email_verified_at` anulável; `password`; `remember_token` anulável; timestamps. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
-| `users.role` | Enum atual `admin`, `funcionario`, sem padrão; migration de retirada remove o papel e as contas antigas de doadora. Aplicação local pendente. | [migration atual](../../database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php) |
+| `users.role` | Enum atual `admin`, `funcionario`, sem padrão; migration de retirada remove o papel e as contas antigas de doadora. Aplicada localmente em 28/10/2026. | [migration atual](../../database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php) |
 | `password_reset_tokens` | `email` PK, `token`, `created_at` anulável. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
 | `sessions` | `id` PK; `user_id` anulável/indexado; `ip_address` e `user_agent` anuláveis; `payload`; `last_activity` indexado. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
 | `cache` | `key` PK; `value`; `expiration` indexado. | [migration de cache](../../database/migrations/0001_01_01_000001_create_cache_table.php) |
@@ -26,15 +38,15 @@ O Laravel também mantém `migrations` como controle das migrações aplicadas; 
 
 Há associação lógica entre sessão e conta por `sessions.user_id`, mas a migration não declara `constrained()` nem chave estrangeira. Tokens de recuperação usam e-mail como identificador, sem FK declarada para `users`. Não há entidades de coleta/estoque.
 
-Em 24/10/2026 foram implementados `Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`, `Permissao`, `ConcessaoPermissao` e `EventoPermissao`, em [Models](../../app/Models), com factories fictícias. As três associações com chave composta usam relações `belongsToMany`, sem model com chave primária composta. Metadados JSON dessas associações permanecem no pivot, sem cast próprio.
+Em 24/10/2026 foram implementados `Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`, `Permissao`, `ConcessaoPermissao` e `EventoPermissao`, em [Models](../../app/Models), com factories fictícias. As três associações com chave composta usam relações `belongsToMany`, sem model com chave primária composta. Metadados JSON dessas associações permanecem no pivot, sem cast próprio. Depois foram acrescentados `Agendamento`, `ReservaAgenda` e `EventoAgendamento` (26/10/2026) e `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento` (28/10/2026), descritos nas seções de agenda e relatório. Operações de negócio desses recortes são métodos transacionais dos próprios models.
 
 Os models usam tabelas/chaves explícitas, casts de JSON, booleanos, versões e datas imutáveis; registros sem `updated_at` declaram `UPDATED_AT = null`. Novos models mantêm a proteção padrão contra atribuição em massa de todos os campos. A futura camada de escrita deve validar e atribuir explicitamente os valores; factories não representam validação de dados de negócio. Relações/casts não executam admissão, triagem, validação clínica ou controle de acesso automaticamente.
 
-Conta com papel `doadora` representa autorização, não um cadastro de doadora com dados de saúde. Não há tabela de domínio para esse cadastro.
+Não existe papel nem conta de doadora: contas são apenas internas. A interessada é representada por `interessadas` e `solicitacoes`, sem vínculo com `users`. Não há tabela de doadora aprovada (D9 pendente).
 
 ## Dados e ambiente
 
-A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta por papel, com valores fixos de demonstração; não é idempotente.
+A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta admin e uma funcionário, com valores fixos de demonstração; não é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
 
 Conexão local, migrations e diferença entre MySQL e SQLite de testes: [Ambiente](../AMBIENTE.md). O levantamento original de 22/10/2026 não inspecionou o legado; a consulta posterior está registrada abaixo e não comprova compatibilidade.
 
@@ -49,6 +61,8 @@ Para discutir o primeiro fluxo, o schema mostra `SOLICITACAO → VISITA → FICH
 Antes de reutilizar o desenho, confirmar a identificação da pessoa, a regra de duplicidade, o momento do cadastro e a separação entre identificação e avaliação de aptidão. O usuário informou posteriormente que não há PDF ou artefato detalhado e forneceu um guia textual. Suas diretrizes e pendências estão em [R1 no Roadmap](ROADMAP.md#r1--solicitação-até-habilitação-para-doar). Nenhuma regra de PDF foi analisada.
 
 ## Proposta do fluxo de admissão — não implementada
+
+> Situação em 29/10/2026: a parte administrativa (pedido, identidade, contatos, resoluções, admissão), a agenda e o relatório narrativo foram implementados com desenho próprio, descrito nas seções finais deste documento. Continuam apenas propostos: doadora aprovada (D9), triagem estruturada, avaliação de saúde, requisitos, documentos/exames e anexos.
 
 Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acima; **P** = nova proposta. O [Roadmap](ROADMAP.md) identifica acordos e decisões D1–D12. O desenho completo abaixo continua **P**, mesmo quando materializa uma diretriz G. A autorização posterior de 24/10/2026 permitiu preparar apenas o schema administrativo descrito ao final; operações e tabelas clínicas continuam propostas. **PDF indisponível:** não há campos clínicos ou limites de aptidão atribuídos a ele.
 
@@ -218,7 +232,9 @@ O conjunto de atendimento pode conduzir o pedido e contato sem obter automaticam
 
 Base Eloquent implementada posteriormente: [Agendamento](../../app/Models/Agendamento.php), [ReservaAgenda](../../app/Models/ReservaAgenda.php) e [EventoAgendamento](../../app/Models/EventoAgendamento.php), com factories e relações de solicitação/contato/autoria/histórico. Reserva usa `solicitacao_id` como chave não incremental e não possui timestamps; evento não possui `updated_at`. Datas usam casts imutáveis, snapshots usam arrays e versões usam inteiros. Após nova autorização, foram implementadas as operações transacionais descritas em [Contratos](CONTRATOS.md#operações-de-backend-implementadas-em-26102026); ter uma relação isolada não valida a coerência funcional dos registros.
 
-**Atualização após autorização em 26/10/2026:** o schema abaixo foi preparado em quatro migrations aditivas, sem aplicação ao banco de desenvolvimento. Models, autorização e operações transacionais estão implementados; o fluxo web foi integrado em 27/10/2026, sem novas mudanças de schema. Não inclui schema clínico ou relatório. Base conferida: migrations de solicitações/contatos/permissões e os models atuais; as migrations antigas foram preservadas.
+**Situação em 29/10/2026:** as quatro migrations abaixo estão aplicadas no desenvolvimento (28/10/2026, lote 5). O estado `realizado` em `agendamentos` e a ação `realizacao` em `eventos_agendamento` foram acrescentados pela migration `2026_10_28_183704_add_realizacao_to_agenda_tables` (lote 6).
+
+**Atualização após autorização em 26/10/2026:** o schema abaixo foi preparado em quatro migrations aditivas, sem aplicação ao banco de desenvolvimento naquela data. Models, autorização e operações transacionais estão implementados; o fluxo web foi integrado em 27/10/2026, sem novas mudanças de schema. Não inclui schema clínico ou relatório. Base conferida: migrations de solicitações/contatos/permissões e os models atuais; as migrations antigas foram preservadas.
 
 Arquivos: [contexto dos contatos](../../database/migrations/2026_10_26_035200_add_contexto_agenda_to_contatos_solicitacao_table.php), [agendamentos](../../database/migrations/2026_10_26_035201_create_agendamentos_table.php), [reservas](../../database/migrations/2026_10_26_035203_create_reservas_agenda_table.php) e [eventos](../../database/migrations/2026_10_26_035204_create_eventos_agendamento_table.php). Evidências e limites em [Status](STATUS.md). `down()` remove os novos campos/tabelas e, portanto, perde os dados desse recorte se já estiverem preenchidos; não é procedimento autorizado para o desenvolvimento. O teste de upgrade preserva contas, pedidos e contatos legados no banco descartável.
 
@@ -287,15 +303,17 @@ A migration elimina as contas de doadora antigas, sessões e tokens de redefini�
 
 ## Persistência proposta para atendimento e relatório — 28/10/2026
 
+**Integração web em 29/10/2026:** as tabelas existentes passaram a ser utilizadas pelas rotas/telas de relatório, sem novas alterações físicas. Escritas continuam nos métodos transacionais; consultas exibem versões publicadas para leitura e rascunhos somente para escrita. Detalhes e limites em Contratos/Status.
+
 **Aplicação local em 29/10/2026:** as cinco migrations deste recorte estão aplicadas no desenvolvimento, lote 6, com tabelas novas vazias e dados anteriores preservados. O catálogo tem cinco permissões, sem concessões. A pendência de aplicação descrita nos registros históricos abaixo está resolvida; ver [Status](STATUS.md#ativação-local-dos-relatórios--29102026).
 
-**Evolução funcional posterior:** os models agora possuem operações transacionais e Gates descritos em [Contratos](CONTRATOS.md#backend-implementado-após-autorização-em-28102026). Registro da realização e rascunho/finalização/correção mantêm vínculos, revisão, numeração e autoria juntos; não houve nova alteração de schema. Atualização/exclusão de instâncias de versões é bloqueada por eventos Eloquent, sem pretender impedir SQL privilegiado ou Query Builder. Factories continuam fixtures independentes das operações. Ativação no desenvolvimento ainda pendente; as limitações das etapas anteriores abaixo são históricas.
+**Evolução funcional posterior:** os models agora possuem operações transacionais e Gates descritos em [Contratos](CONTRATOS.md#backend-implementado-após-autorização-em-28102026). Registro da realização e rascunho/finalização/correção mantêm vínculos, revisão, numeração e autoria juntos; não houve nova alteração de schema. Atualização/exclusão de instâncias de versões é bloqueada por eventos Eloquent, sem pretender impedir SQL privilegiado ou Query Builder. Factories continuam fixtures independentes das operações. As limitações das etapas anteriores abaixo são históricas.
 
 **Base Eloquent implementada posteriormente, com autorização:** `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento`, com factories de dados fictícios. `Agendamento::atendimento()` dá acesso ao fato registrado; a identidade continua ligada pelo agendamento/solicitação, sem duplicação. Relações identificam criador, editor, finalizador, responsável efetivo e autor de eventos separadamente. Versão-base/correções e eventos têm relações explícitas; versões/eventos não usam `updated_at`. Datas do domínio são imutáveis e números de versão/revisão usam casts inteiros.
 
 A proteção padrão de atribuição em massa foi mantida. Textos de rascunho/versão, motivos narrativos e hash de evento ficam ocultos em `toArray()`/JSON, inclusive nas relações carregadas. Continuam acessíveis em PHP: `$hidden` não é autorização nem criptografia. Não há carregamento automático de relações clínicas. Factories não substituem operações de negócio: não liberam reservas, não mantêm ponteiros/sequências automaticamente e não fazem finalização ou auditoria transacional. Não foram criados seeders de conteúdo clínico nem inseridos dados de desenvolvimento. Imutabilidade contra alterações explícitas, autorização e transições permanecem na etapa funcional seguinte.
 
-**Schema implementado após autorização em 28/10/2026, sem aplicação ao desenvolvimento.** Derivado dos acordos de narrativa/rascunho/versões e da agenda atual; nenhum PDF ou critério clínico fundamenta estes campos. As regras de operação continuam propostas e ainda não foram implementadas. Contrato funcional e decisões R1–R3 em [Contratos](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026).
+**Schema implementado após autorização em 28/10/2026** (aplicado ao desenvolvimento em 29/10/2026). Derivado dos acordos de narrativa/rascunho/versões e da agenda; nenhum PDF ou critério clínico fundamenta estes campos. As regras de operação foram implementadas depois, conforme os parágrafos acima; a tabela a seguir mantém o desenho aprovado para o schema. Contrato funcional e decisões R1–R3 em [Contratos](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026).
 
 Arquivos: `2026_10_28_183700_create_atendimentos_table`, `183701_create_relatorios_visita_table`, `183702_create_versoes_relatorio_visita_table`, `183703_create_eventos_atendimento_table` e `183704_add_realizacao_to_agenda_tables`, em `database/migrations`. Migrations anteriores preservadas. Os nomes abreviados compartilham o prefixo `2026_10_28_`.
 

@@ -1,6 +1,6 @@
 # FPA — Banco de Leite Humano
 
-Aplicação web Laravel e Blade do Banco de Leite Humano de Marília. Possui solicitação pública sem conta, atendimento administrativo e agenda. O acesso autenticado é exclusivo de funcionários e administradores; não existe autocadastro nem conta de doadora. Consulte `docs/GUIA.md` e `docs/backend/STATUS.md` para funcionalidades, ativação local e limites de validação.
+Aplicação web Laravel e Blade do Banco de Leite Humano de Marília. Possui solicitação pública sem conta, atendimento e admissão administrativa, agenda de visitas e relatórios de visita com rascunho e correções versionadas. O acesso autenticado é exclusivo de funcionários e administradores; não existe autocadastro nem conta de doadora. Documentos/exames, avaliação de saúde e habilitação para doar ainda não estão implementados. Consulte o [estado atual](docs/backend/STATUS.md#estado-atual--29102026) para funcionalidades, ativação local e limites de validação.
 
 A arquitetura atual usa PHP, Laravel, Blade, Bootstrap e MySQL/MariaDB. As telas de apoio ao desenvolvimento não representam a interface final.
 
@@ -11,10 +11,11 @@ Comece pelo [Guia e ordem de leitura](docs/GUIA.md).
 - [Ambiente](docs/AMBIENTE.md): requisitos, instalação, configuração local, execução e testes.
 - [Arquitetura](docs/ARQUITETURA.md): stack, pastas e responsabilidades de backend e frontend.
 - [Padrões](docs/PADROES.md): orientações existentes, propostas para revisão e limites de atuação.
-- [Status do backend](docs/backend/STATUS.md): implementação, evidências e pendências.
+- [Status do backend](docs/backend/STATUS.md): estado atual, evidências e pendências.
 - [Roadmap do backend](docs/backend/ROADMAP.md): etapas propostas e dependências.
 - [Modelagem](docs/backend/MODELAGEM.md): schema atual e questões em aberto.
 - [Contratos](docs/backend/CONTRATOS.md): integração Laravel/Blade e modelo para futuros fluxos.
+- [Segurança](docs/SEGURANCA.md): controles, verificações pendentes e evidências por assunto.
 
 Agentes devem iniciar por [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) aponta para a mesma referência.
 
