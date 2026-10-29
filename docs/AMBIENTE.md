@@ -55,7 +55,7 @@ npm.cmd run build
 
 Não importe o schema legado por cima das migrations. Não use `migrate:fresh` em banco com dados a preservar.
 
-Depois das migrations, provisione o catálogo de permissões com `php artisan db:seed --class=PermissaoSeeder --no-interaction`. O seeder é idempotente e não concede permissões a ninguém: o admin acessa todos os módulos automaticamente, e funcionários dependem de concessão explícita. Ainda não há tela para conceder permissões; consulte [Status](backend/STATUS.md#estado-atual--29102026).
+Depois das migrations, provisione o catálogo de permissões com `php artisan db:seed --class=PermissaoSeeder --no-interaction`. O seeder é idempotente e não concede permissões a ninguém: o admin acessa todos os módulos automaticamente, e funcionários dependem de concessão explícita. Conceda-as entrando como admin, no menu “Permissões”.
 
 O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `database/database.sqlite` remanescente da preparação anterior não representa a conexão MySQL. Os testes usam outro banco: SQLite em memória.
 

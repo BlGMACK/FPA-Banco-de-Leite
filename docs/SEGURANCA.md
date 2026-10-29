@@ -28,7 +28,7 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 
 | ID / prioridade | Estado observado e fonte | Reforço ou teste esperado | Verificação atual |
 | --- | --- | --- | --- |
-| SEG-01 / P1 | **Implementado:** `role` removido do `Fillable` de [User](../app/Models/User.php); cadastro e perfil mantêm listas explícitas de campos. | Manter papel controlado por operação interna autorizada. Testes enviam `role=admin` no cadastro/perfil e tentam preenchimento em massa: sem promoção. Gestão de contas/papéis ainda sem interface. | Validado no recorte em SQLite e MariaDB: E-03 e E-04. |
+| SEG-01 / P1 | **Implementado:** `role` removido do `Fillable` de [User](../app/Models/User.php); cadastro e perfil mantêm listas explícitas de campos. | Manter papel controlado por operação interna autorizada. Testes enviam `role=admin` no cadastro/perfil e tentam preenchimento em massa: sem promoção. Alteração de papel e desativação de contas continuam sem interface; concessão de permissões tem tela somente para admin (E-20). | Validado no recorte em SQLite e MariaDB: E-03 e E-04. |
 | SEG-02 / P1 | **Implementado:** Gates nas rotas de recebimento, fila, detalhe, análise, contatos, decisões, acompanhamento, agenda, relatórios e criação de funcionários. Consulta de IDs após autorização. Contas de doadora não existem mais. | Testes de visitante, funcionário sem concessão, funcionário autorizado, admin e revogação em cada módulo. Revisar escopo quando existirem outras unidades e antes das operações clínicas. | E-03/E-04, E-05, E-07, E-09, E-11, E-12, E-17 e E-19; não concede permissão clínica. |
 | SEG-03 / P1 | **Implementado no recorte:** consultas com parâmetros; nomes de campos fixos e ordenação selecionada entre opções permitidas. Fontes: [controller](../app/Http/Controllers/SolicitacaoController.php) e [model](../app/Models/Solicitacao.php). | Entrada com sintaxe SQL permanece dado; filtro de ordenação arbitrário é rejeitado. Revisar consultas novas e desempenho das correspondências. | E-05: persistência e filtros exercitados; não é auditoria completa de injeção SQL. |
 | SEG-04 / P1 | **Implementado:** views de [solicitações](../resources/views/solicitacoes), [agenda](../resources/views/agenda) e [relatórios](../resources/views/relatorios) exibem dados com escape Blade; narrativas preservam quebras de linha sem aceitar HTML. | Testes gravam texto com script e confirmam saída escapada. Validação em navegador e JavaScript dinâmico continuam pendentes. | E-05, E-11 e E-19: respostas HTML testadas; sem execução visual em navegador. |
@@ -51,6 +51,12 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 | SEG-16 / P1 | **Implementado:** guarda do teste de schema e helper em [TestCase](../tests/TestCase.php), chamado pelos testes que preparam banco nos módulos administrativo, agenda e relatórios. | Aceitam somente SQLite em memória ou `banco_de_leite_schema_test` local, em testing, sem URL/configuração em cache. Não presumir que classes antigas chamem o helper; conferir a seleção antes de execução destrutiva. | E-01, E-03, E-04 e E-05; sem teste negativo dedicado da guarda. |
 
 ## Evidências registradas
+
+### E-20 — gestão de permissões, 29/10/2026
+
+- SEG-01, SEG-02, SEG-04, SEG-05 e SEG-09: rotas `interno/permissoes` sob sessão e `gerenciar-permissoes` (somente admin) antes de consultar IDs; funcionário com `criar-funcionarios` recebe 403. Contas admin não são alvo (404). Responsável vem da sessão; campos extras ignorados. Motivo obrigatório e escapado no histórico; POST sem token retorna 419.
+- Escrita delegada a `Permissao::conceder/revogar`, que reautoriza sob trava, grava concessão e evento na mesma transação e não duplica evento em repetição. O efeito na sessão aberta do funcionário foi confirmado em navegador.
+- Validação: `PermissaoWebTest` (4 testes, 58 assertions) em SQLite; seleção com autorização e criação de funcionários no MariaDB exclusivo (24 testes, 146 assertions); fluxo Playwright/Edge com 6 cenários. Detalhes em [Status](backend/STATUS.md#gestão-de-permissões--29102026). Desativação de contas e alteração de papel continuam sem interface.
 
 ### E-19 — interface de relatórios, 29/10/2026
 

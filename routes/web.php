@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelatorioVisitaController;
 use App\Http\Controllers\SolicitacaoController;
@@ -47,6 +48,14 @@ Route::middleware(['auth', 'can:gerenciar-agenda'])->prefix('interno/agenda')->n
 Route::middleware(['auth', 'can:criar-funcionarios'])->prefix('interno/funcionarios')->name('interno.funcionarios.')->group(function (): void {
     Route::get('/novo', [FuncionarioController::class, 'create'])->name('create');
     Route::post('/', [FuncionarioController::class, 'store'])->name('store');
+});
+
+Route::middleware(['auth', 'can:gerenciar-permissoes'])->prefix('interno/permissoes')->name('interno.permissoes.')->group(function (): void {
+    Route::get('/', [PermissaoController::class, 'index'])->name('index');
+    Route::get('/{funcionario}', [PermissaoController::class, 'show'])->whereNumber('funcionario')->name('show');
+    foreach (['concessoes', 'revogacoes'] as $acao) {
+        Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'alterar'])->whereNumber('funcionario')->name($acao.'.store');
+    }
 });
 
 Route::get('/dashboard', function () {

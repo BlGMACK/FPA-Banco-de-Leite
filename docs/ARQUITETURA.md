@@ -17,17 +17,17 @@ A aplicação é um monólito web Laravel com páginas renderizadas por Blade e 
 
 | Caminho | Responsabilidade observada |
 | --- | --- |
-| [routes/web.php](../routes/web.php) | Solicitação pública sem conta (`/doar`), painel e perfil, e áreas internas: `interno/solicitacoes`, `interno/acompanhamentos`, `interno/agenda`, `interno/relatorios` e `interno/funcionarios`. Cada grupo exige autenticação e o Gate correspondente. |
+| [routes/web.php](../routes/web.php) | Solicitação pública sem conta (`/doar`), painel e perfil, e áreas internas: `interno/solicitacoes`, `interno/acompanhamentos`, `interno/agenda`, `interno/relatorios`, `interno/funcionarios` e `interno/permissoes`. Cada grupo exige autenticação e o Gate correspondente. |
 | [routes/auth.php](../routes/auth.php) | Sessão, senha e verificação de e-mail para contas internas. Sem autocadastro. |
 | [routes/console.php](../routes/console.php) | Comando de exemplo `inspire`; não há agendamento de negócio. |
 | [bootstrap/app.php](../bootstrap/app.php) | Inicialização, health check `/up`, `EnsureInternalAccount` no grupo web e alias `role`. |
-| [app/Http/Controllers](../app/Http/Controllers) | `SolicitacaoController`, `AtendimentoSolicitacaoController`, `AgendaController`, `RelatorioVisitaController`, `FuncionarioController`, `ProfileController` e controllers de autenticação. Selecionam entradas, delegam regras aos models e retornam views ou redirecionamentos. |
+| [app/Http/Controllers](../app/Http/Controllers) | `SolicitacaoController`, `AtendimentoSolicitacaoController`, `AgendaController`, `RelatorioVisitaController`, `FuncionarioController`, `PermissaoController`, `ProfileController` e controllers de autenticação. Selecionam entradas, delegam regras aos models e retornam views ou redirecionamentos. |
 | [app/Http/Requests](../app/Http/Requests) | Form Requests de login, perfil, solicitação, atendimento e criação de funcionário. Agenda e relatórios validam no controller e nos métodos dos models. |
 | [app/Http/Middleware](../app/Http/Middleware) | `EnsureInternalAccount` (revalida a conta a cada requisição) e `EnsureUserHasRole` (registrado como `role`, sem uso atual em rotas). |
 | [app/Models](../app/Models) | `User` e quinze models de domínio: identidade e pedidos (`Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`), permissões (`Permissao`, `ConcessaoPermissao`, `EventoPermissao`), agenda (`Agendamento`, `ReservaAgenda`, `EventoAgendamento`) e visita (`Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita`, `EventoAtendimento`). |
 | [AppServiceProvider](../app/Providers/AppServiceProvider.php) | Gates `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita`, `registrar-relatorios-visita` e `gerenciar-permissoes`. O admin é liberado explicitamente em cada capacidade, sem bypass global. |
 | [database](../database) | Migrations, factories e seeders (`DatabaseSeeder` de demonstração e `PermissaoSeeder` do catálogo); detalhes em [Modelagem](backend/MODELAGEM.md). |
-| [resources/views](../resources/views) | Layouts, componentes, autenticação, perfil e as áreas `solicitacoes`, `agenda`, `relatorios` e `funcionarios`, além de `errors/409`. `welcome.blade.php` é remanescente do scaffold, sem rota. |
+| [resources/views](../resources/views) | Layouts, componentes, autenticação, perfil e as áreas `solicitacoes`, `agenda`, `relatorios`, `funcionarios` e `permissoes`, além de `errors/409`. `welcome.blade.php` é remanescente do scaffold, sem rota. |
 | [app/View/Components](../app/View/Components) | Componentes de layout Blade. |
 | [resources/css/app.css](../resources/css/app.css) e [resources/js/app.js](../resources/js/app.js) | Bootstrap, estilos e interações Alpine/modal. |
 | [config](../config) | Configurações da aplicação; variáveis locais ficam fora do Git. |
@@ -48,5 +48,7 @@ Esconder links na navegação não substitui a autorização do servidor. As rot
 - **Atendimento administrativo:** `AtendimentoSolicitacaoController` e `AtendimentoSolicitacaoRequest`; decisões transacionais em `ResolucaoSolicitacao`. A área de acompanhamento lista admitidas e o estado da visita. Ver [Contratos](backend/CONTRATOS.md#atendimento-administrativo-implementado-em-26102026).
 - **Agenda:** `AgendaController` e views `agenda`, protegidos por `gerenciar-agenda`, independente de atendimento. Operações em `Agendamento` e `ContatoSolicitacao::registrarAcompanhamento`, com bloqueio de sobreposição do responsável. As views mostram apenas identificação e contato necessários à visita. Ver [Contratos](backend/CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026).
 - **Relatórios de visita:** `RelatorioVisitaController` e views `relatorios`, protegidos por `consultar-relatorios-visita` e, nas escritas, `registrar-relatorios-visita`. Operações em `Atendimento` e `RelatorioVisita`; leitura recebe somente versões publicadas. Ver [Contratos](backend/CONTRATOS.md#interface-blade-implementada-em-29102026).
+
+- **Permissões:** `PermissaoController` e views `permissoes`, protegidos por `gerenciar-permissoes` (somente admin). Concessão e revogação delegadas a `Permissao::conceder/revogar`, com motivo e histórico. Ver [Contratos](backend/CONTRATOS.md#gestão-de-permissões-implementada-em-29102026).
 
 A página inicial apresenta o acesso à solicitação e ao login; o painel apenas confirma a sessão. Todas as telas existentes são apoio ao desenvolvimento, sem aprovação como interface final nem revisão visual registrada.

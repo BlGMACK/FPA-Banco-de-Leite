@@ -8,7 +8,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 contra rotas, controllers, mode
 | --- | --- | --- |
 | Contas e sessão | **Implementado e aplicado.** Somente `admin` e `funcionario`; sem autocadastro nem conta de doadora. Login com limite de tentativas, recuperação de senha, perfil e exclusão com proteção de autoria. `EnsureInternalAccount` encerra sessões sem conta interna válida. Verificação de e-mail não é obrigatória (`User` não implementa `MustVerifyEmail`). | [rotas](../../routes/auth.php), [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [Contratos](CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | Cadastro de funcionários | **Implementado.** Admin ou funcionário com `criar-funcionarios` cria funcionário com senha aleatória e autoria; a primeira senha é definida por recuperação via e-mail. Não concede permissões nem cria admin. | [FuncionarioController](../../app/Http/Controllers/FuncionarioController.php) |
-| Permissões | **Implementado no backend, sem interface.** Catálogo com cinco códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita` e `registrar-relatorios-visita`. Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura. Concessão/revogação auditada existe em `Permissao` (somente admin), mas não há tela: hoje concessões exigem operação técnica. | [AppServiceProvider](../../app/Providers/AppServiceProvider.php), [User](../../app/Models/User.php), [Permissao](../../app/Models/Permissao.php) |
+| Permissões | **Implementado.** Catálogo com cinco códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita` e `registrar-relatorios-visita`. Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura. Tela `interno/permissoes`, somente para admin, concede e revoga com motivo obrigatório e mostra o histórico auditado. | [PermissaoController](../../app/Http/Controllers/PermissaoController.php), [Permissao](../../app/Models/Permissao.php), [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026) |
 | Recebimento e fila | **Implementado.** Formulário público sem conta (`/doar`) e registro interno, confirmação neutra, limite de envios, fila paginada com alerta único de correspondências e detalhe restrito. | [Contratos](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026) |
 | Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
@@ -39,7 +39,7 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Interface de concessão/revogação de permissões e desativação de funcionários.
+- Desativação de funcionários (exige decisão sobre o comportamento e nova migration).
 - Correção de dados do pedido após o recebimento.
 - Documentos/exames e anexos, avaliação de saúde, decisão registrada e habilitação para doar.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
@@ -49,7 +49,7 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Roteiro pendente para a equipe
 
-Usar dados fictícios e uma conta interna com escrita autorizada (admin possui acesso automático). A interface de concessão de permissões continua fora deste recorte; não criar acesso público para facilitar o teste.
+Usar dados fictícios e uma conta interna com escrita autorizada (admin possui acesso automático; funcionários recebem acesso em “Permissões”). Não criar acesso público para facilitar o teste.
 
 1. Com uma solicitação admitida e visita confirmada, abrir “Relatórios de visita” e registrar uma visita já ocorrida. Conferir nome, local, datas em horário de Marília e criação de rascunho, sem aprovação automática.
 2. Digitar um relato. Conferir que “Finalizar texto salvo” fica desabilitado enquanto o texto não foi salvo; salvar, recarregar e confirmar o conteúdo antes de finalizar.
@@ -62,6 +62,20 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Gestão de permissões — 29/10/2026
+
+Implementação autorizada pelo usuário: `PermissaoController`, quatro rotas em `interno/permissoes` sob `gerenciar-permissoes` (somente admin), duas views, item “Permissões” no menu e atalho após cadastrar funcionário. A tela usa os métodos auditados já existentes em `Permissao`; não houve mudança de model, schema, migration ou seeder. Contrato em [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/PermissaoWebTest.php`, SQLite `:memory:` | 4 testes, 58 assertions aprovados. |
+| `php artisan test`, SQLite `:memory:` | 307 testes: 303 aprovados, 4 ignorados (concorrência MariaDB); 1.478 assertions. |
+| `PermissaoWebTest`, `EmployeeAuthorizationTest` e `FuncionarioCreationTest`, MariaDB `banco_de_leite_schema_test` | 24 testes, 146 assertions aprovados. |
+| `php vendor/bin/pint --dirty --format agent` e `php artisan route:list --path=interno/permissoes` | Aprovado; quatro rotas registradas. |
+| Playwright/Edge contra o banco de testes | 6 de 6 cenários: funcionária sem permissão não vê módulos (403); admin concede agenda com motivo; efeito imediato na sessão já aberta da funcionária; motivo vazio bloqueado no navegador; revogação volta a negar acesso e aparece no histórico; sem rolagem horizontal a 390 px. |
+
+Os testes HTTP cobrem: autorização antes da busca de IDs (visitante, funcionário com `criar-funcionarios`, admin), contas admin fora do alcance (404), motivo obrigatório inclusive só com espaços, limite de 2.000 caracteres, permissão inexistente, repetição sem novo evento, campos extras ignorados, escape do motivo no histórico e CSRF. Nenhuma concessão foi feita em `banco_de_leite_dev`. Desativação de funcionários continua fora do recorte.
 
 ### Teste das telas em navegador — 29/10/2026
 

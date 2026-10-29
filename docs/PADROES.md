@@ -38,7 +38,7 @@ Implementação não equivale a validação. Registre comando, data, ambiente e 
 
 ## Permissões e dados
 
-O comportamento atual está em [Contratos](backend/CONTRATOS.md). Papéis fixos são apenas `admin` e `funcionario`; capacidades de funcionário vêm do catálogo de permissões concedidas individualmente, sem interface de gestão até o momento. Novas permissões por módulo e acesso por registro dependem de discussão.
+O comportamento atual está em [Contratos](backend/CONTRATOS.md). Papéis fixos são apenas `admin` e `funcionario`; capacidades de funcionário vêm do catálogo de permissões concedidas individualmente pelo admin, na tela “Permissões”, com motivo e histórico. Novas permissões por módulo e acesso por registro dependem de discussão.
 
 **Orientações existentes:** não versionar `.env`, dependências instaladas, credenciais, dados pessoais ou registros reais de saúde; usar dados fictícios. Cada integrante mantém seu banco local; migrations compartilham estrutura, não registros.
 

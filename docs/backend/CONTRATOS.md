@@ -45,8 +45,9 @@ Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão 
 | `gerenciar-agenda` | `interno/agenda`: lista, acompanhamento, contatos, agendamento, `reagendamentos`, `cancelamento` e `nao-realizacao` | [Rotas web da agenda](#rotas-web-da-agenda) |
 | `consultar-relatorios-visita`; escritas também `registrar-relatorios-visita` | `interno/relatorios`: lista, detalhe, registro da visita, `rascunho`, `finalizar` e `correcao` | [Interface Blade dos relatórios](#interface-blade-implementada-em-29102026) |
 | `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
+| `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes` e `revogacoes` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
 
-Não há rota para conceder ou revogar permissões, desativar funcionários ou corrigir dados de pedidos.
+Não há rota para desativar funcionários ou corrigir dados de pedidos.
 
 ## Campos, mensagens e permissões
 
@@ -72,7 +73,7 @@ A matriz é exercitada por `FuncionarioCreationTest`. Rotas de demonstração fo
 
 ## Base de models e autorização implementada em 24/10/2026
 
-> Situação posterior: o catálogo passou a cinco códigos (atendimento, agenda, criação de funcionários e consulta/registro de relatórios), todos aceitos por `conceder/revogar`; contas de doadora e rotas de apoio por papel foram removidas; criação de funcionários foi implementada. Concessão/revogação continua sem rota ou tela. O texto abaixo descreve a entrega de 24/10/2026.
+> Situação posterior: o catálogo passou a cinco códigos (atendimento, agenda, criação de funcionários e consulta/registro de relatórios), todos aceitos por `conceder/revogar`; contas de doadora e rotas de apoio por papel foram removidas; criação de funcionários foi implementada. Concessão/revogação ganhou tela própria em 29/10/2026 ([Gestão de permissões](#gestão-de-permissões-implementada-em-29102026)). O texto abaixo descreve a entrega de 24/10/2026.
 
 Escopo autorizado pelo usuário: models do recorte administrativo, autorização dos funcionários e preservação de autoria. Não foram criadas rotas, telas ou API de atendimento/gestão de permissões. As rotas de apoio por papel mantêm sua finalidade anterior.
 
@@ -542,6 +543,22 @@ O usuário determinou a retirada integral do acesso de doadoras e autorizou a re
 - A pessoa define sua própria senha pela recuperação por e-mail já existente. O cadastro não envia automaticamente convite, não inicia sessão da pessoa criada e não troca a sessão do operador. Entrega real de e-mail depende da configuração operacional; não foi homologada nesta tarefa.
 - A migration `2026_10_27_202742_restrict_users_to_internal_accounts` remove contas antigas com papel `doadora`, suas sessões de banco e tokens de recuperação; restringe o enum a `admin|funcionario`, sem padrão implícito, e acrescenta autoria da criação. Não altera interessadas, solicitações ou dados clínicos. FKs continuam ativas: vínculo inesperado impede a exclusão, sem apagar histórico em cascata. `down()` não restaura contas excluídas. Aplicada no desenvolvimento em 28/10/2026 (lote 4), sem contas de doadora remanescentes.
 - Seeder de desenvolvimento passa a criar somente admin/funcionário; catálogo inclui a permissão nova sem concedê-la automaticamente. Referências anteriores deste documento a autocadastro ou perfil doadora são histórico superado por esta decisão.
+
+## Gestão de permissões implementada em 29/10/2026
+
+Tela para o administrador conceder e revogar as permissões do catálogo a funcionários, usando `Permissao::conceder/revogar` (Gate `gerenciar-permissoes`, transação com trava, evento com autor, motivo e instante). Fontes: [PermissaoController](../../app/Http/Controllers/PermissaoController.php) e [views](../../resources/views/permissoes).
+
+| Método / caminho | Nome `interno.permissoes.*` | Entrada e efeito |
+| --- | --- | --- |
+| GET `/interno/permissoes` | `index` | Funcionários em ordem de nome, 20 por página, com permissões ativas. Contas admin não aparecem. |
+| GET `/interno/permissoes/{funcionario}` | `show` | Cinco permissões do catálogo com estado (ativa desde/por quem, ou não concedida), descrição e formulário; histórico de alterações em páginas de 15. Conta inexistente ou admin: 404. |
+| POST `/interno/permissoes/{funcionario}/concessoes` | `concessoes.store` | `permissao_id` (existente) e `motivo` (obrigatório, até 2.000 caracteres, não só espaços). Redireciona ao detalhe com status. |
+| POST `/interno/permissoes/{funcionario}/revogacoes` | `revogacoes.store` | Mesmas entradas; revoga a concessão ativa. |
+
+- Todas as rotas exigem sessão e `gerenciar-permissoes` antes de consultar IDs; funcionário com `criar-funcionarios` não gerencia permissões. O responsável vem da sessão; campos extras são ignorados.
+- Repetir uma concessão já ativa ou revogação já efetiva não grava evento e retorna “Nenhuma alteração”. Erros de validação voltam ao detalhe com o motivo preservado apenas no formulário da permissão correspondente.
+- O efeito vale na próxima requisição do funcionário, inclusive em sessão aberta, porque os Gates consultam o banco a cada verificação. Motivos são exibidos com escape no histórico.
+- Fora do recorte: desativação de funcionários, alteração de papel, criação de admin e permissões por registro.
 
 ## Atendimento e relatório narrativo — especificação de 28/10/2026
 
