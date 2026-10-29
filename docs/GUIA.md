@@ -4,6 +4,10 @@ A base de implementação foi descrita em 22/10/2026; Roadmap, Modelagem e Contr
 
 ## Estados usados
 
+Ativação local em 29/10/2026: as cinco migrations de relatório foram aplicadas no desenvolvimento (lote 6) e o catálogo foi atualizado para cinco permissões, sem concessões automáticas. As 20 migrations estão aplicadas; contas e solicitação existentes foram preservadas. A pendência de schema indicada nos relatos anteriores está resolvida. Próximo recorte: telas/rotas Blade de relatório e sua validação. Evidência em [Status](backend/STATUS.md#ativação-local-dos-relatórios--29102026).
+
+Operações de relatório implementadas em 28/10/2026: Gates separados de leitura/escrita, realização transacional, rascunho, finalização e correção versionada, com testes em SQLite e MariaDB exclusivo. A agenda reconhece visitas realizadas e impede novo agendamento nesse acompanhamento. Ainda não há telas/rotas de relatório; antes de usar a agenda atualizada no desenvolvimento, aplicar as cinco migrations de relatório e atualizar o catálogo em etapa de ativação autorizada. Nada foi aplicado ao desenvolvimento neste recorte. Contratos e Status detalham os limites.
+
 Avanço posterior em 28/10/2026: implementados os quatro models de atendimento/relatório, relações com a agenda, casts e factories. Proteção padrão de atribuição em massa mantida; narrativa omitida da serialização automática. Permissões e operações do relatório continuam pendentes. Consulte [Status](backend/STATUS.md) para as verificações e o limite de ativação local.
 
 Implementação autorizada em 28/10/2026: preparadas cinco migrations para atendimento, rascunho, versões, eventos e estado de realização da agenda. A aplicação foi limitada aos bancos de testes; o desenvolvimento não recebeu essas migrations. Models, permissões, transações e telas do relatório continuam pendentes. Evidências e limites em [Status](backend/STATUS.md#schema-de-atendimento-e-relatório--28102026).

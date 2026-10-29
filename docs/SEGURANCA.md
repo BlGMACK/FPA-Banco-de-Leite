@@ -1,5 +1,18 @@
 # Acompanhamento de segurança
 
+## Ativação local dos relatórios — 29/10/2026
+
+- SEG-09 e SEG-16: cinco migrations aplicadas com caminhos explícitos e somente `PermissaoSeeder` executado em `banco_de_leite_dev`, após autorização. Nenhuma recriação, fixture ou concessão automática. As duas contas e uma solicitação existentes foram preservadas; tabelas novas vazias e concessões continuam zeradas.
+- Catálogo confirmado com cinco códigos; 20 migrations aplicadas, nenhuma pendente. A conexão inicialmente recusada foi restabelecida pelo usuário antes da aplicação. Evidência em [Status](backend/STATUS.md#ativação-local-dos-relatórios--29102026).
+- Verificação local limitada a aplicação, status e contagens. Sem nova execução de testes, revisão visual ou validação de futuros endpoints de relatório. As evidências automatizadas anteriores permanecem com seus limites.
+
+## Operações de relatório — evidência de 28/10/2026
+
+- SEG-02, SEG-09, SEG-10 e SEG-16: Gates de leitura/escrita com admin explícito; revogação consultada no banco, incluindo replay; métodos de consulta retornam somente campos autorizados e leitura isolada não retorna rascunho. Operações fazem autorização antes da validação/consulta e sob trava.
+- UUID/hash/revisão evitam repetição e sobrescrita desatualizada; realização e publicação são transacionais com auditoria obrigatória. Metadados operacionais não incluem texto/motivo narrativo. Versões recusam `save`/`delete` de instâncias existentes, mas operações privilegiadas sem eventos/SQL direto continuam fora dessa proteção. Não confundir com restrição do usuário do banco ou criptografia.
+- Testes finais de operações/autorização: 31 testes/139 assertions em SQLite e MariaDB exclusivo. Execução MariaDB anterior incluindo concorrência e regressão de agenda: 56 testes/327 assertions. Suíte SQLite completa: 287 aprovados, 4 ignorados, 1.270 assertions. Comandos, sequência e limites em [Status](backend/STATUS.md#operações-e-permissões-de-relatório--28102026).
+- Próximos reforços: proteger as futuras rotas, CSRF, validação de formulários/flash de conteúdo restrito, escape de narrativa e autorização de histórico. Fluxo web de relatório ainda não existe. Nenhuma ativação ou concessão no desenvolvimento; aplicar schema/catálogo antes de disponibilizar o código atualizado.
+
 ## Models de relatório e MariaDB — evidência posterior de 28/10/2026
 
 - SEG-02, SEG-09 e SEG-16: models mantêm bloqueio padrão de atribuição em massa e relações explícitas de autoria. Textos de relatório/rascunho, motivos narrativos e hash não aparecem em serialização automática, inclusive nas relações carregadas. `$hidden` não protege leitura direta em PHP nem substitui autorização.

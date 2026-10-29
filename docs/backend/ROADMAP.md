@@ -188,6 +188,10 @@ O usuário confirmou retirada do autocadastro e de todas as contas de doadora. A
 
 ## Recorte de atendimento e relatório — 28/10/2026
 
+**Ativação concluída em 29/10/2026:** cinco migrations e catálogo aplicados no desenvolvimento com autorização, preservando registros e sem concessões automáticas. Próximo recorte: interface Blade de relatórios, com rotas protegidas, testes de formulário/CSRF/escape e revisão manual. O backend e a persistência estão disponíveis; o fluxo de relatório ainda não está acessível por telas.
+
+**Avanço posterior autorizado:** permissões e operações de realização, rascunho, finalização/correção implementadas; agenda integrada ao estado realizado e ao bloqueio de novo agendamento. Concorrência e rollback transacional verificados em MariaDB exclusivo. Próximo recorte: ativação local das migrations/catálogo e interface Blade própria do relatório, com testes de autorização/CSRF/escape e revisão manual. Ativação e telas ainda não foram executadas; referências a permissões/operações como próximo passo abaixo registram a sequência anterior.
+
 Após ativação local da agenda, o usuário autorizou trabalhar na etapa de definição do atendimento e relatório. [Contrato detalhado](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026) e [persistência proposta](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026) preparados sem implementar módulo ou alterar banco. Narrativa ampla, rascunho e versões após finalizar já são acordos; campos físicos e operações agora descritos são propostas.
 
 R1–R3 confirmadas pelo usuário em 28/10/2026: leitura separada de escrita/finalização; administrador com acesso automático; qualquer profissional autorizado para escrita pode continuar/corrigir relatório de outro autor, com autoria e versões preservadas. Não inferir habilitações profissionais ou cargos reais. Realização com data efetiva, uma visita por agendamento, texto simples, imutabilidade e tratamento da fila após visita estão propostos para revisão.

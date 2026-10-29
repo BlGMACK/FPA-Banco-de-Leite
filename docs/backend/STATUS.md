@@ -1,5 +1,30 @@
 # Status do backend
 
+## Ativação local dos relatórios — 29/10/2026
+
+Com autorização do usuário para aplicar migrations/catálogo e fazer commits, executadas as cinco migrations `2026_10_28_183700` a `183704` com `php artisan migrate --path=...` (cinco caminhos explícitos) e `--no-interaction`. Executado somente `php artisan db:seed --class=PermissaoSeeder --no-interaction`. A primeira consulta falhou por conexão recusada, inclusive fora do sandbox; após o usuário iniciar o servidor, a aplicação concluiu normalmente.
+
+`migrate:status --no-interaction` confirmou **20 migrations aplicadas, nenhuma pendente**, com as cinco novas no lote 6. Contagens antes/depois em `banco_de_leite_dev`: duas contas internas, uma solicitação e zero interessadas, contatos, agendamentos, reservas e eventos de agenda. As quatro tabelas novas estão vazias. O catálogo passou de três para cinco permissões; `permissao_user` continuou vazio. Códigos confirmados: atendimento, agenda, criação de funcionários, consulta de relatórios e registro de relatórios.
+
+Não houve recriação do banco, `migrate:fresh`, `DatabaseSeeder`, inserção de fixtures, concessão automática ou mudança de `.env`/dependências. A verificação local foi de aplicação/status e contagens, sem exibir dados pessoais; não substitui revisão visual ou exercício manual. Os resultados automatizados da etapa anterior continuam registrados abaixo; sem alteração de PHP nesta ativação, não foram repetidos. `git diff --check` aprovado, com avisos somente de normalização de fim de linha.
+
+O schema já permite usar a agenda atualizada. O backend de relatórios existe, mas suas telas/rotas continuam pendentes. A autorização atual de commit abrange as alterações da etapa anterior, separadas entre permissões, operações/integração e documentação; não inclui push.
+
+## Operações e permissões de relatório — 28/10/2026
+
+Implementados os Gates/catálogo de leitura e escrita, consultas autorizadas, realização da visita, salvamento de rascunho, finalização e abertura/finalização de correção. Agenda reconhece `realizado`, remove atendidas da fila e bloqueia nova confirmação nesse acompanhamento. Narrativas/motivos restritos não entram no histórico operacional. Contrato e limites em [Contratos](CONTRATOS.md#backend-implementado-após-autorização-em-28102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit`, SQLite `:memory:` | **291 testes: 287 aprovados, 4 ignorados; 1.270 assertions**. Os quatro ignorados exigem MariaDB para concorrência real (dois de agenda e dois de relatório). |
+| `RelatorioVisitaOperationsTest`, `RelatorioVisitaAuthorizationTest`, `RelatorioVisitaConcurrencyTest`, `AgendaOperationsTest`, `AgendaWebTest`, MariaDB exclusivo, via `php vendor/bin/phpunit ... --stop-on-error` | **56 testes, 327 assertions aprovados**, antes dos oito cenários adicionais de revisão/auditoria/autorizações. |
+| Reexecução final de `RelatorioVisitaOperationsTest` e `RelatorioVisitaAuthorizationTest`, SQLite e MariaDB exclusivo | **31 testes, 139 assertions aprovados em cada ambiente**, incluindo os oito casos adicionais. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado após ajustes automáticos. |
+
+Os processos usam `APP_ENV=testing`, `DB_URL` vazio e conexão/banco explícitos: SQLite em memória ou `banco_de_leite_schema_test` local, com guarda antes da preparação. Concorrência usa processos/conexões independentes e barreira por trava: duas finalizações e cancelamento contra realização produziram uma conclusão e um 409 por disputa. Não é teste de carga nem prova de todas as interleavings. Falhas simuladas de auditoria confirmam reversão de realização e finalização. Testes cobrem datas/fuso, motivo de divergência, reenvio, revisão vencida, limites, revogação, matriz de acesso e não exposição na agenda.
+
+Nenhuma migration/seeder executada no desenvolvimento, nenhuma concessão, alteração de `.env`, dependências ou commit nesta etapa. **A agenda atualizada exige as migrations de relatório antes do uso local**; ativação ainda pendente. Não há telas/rotas de relatório; não houve revisão visual. A proteção de versões por eventos Eloquent não impede SQL direto ou operações que ignorem eventos. Não foi implementada aprovação clínica.
+
 ## Models de relatório e validação MariaDB — 28/10/2026
 
 O usuário autorizou repetir a validação, implementar os models e fazer commits por finalidade. Implementados `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento`, suas factories, relações/casts e `Agendamento::atendimento()`. Campos narrativos/motivos e hash de evento são omitidos na serialização padrão; atribuição em massa segue bloqueada. Não foram implementados Gates, operações transacionais ou telas de relatório. Detalhes em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026).
