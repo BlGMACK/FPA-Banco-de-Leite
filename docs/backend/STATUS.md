@@ -12,7 +12,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 contra rotas, controllers, mode
 | Recebimento e fila | **Implementado.** Formulário público sem conta (`/doar`) e registro interno, confirmação neutra, limite de envios, fila paginada com alerta único de correspondências e detalhe restrito. | [Contratos](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026) |
 | Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
-| Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Revisão visual pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
+| Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
 | Documentos/exames, avaliação de saúde, decisão e habilitação | **Não implementado.** Regras, profissionais e critérios ainda não definidos pelo serviço (D6, D9). | [Roadmap](ROADMAP.md#pendências-para-revisão) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
@@ -32,7 +32,7 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Validações pendentes
 
-- **Revisão visual e de interação** das telas internas (atendimento, agenda, relatórios): responsividade, teclado, acessibilidade e comportamento Alpine. Nenhuma sessão de agente teve navegador disponível; o único retorno manual é o relato do usuário de 26/10/2026 sobre o fluxo administrativo, sem detalhes de cenários. Roteiro dos relatórios abaixo.
+- **Avaliação de usabilidade pela equipe.** O fluxo completo (pedido público → admissão → agenda → relatório) e o roteiro dos relatórios foram executados em navegador automatizado em 29/10/2026, sem defeitos funcionais ([registro](#teste-das-telas-em-navegador--29102026)). Faltam o julgamento humano das telas, leitor de tela, outros navegadores e dispositivos reais, além das sugestões de melhoria registradas. Atendimento e agenda foram exercitados no caminho feliz, sem revisão detalhada de erros.
 - Concorrência coberta apenas nos cenários testados; sem teste de carga ou volume real.
 - Entrega real de e-mail (SMTP) não validada; necessária para a primeira senha de novos funcionários.
 - Ambiente de publicação, backups e restauração não verificados ([SEG-13](../SEGURANCA.md#segurança-dos-módulos-e-da-operação), [SEG-15](../SEGURANCA.md#segurança-dos-módulos-e-da-operação)).
@@ -57,11 +57,36 @@ Usar dados fictícios e uma conta interna com escrita autorizada (admin possui a
 4. Abrir o mesmo rascunho em duas abas. Salvar na primeira e tentar salvar na segunda. Conferir mensagem de conflito, texto rejeitado disponível para cópia e ausência de sobrescrita. Copiar antes de recarregar.
 5. Repetir a navegação com viewport estreita e teclado: menu, filtros, campos, mensagens, botões e histórico. Registrar problemas de rolagem, leitura, foco ou acionamento.
 
-Leitura isolada, revogação e CSRF já têm evidências automatizadas; não marcar como revisão manual sem execução real. Documentos/exames continuam dependendo de especificação funcional própria.
+Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco passos foram executados em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); a equipe ainda deve repeti-los para avaliar a usabilidade. Documentos/exames continuam dependendo de especificação funcional própria.
 
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Teste das telas em navegador — 29/10/2026
+
+A pedido do usuário, Playwright 1.56.1 instalado numa pasta temporária fora do projeto (sem alterar `package.json`), usando o Microsoft Edge do sistema em modo headless. Servidor PHP temporário (`php -S`, executado em `public/`) com `DB_DATABASE=banco_de_leite_schema_test`, sem tocar em `banco_de_leite_dev` nem no `.env`. Dados fictícios criados só nesse banco: `PermissaoSeeder`, uma conta admin e uma funcionária com apenas `consultar-relatorios-visita`.
+
+| Cenário | Resultado |
+| --- | --- |
+| Pedido público em `/doar` (desktop) | Confirmação neutra exibida. |
+| Login admin, fila, início de análise, contato e admissão | Aprovado. |
+| Agenda: contato de acompanhamento e confirmação da visita | Aprovado; a visita aparece em “Visitas a registrar”. |
+| Roteiro 1: registro da visita realizada | Relatório criado em rascunho; tela informa que não aprova a doação. |
+| Roteiro 2: salvar antes de finalizar | “Finalizar texto salvo” desabilitado após digitar sem salvar e habilitado após salvar; texto preservado após recarregar; publicação da versão 1. |
+| Roteiro 3: correção versionada | Versão 2 publicada; versão 1 consultável com o texto original. |
+| Roteiro 4: conflito entre abas | Rascunho × rascunho: 409, texto rejeitado mantido no editor somente leitura, botões desabilitados, sem sobrescrita (conferido no banco). Finalização × rascunho: 409 e texto enviado na área separada para cópia. |
+| Roteiro 5: teclado e celular (390 px) | Ordem de Tab lógica, com foco visível em todos os elementos; sem rolagem horizontal em `/doar`, fila, agenda, lista e relatório; menu recolhido abre. |
+| Leitura isolada | Funcionária vê somente a versão publicada, sem editor, rascunho ou motivo em elaboração; menu restrito; `/interno/agenda` responde 403. |
+
+Console do navegador sem erros JavaScript; apenas os 409 e 403 esperados. Limites: navegador automatizado não substitui avaliação humana, leitor de tela, Firefox/Safari ou dispositivo real. Atendimento e agenda foram cobertos apenas no caminho feliz.
+
+Sugestões de usabilidade, sem defeito funcional, para decisão da equipe:
+
+- No registro da visita, início e fim efetivos vêm vazios, embora o horário previsto apareça logo acima; pré-preencher reduziria digitação.
+- No conflito rascunho × rascunho, o texto rejeitado fica no editor com o rótulo “Relato da visita”, o que pode ser confundido com o rascunho salvo; a variante após finalização usa o rótulo “Texto enviado e não salvo”.
+- Num relatório novo e vazio, “Finalizar texto salvo” fica habilitado; o backend recusa a finalização vazia, mas o botão poderia indicar isso antes.
+- Não há link “pular para o conteúdo”: são oito paradas de Tab no menu antes do conteúdo da página.
 
 ### Preparação da revisão manual — 29/10/2026
 

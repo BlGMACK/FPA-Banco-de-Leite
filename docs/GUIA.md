@@ -4,7 +4,7 @@
 
 O primeiro fluxo (solicitação até habilitação para doar) está implementado até o **relatório de visita**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas e relatório narrativo com rascunho, finalização e correções versionadas. As 20 migrations estão aplicadas no banco de desenvolvimento e a suíte automatizada passa (302 testes, 4 ignorados por exigirem MariaDB).
 
-Ainda não existem: documentos/exames, avaliação de saúde, decisão e habilitação; interface de concessão de permissões; correção de dados do pedido; coleta, estoque e distribuição. A revisão visual das telas internas continua pendente.
+Ainda não existem: documentos/exames, avaliação de saúde, decisão e habilitação; interface de concessão de permissões; correção de dados do pedido; coleta, estoque e distribuição. O fluxo completo foi exercitado em navegador automatizado em 29/10/2026, sem defeitos funcionais; falta a avaliação de usabilidade pela equipe.
 
 O retrato completo, com fontes e evidências, está no [Estado atual do Status](backend/STATUS.md#estado-atual--29102026). O código e as migrations são as evidências de implementação; ideias, propostas e arquivos antigos não comprovam funcionalidades disponíveis.
 

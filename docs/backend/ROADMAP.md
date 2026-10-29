@@ -4,7 +4,7 @@ As prioridades e entregas técnicas abaixo são **propostas para revisão da equ
 
 ## Situação em 29/10/2026
 
-O primeiro fluxo está implementado até o relatório de visita: recebimento, atendimento e admissão administrativa, agenda e relatório narrativo versionado, todos aplicados no desenvolvimento. **Próximo passo:** revisão manual das telas de relatório com a equipe ([roteiro](STATUS.md#roteiro-pendente-para-a-equipe)) e ajustes de usabilidade. Depois disso, as continuações dependem de decisão: interface de concessão de permissões, correção de dados do pedido e especificação funcional de documentos/exames e avaliação de saúde (D6) antes de qualquer código desse recorte. Esta posição não autoriza implementação.
+O primeiro fluxo está implementado até o relatório de visita: recebimento, atendimento e admissão administrativa, agenda e relatório narrativo versionado, todos aplicados no desenvolvimento. **Próximo passo:** o roteiro das telas de relatório passou em navegador automatizado ([registro](STATUS.md#teste-das-telas-em-navegador--29102026)); falta a equipe avaliar a usabilidade e decidir sobre as sugestões registradas. Depois disso, as continuações dependem de decisão: interface de concessão de permissões, correção de dados do pedido e especificação funcional de documentos/exames e avaliação de saúde (D6) antes de qualquer código desse recorte. Esta posição não autoriza implementação.
 
 P0 indica pré-requisito de alinhamento; P1, base de implementação; P2, evolução após a base. A ordem definitiva depende dos fluxos reais do Banco de Leite.
 
