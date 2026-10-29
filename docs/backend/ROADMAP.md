@@ -4,7 +4,7 @@ As prioridades e entregas técnicas abaixo são **propostas para revisão da equ
 
 ## Situação em 29/10/2026
 
-O primeiro fluxo está implementado até o relatório de visita: recebimento, atendimento e admissão administrativa, agenda e relatório narrativo versionado, todos aplicados no desenvolvimento. **Próximo passo:** o roteiro das telas de relatório passou em navegador automatizado ([registro](STATUS.md#teste-das-telas-em-navegador--29102026)); as sugestões de usabilidade foram aplicadas e a tela de gestão de permissões foi entregue; falta a equipe avaliar as telas. As continuações dependem de decisão: desativação de funcionários, correção de dados do pedido e especificação funcional de documentos/exames e avaliação de saúde (D6) antes de qualquer código desse recorte. Esta posição não autoriza implementação.
+O primeiro fluxo está implementado até o relatório de visita: recebimento, atendimento e admissão administrativa, agenda e relatório narrativo versionado, todos aplicados no desenvolvimento. **Próximo passo:** o roteiro das telas de relatório passou em navegador automatizado ([registro](STATUS.md#teste-das-telas-em-navegador--29102026)); as sugestões de usabilidade foram aplicadas e a tela de gestão de permissões foi entregue; falta a equipe avaliar as telas. Em 29/10/2026 o usuário definiu as regras da [desativação de funcionários](#desativação-de-funcionários--acordado-em-29102026) e a estrutura da [avaliação após visita, exames e documentos](#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). A desativação está pronta para ser proposta tecnicamente; exames ainda dependem da lista real e dos desfechos da decisão. Correção de dados do pedido continua sem definição. Esta posição não autoriza implementação.
 
 P0 indica pré-requisito de alinhamento; P1, base de implementação; P2, evolução após a base. A ordem definitiva depende dos fluxos reais do Banco de Leite.
 
@@ -101,11 +101,11 @@ Detalhes técnicos, limites de campos, normalização e resolução dos alertas 
 | D3 | Campos iniciais definidos pelo usuário. | Nome completo, CPF, e-mail, município/bairro, endereço completo e fixo e/ou celular (ao menos um); detalhes adicionais opcionais. CNS e preferência de data não entram como obrigatórios; momento a definir. Tipos/limites em Modelagem são propostos. |
 | D4 | Endereço completo na abertura, confirmado pelo usuário. | Decomposição e limites propostos em Modelagem; complemento opcional. |
 | D5 | Atendimento dos pedidos agrupado em uma função. | Confirmado pelo usuário e implementado como permissão `atender-solicitacoes`, acumulável com agenda e relatórios; admin com acesso automático (confirmado em 28/10/2026). Atribuições clínicas e habilitações profissionais continuam pendentes. |
-| D6 | Aptidão, documentos, exames, validade e reavaliação. | Sequência confirmada: somente solicitar documentos/exames após visita e análise das informações, quando houver indicação. Conteúdo exigido, profissionais, critérios e validade ainda dependem do serviço; relatório narrativo é preferência atual, sujeita a revisão. |
+| D6 | Aptidão, documentos, exames, validade e reavaliação. | Sequência confirmada: somente solicitar documentos/exames após visita e análise das informações, quando houver indicação. **Estrutura acordada em 29/10/2026** ([avaliação e exames](#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): permissões, catálogo fixo, estados, anexos, validade e regra de avanço. Lista real de exames, prazos por tipo e desfechos da decisão ainda dependem do serviço. |
 | D7 | Alertas de correspondência e resolução humana. | Confirmado: contato que esclarece a repetição, escolha humana de qual pedido avança e qual arquiva, ou arquivamento de ambos com motivo. Comparar somente pedidos ativos e cadastros administrativamente concluídos; arquivados não geram flags. Detalhes técnicos/reabertura continuam propostos ou pendentes. |
 | D8 | Cancelamento, ausência e reagendamento. | **Implementado na agenda:** quem tem `gerenciar-agenda` reagenda, cancela ou registra não realização com motivo, preservando a admissão e o histórico. Prazos, limites de tentativas e efeitos de política sobre a solicitação continuam a definir. |
 | D9 | Criar doadora na aprovação ou atualizar cadastro existente? | Recomendação e alternativa em Modelagem; escolha ainda pendente. |
-| D10 | Correções, exclusão de conta e retenção. | Histórico preservado é diretriz; mecanismo, prazo e acesso precisam de definição. |
+| D10 | Correções, exclusão de conta e retenção. | Histórico preservado é diretriz. **Desativação de funcionários acordada em 29/10/2026** ([regras](#desativação-de-funcionários--acordado-em-29102026)). Retenção de dados e anexos e correção de pedidos ainda precisam de definição. |
 | D11 | WhatsApp exigido para abertura. | Confirmado pelo usuário: indicar um dos telefones e declarar disponibilidade; equipe confere no contato. E-mail/telefone são secundários a critério do funcionário. Operação manual proposta; sem garantia automática de número ativo. |
 | D12 | Aceite final do serviço. | Identificar participantes e confirmar propostas e cenários; não presumir aprovação coletiva. |
 
@@ -188,6 +188,51 @@ Atualização de 24/10/2026: o usuário autorizou e foram implementados os model
 Visita, relatório, documentos/exames e decisão clínica continuam na sequência funcional, mas fora desta primeira entrega. Pendências de cargos clínicos não impedem especificar a entrada administrativa; a implantação dessa entrada ainda exige autorização por função, proteção da autoria, definição operacional dos limites de recebimento e revisão do contrato.
 
 Verificação: inspeção estática dos documentos, código atual e schema local legado. Sem execução do fluxo, validação clínica ou conteúdo de PDF consultado.
+## Desativação de funcionários — acordado em 29/10/2026
+
+Origem: respostas do usuário nesta data. Ainda **não implementado**; implementação exige autorização do recorte e nova migration.
+
+- Somente o admin desativa e reativa contas de funcionário. *Suposição informada ao usuário, sem objeção até o momento:* admin não desativa outro admin.
+- A desativação bloqueia login e acesso imediatamente. As concessões ficam **suspensas**, não revogadas: ao reativar, o funcionário volta com o mesmo acesso.
+- A desativação é **bloqueada** enquanto o funcionário for responsável por visita confirmada e ainda futura; antes, a equipe reagenda para outra pessoa ou cancela.
+- Reativação permitida. Desativação e reativação exigem motivo e ficam registradas com autor e data.
+- **Proposta técnica (não acordada):** marcar desativação na conta (ex.: `desativado_em`) com histórico próprio; `EnsureInternalAccount` e os Gates passam a negar contas desativadas; listas de responsáveis da agenda e de relatórios deixam de oferecê-las; a tela fica na área “Permissões”.
+
+## Avaliação após visita, exames e documentos — acordado em 29/10/2026
+
+Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequência de 23/10/2026. Ainda **não implementado**; desenho físico e telas serão propostos antes de programar.
+
+**Fluxo.** Relatório de visita finalizado → **análise do relatório** por profissional autorizado → se as avaliações anteriores forem consideradas válidas, libera a etapa de **exames e documentos** (exames só são pedidos com essa indicação, como a próxima camada de verificação) → acompanhamento de cada item → decisão de habilitação.
+
+**Permissões (três, separadas e acumuláveis).** Nomes técnicos propostos:
+- *Consultar exames:* somente leitura dos itens e anexos, para quem não deve criar ou alterar exames.
+- *Registrar exames:* solicitar itens, anexar arquivos e atualizar estados.
+- *Avaliar doadoras:* analisar o relatório, liberar a etapa de exames e registrar a decisão. Concedida a profissionais de saúde, separada da escrita de relatórios.
+
+**Catálogo e estados.**
+- Lista **fixa** e relativamente ampla de tipos de exame e documento, mantida no sistema, sem tela de edição, para manter o uso simples. Inclui **“Outro exame”**: o funcionário informa nome e detalhes para um exame específico daquela doadora, com o mesmo estado e anexo dos demais.
+- Todo item tem **estado obrigatório** por doadora, nunca em branco. Começa em **Não solicitado**. Ciclo: Não solicitado → Solicitado → Recebido → Aceito, ou Recebido → Precisa complementar → Solicitado.
+- **Regra de avanço:** a doadora só passa às etapas seguintes quando todos os itens **solicitados** estiverem **Aceitos**, houver ao menos um item solicitado e nenhum estiver vencido. Itens “Não solicitado” não bloqueiam.
+
+**Anexos.** Arquivos de exames (fotos e PDFs recebidos pelo WhatsApp) ficam guardados no sistema de forma segura e limitada: armazenamento privado, consulta a qualquer momento por quem tem permissão e nenhum acesso público. Requisitos técnicos em [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).
+
+**Validade (alerta, não bloqueio automático).**
+- A validade conta da **data de realização/coleta**, informada obrigatoriamente ao marcar um exame como Recebido.
+- Prazo padrão por tipo, inicialmente **um mês** para todos, até a equipe definir prazos próprios.
+- Ao vencer, o item recebe sinalização e oferece duas ações: **pedir novo exame** ou **prorrogar por mais um mês com motivo**, no máximo **duas prorrogações**; depois, apenas novo exame. Tudo fica no histórico.
+
+**Documentos de identificação** (na mesma etapa, como itens com estado):
+- **CNS:** número com validação dos dígitos e registro de quem conferiu e quando, **sem guardar imagem** do cartão (minimização de dados sensíveis).
+- **Plano de saúde:** apenas a indicação de que possui ou não possui.
+
+**Desfechos.**
+- **Análise do relatório:** *Liberar para exames*, *Em aguardo* (estado de espera explícito, para quando ainda não é possível decidir) ou *Não apta* (encerra o acompanhamento, com motivo e histórico preservado).
+- **Decisão final**, possível somente quando a regra de avanço for cumprida: *Habilitada para doar*, *Habilitada temporariamente* (com prazo ou condição registrada pelo profissional) ou *Não habilitada* (com motivo e acesso controlado à justificativa).
+- **Depois de habilitada:** a habilitação pode ser **suspensa** (temporária, com retorno possível) ou **encerrada** (definitiva), ambas com motivo e histórico.
+- **Nova tentativa:** quem foi considerada não apta ou não habilitada pode enviar **novo pedido**. A equipe vê o histórico anterior no alerta de correspondência, sem aprovação nem recusa automáticas.
+
+**Pendências.** Lista real de exames e documentos (confirmado até agora: exame de sangue) e prazos por tipo, a obter com o Banco de Leite; o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9, decisão técnica a propor); formatos e tamanho máximo de arquivo; retenção dos anexos.
+
 ## Atualização de acesso — 27/10/2026
 
 O usuário confirmou retirada do autocadastro e de todas as contas de doadora. Acesso interno exclusivo de admin/funcionário; criação de funcionários por admin ou funcionário com permissão específica. Implementados formulário interno, autoria e recuperação de senha para primeira definição, sem conceder permissões automaticamente. Ainda não há interface de concessão/revogação ou desativação de funcionários; isso requer recorte próprio. Entrega real de e-mail e revisão visual permanecem pendentes. A condição anterior de decidir sobre a permanência do Breeze público foi resolvida: `/register` foi removido.

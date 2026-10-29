@@ -39,9 +39,9 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Desativação de funcionários (exige decisão sobre o comportamento e nova migration).
+- Desativação de funcionários: regras acordadas em 29/10/2026 ([Roadmap](ROADMAP.md#desativação-de-funcionários--acordado-em-29102026)); falta implementar, com nova migration.
 - Correção de dados do pedido após o recebimento.
-- Documentos/exames e anexos, avaliação de saúde, decisão registrada e habilitação para doar.
+- Documentos/exames e anexos, avaliação de saúde, decisão registrada e habilitação para doar. Estrutura acordada em 29/10/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)); faltam a lista real de exames, os prazos e os desfechos da decisão.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
 - `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
 - Middleware `role` (`EnsureUserHasRole`) está registrado, mas nenhuma rota o utiliza; a autorização efetiva é por Gates. Decidir se permanece.
