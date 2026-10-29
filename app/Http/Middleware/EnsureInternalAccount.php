@@ -18,7 +18,7 @@ class EnsureInternalAccount
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && ! User::query()->whereKey($request->user()->id)->whereIn('role', ['admin', 'funcionario'])->exists()) {
+        if ($request->user() && ! User::query()->whereKey($request->user()->id)->whereIn('role', ['admin', 'funcionario'])->whereNull('desativado_em')->exists()) {
             /** @var SessionGuard $guard */
             $guard = Auth::guard('web');
             $guard->logoutCurrentDevice();

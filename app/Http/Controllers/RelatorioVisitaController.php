@@ -109,7 +109,7 @@ class RelatorioVisitaController extends Controller
             && ! $agenda->solicitacao->agendamentos()->whereHas('atendimento')->exists(), 409, 'O compromisso não está disponível para realização.');
 
         return $this->pagina('relatorios.visita', ['agenda' => $agenda, 'entrada' => $this->escalares($entrada),
-            'falhas' => $falhas, 'responsaveis' => $this->responsaveis()], $status);
+            'falhas' => $falhas, 'responsaveis' => $this->responsaveis($agenda->responsavel_user_id)], $status);
     }
 
     /** @param array<string, mixed> $entrada
@@ -136,9 +136,12 @@ class RelatorioVisitaController extends Controller
                 ->with('finalizadoPor')->orderByDesc('numero')->paginate(15)->appends(['versao' => $numero])], $status);
     }
 
-    private function responsaveis(): Collection
+    /** Sem argumento, lista todos para filtros de histórico; com o responsável previsto, oferece só contas ativas e ele. */
+    private function responsaveis(?int $previsto = null): Collection
     {
-        return User::query()->whereIn('role', ['admin', 'funcionario'])->orderBy('name')->get(['id', 'name']);
+        return User::query()->whereIn('role', ['admin', 'funcionario'])
+            ->when($previsto !== null, fn (Builder $query): Builder => $query->where(fn (Builder $ativos): Builder => $ativos->whereNull('desativado_em')->orWhere('id', $previsto)))
+            ->orderBy('name')->get(['id', 'name']);
     }
 
     /** @param array<string, mixed> $entrada

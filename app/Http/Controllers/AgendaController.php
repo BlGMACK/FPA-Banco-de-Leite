@@ -60,7 +60,7 @@ class AgendaController extends Controller
             'confirmacoes' => $pedido->contatos()->where('contexto', 'acompanhamento')->where('resultado', 'realizado')
                 ->orderByDesc('ocorrido_em')->get(['contatos_solicitacao.id', 'ocorrido_em', 'finalidade']),
             'agendamentos' => $pedido->agendamentos()->with(['responsavel', 'eventos.autor'])->orderByDesc('id')->paginate(15, ['*'], 'historico_page'),
-            'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->orderBy('name')->get(['id', 'name']),
+            'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->whereNull('desativado_em')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

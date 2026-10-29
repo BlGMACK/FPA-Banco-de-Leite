@@ -56,6 +56,9 @@ Route::middleware(['auth', 'can:gerenciar-permissoes'])->prefix('interno/permiss
     foreach (['concessoes', 'revogacoes'] as $acao) {
         Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'alterar'])->whereNumber('funcionario')->name($acao.'.store');
     }
+    foreach (['desativacao', 'reativacao'] as $acao) {
+        Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'situacao'])->whereNumber('funcionario')->name($acao.'.store');
+    }
 });
 
 Route::get('/dashboard', function () {

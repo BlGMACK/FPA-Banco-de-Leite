@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class InternalAccountsSchemaTest extends TestCase
@@ -39,6 +40,29 @@ class InternalAccountsSchemaTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $employee->id, 'role' => 'funcionario']);
         $this->expectException(QueryException::class);
         User::factory()->create(['role' => 'doadora']);
+    }
+
+    public function test_deactivation_schema_refuses_rollback_with_deactivated_accounts_and_preserves_authors(): void
+    {
+        $migration = require database_path('migrations/2026_10_29_200000_add_desativacao_to_users_table.php');
+        $admin = User::factory()->admin()->create();
+        $employee = User::factory()->funcionario()->create(['desativado_em' => now(), 'desativado_por_user_id' => $admin->id]);
+        try {
+            $migration->down();
+            $this->fail('Expected rollback refusal.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('contas desativadas', $exception->getMessage());
+            $this->assertTrue(Schema::hasColumn('users', 'desativado_em'));
+        }
+        $employee->forceFill(['desativado_em' => null, 'desativado_por_user_id' => null])->save();
+        $migration->down();
+        $this->assertFalse(Schema::hasColumn('users', 'desativado_em'));
+        $this->assertFalse(Schema::hasTable('eventos_conta'));
+        $migration->up();
+        DB::table('eventos_conta')->insert(['user_id' => $employee->id, 'autor_user_id' => $admin->id, 'acao' => 'desativacao',
+            'motivo' => 'Teste', 'ocorrido_em' => now()]);
+        $this->expectException(QueryException::class);
+        $admin->delete();
     }
 
     public function test_upgrade_does_not_delete_historical_links_or_partially_remove_session_on_fk_failure(): void

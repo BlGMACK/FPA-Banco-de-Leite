@@ -9,7 +9,7 @@
                 <tbody>
                     @forelse ($funcionarios as $funcionario)
                         <tr>
-                            <td>{{ $funcionario->name }}<br><span class="small text-body-secondary">{{ $funcionario->email }}</span></td>
+                            <td>{{ $funcionario->name }}@unless ($funcionario->estaAtivo()) <span class="badge text-bg-danger">Desativada</span>@endunless<br><span class="small text-body-secondary">{{ $funcionario->email }}</span></td>
                             <td>@forelse ($funcionario->concessoes as $concessao)<span class="badge text-bg-secondary me-1 mb-1">{{ $concessao->permissao->nome }}</span>@empty<span class="text-body-secondary">Nenhuma</span>@endforelse</td>
                             <td class="text-end"><a href="{{ route('interno.permissoes.show', $funcionario) }}">Gerenciar<span class="visually-hidden"> permissões de {{ $funcionario->name }}</span></a></td>
                         </tr>

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PermissaoController extends Controller
@@ -29,7 +30,28 @@ class PermissaoController extends Controller
             'catalogo' => Permissao::query()->orderBy('id')->get(),
             'concessoes' => $pessoa->concessoes()->whereNull('revogada_em')->with('concedidaPor')->get()->keyBy('permissao_id'),
             'eventos' => $pessoa->eventosPermissao()->with(['permissao', 'autor'])->orderByDesc('ocorrido_em')->orderByDesc('id')->paginate(15),
+            'eventosConta' => $pessoa->eventosConta()->with('autor')->orderByDesc('ocorrido_em')->orderByDesc('id')->paginate(15, ['*'], 'conta_page'),
+            'visitasFuturas' => $pessoa->estaAtivo() ? $pessoa->visitasFuturas()->with('solicitacao.interessada')->orderBy('inicio_previsto_em')->get() : collect(),
         ]);
+    }
+
+    public function situacao(Request $request, int $funcionario): RedirectResponse
+    {
+        $pessoa = $this->funcionario($funcionario);
+        $dados = $request->validateWithBag('conta', ['motivo' => ['required', 'string', 'max:2000']]);
+        $desativar = $request->routeIs('interno.permissoes.desativacao.store');
+        try {
+            $alterou = $desativar ? $pessoa->desativar($request->user(), $dados['motivo']) : $pessoa->reativar($request->user(), $dados['motivo']);
+        } catch (ValidationException $exception) {
+            throw $exception->errorBag('conta');
+        }
+        $mensagem = match (true) {
+            ! $alterou => 'Nenhuma alteração: a conta já estava '.($desativar ? 'desativada.' : 'ativa.'),
+            $desativar => 'Conta desativada. As permissões ficam suspensas até uma eventual reativação.',
+            default => 'Conta reativada com as permissões que já possuía.',
+        };
+
+        return redirect()->route('interno.permissoes.show', $pessoa)->with('status', $mensagem);
     }
 
     public function alterar(Request $request, int $funcionario): RedirectResponse
