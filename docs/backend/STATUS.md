@@ -6,26 +6,28 @@ Fonte do estado vigente. Conferido em 29/10/2026 contra rotas, controllers, mode
 
 | Área | Situação | Fonte |
 | --- | --- | --- |
-| Contas e sessão | **Implementado e aplicado.** Somente `admin` e `funcionario`; sem autocadastro nem conta de doadora. Login com limite de tentativas, recuperação de senha, perfil e exclusão com proteção de autoria. `EnsureInternalAccount` encerra sessões sem conta interna válida. Verificação de e-mail não é obrigatória (`User` não implementa `MustVerifyEmail`). | [rotas](../../routes/auth.php), [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [Contratos](CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
+| Contas e sessão | **Implementado e aplicado.** Somente `admin` e `funcionario`; sem autocadastro nem conta de doadora. Login com limite de tentativas, recuperação de senha, perfil e exclusão com proteção de autoria. `EnsureInternalAccount` encerra sessões sem conta interna válida ou de conta desativada. **Desativação e reativação de funcionários** pelo admin, com motivo, permissões suspensas e bloqueio enquanto houver visitas futuras (migration ainda não aplicada no desenvolvimento, ver abaixo). Verificação de e-mail não é obrigatória (`User` não implementa `MustVerifyEmail`). | [rotas](../../routes/auth.php), [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [Contratos](CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | Cadastro de funcionários | **Implementado.** Admin ou funcionário com `criar-funcionarios` cria funcionário com senha aleatória e autoria; a primeira senha é definida por recuperação via e-mail. Não concede permissões nem cria admin. | [FuncionarioController](../../app/Http/Controllers/FuncionarioController.php) |
 | Permissões | **Implementado.** Catálogo com cinco códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita` e `registrar-relatorios-visita`. Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura. Tela `interno/permissoes`, somente para admin, concede e revoga com motivo obrigatório e mostra o histórico auditado. | [PermissaoController](../../app/Http/Controllers/PermissaoController.php), [Permissao](../../app/Models/Permissao.php), [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026) |
 | Recebimento e fila | **Implementado.** Formulário público sem conta (`/doar`) e registro interno, confirmação neutra, limite de envios, fila paginada com alerta único de correspondências e detalhe restrito. | [Contratos](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026) |
 | Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
-| Documentos/exames, avaliação de saúde, decisão e habilitação | **Não implementado.** Regras, profissionais e critérios ainda não definidos pelo serviço (D6, D9). | [Roadmap](ROADMAP.md#pendências-para-revisão) |
+| Documentos/exames, avaliação de saúde, decisão e habilitação | **Não implementado.** Estrutura acordada em 29/10/2026; faltam a lista real de exames, os prazos por tipo e a decisão D9. | [Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
 ### Banco de desenvolvimento
 
-Conferência somente leitura em 29/10/2026 (`php artisan migrate:status` e contagens, sem exibir dados pessoais): **20 migrations aplicadas, nenhuma pendente** (lotes 1 a 6). Catálogo com cinco permissões e zero concessões; duas contas internas (uma admin); uma solicitação; tabelas de agenda, atendimento e relatório vazias.
+Conferência somente leitura em 29/10/2026 (`php artisan migrate:status` e contagens, sem exibir dados pessoais): 20 migrations aplicadas (lotes 1 a 6). Catálogo com cinco permissões e zero concessões; duas contas internas (uma admin); uma solicitação; tabelas de agenda, atendimento e relatório vazias.
+
+**Pendente de ativação:** a migration `2026_10_29_200000_add_desativacao_to_users_table` (21ª) foi testada em SQLite e no MariaDB de testes, mas **não foi aplicada** em `banco_de_leite_dev`. Até ser aplicada com `php artisan migrate`, o login local falha, porque o código já consulta `users.desativado_em`. A migration só acrescenta colunas e uma tabela, sem alterar dados existentes.
 
 ### Verificação automatizada
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
-| 29/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **302 testes: 298 aprovados, 4 ignorados; 1.405 assertions.** Os quatro ignorados são os testes de concorrência de agenda e relatório, que exigem MariaDB. |
+| 29/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **312 testes: 308 aprovados, 4 ignorados; 1.539 assertions.** Os quatro ignorados são os testes de concorrência de agenda e relatório, que exigem MariaDB; os de agenda passaram no MariaDB exclusivo na mesma data ([desativação](#desativação-de-funcionários--29102026)). |
 | 29/10/2026 | `npm.cmd run build` | Aprovado (registrado na [preparação da revisão manual](#preparação-da-revisão-manual--29102026)). |
 
 A suíte completa não foi repetida em MariaDB nesta conferência. As execuções MariaDB por módulo, com seus limites, estão no histórico. Não há CI configurado.
@@ -39,7 +41,8 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Desativação de funcionários: regras acordadas em 29/10/2026 ([Roadmap](ROADMAP.md#desativação-de-funcionários--acordado-em-29102026)); falta implementar, com nova migration.
+- Aplicar a migration de desativação no banco de desenvolvimento (ver acima).
+- Idioma: `APP_LOCALE=en` e sem arquivos de tradução; mensagens padrão do framework (por exemplo, login recusado: “These credentials do not match our records.”) aparecem em inglês. Encontrado no teste em navegador de 29/10/2026; decidir a configuração pt-BR.
 - Correção de dados do pedido após o recebimento.
 - Documentos/exames e anexos, avaliação de saúde, decisão registrada e habilitação para doar. Estrutura acordada em 29/10/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)); faltam a lista real de exames, os prazos e os desfechos da decisão.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
@@ -63,6 +66,21 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
 
+### Desativação de funcionários — 29/10/2026
+
+Implementação das regras acordadas ([Roadmap](ROADMAP.md#desativação-de-funcionários--acordado-em-29102026)), após o usuário aprovar o desenho técnico. Migration aditiva `2026_10_29_200000_add_desativacao_to_users_table` (`users.desativado_em`, `users.desativado_por_user_id` e tabela `eventos_conta`), model `EventoConta`, operações `User::desativar/reativar` (Gate `gerenciar-permissoes`, trava da conta, evento com motivo), duas rotas em `interno/permissoes` e bloco “Situação da conta” na tela. Login, recuperação de senha, `EnsureInternalAccount` e Gates negam contas desativadas; concessões permanecem gravadas e voltam a valer na reativação. A agenda não aceita responsável desativado, e a tela de agenda deixa de oferecê-lo. O registro de visita já ocorrida continua aceitando o responsável previsto, mesmo desativado. Filtros de histórico continuam listando todos. O rollback da migration é recusado enquanto houver conta desativada, para não liberar o acesso dela.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `DesativacaoFuncionarioTest`, `AgendaOperationsTest` e `PermissaoWebTest`, SQLite `:memory:` | 30 testes, 215 assertions aprovados. |
+| `InternalAccountsSchemaTest`, SQLite `:memory:` | 3 testes aprovados, incluindo recusa de rollback e preservação de autoria. |
+| `php artisan test`, SQLite `:memory:` | 312 testes: 308 aprovados, 4 ignorados. |
+| Seleção de schema, desativação, permissões, operações e concorrência da agenda, acesso interno e relatórios web, MariaDB `banco_de_leite_schema_test` | 60 testes, 457 assertions aprovados. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado. |
+| Playwright/Edge contra o banco de testes | Visita futura: aviso com a visita e botão desabilitado. Depois de mover a visita para o passado: desativação com permissões “Suspensa”; sessão aberta da funcionária recebe 403 e é encerrada; novo login recusado com mensagem genérica; reativação registrada no histórico, com login e agenda funcionando de novo. |
+
+A primeira versão da view falhou na renderização: o `@php(...)` em linha, num arquivo com blocos `@php ... @endphp`, é casado com o `@endphp` seguinte. Foi corrigida para a forma em bloco. Não aplicado em `banco_de_leite_dev`: a ativação depende de autorização.
+
 ### Gestão de permissões — 29/10/2026
 
 Implementação autorizada pelo usuário: `PermissaoController`, quatro rotas em `interno/permissoes` sob `gerenciar-permissoes` (somente admin), duas views, item “Permissões” no menu e atalho após cadastrar funcionário. A tela usa os métodos auditados já existentes em `Permissao`; não houve mudança de model, schema, migration ou seeder. Contrato em [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026).
@@ -75,7 +93,7 @@ Implementação autorizada pelo usuário: `PermissaoController`, quatro rotas em
 | `php vendor/bin/pint --dirty --format agent` e `php artisan route:list --path=interno/permissoes` | Aprovado; quatro rotas registradas. |
 | Playwright/Edge contra o banco de testes | 6 de 6 cenários: funcionária sem permissão não vê módulos (403); admin concede agenda com motivo; efeito imediato na sessão já aberta da funcionária; motivo vazio bloqueado no navegador; revogação volta a negar acesso e aparece no histórico; sem rolagem horizontal a 390 px. |
 
-Os testes HTTP cobrem: autorização antes da busca de IDs (visitante, funcionário com `criar-funcionarios`, admin), contas admin fora do alcance (404), motivo obrigatório inclusive só com espaços, limite de 2.000 caracteres, permissão inexistente, repetição sem novo evento, campos extras ignorados, escape do motivo no histórico e CSRF. Nenhuma concessão foi feita em `banco_de_leite_dev`. Desativação de funcionários continua fora do recorte.
+Os testes HTTP cobrem: autorização antes da busca de IDs (visitante, funcionário com `criar-funcionarios`, admin), contas admin fora do alcance (404), motivo obrigatório inclusive só com espaços, limite de 2.000 caracteres, permissão inexistente, repetição sem novo evento, campos extras ignorados, escape do motivo no histórico e CSRF. Nenhuma concessão foi feita em `banco_de_leite_dev`. A desativação de funcionários foi entregue depois, na seção acima.
 
 ### Teste das telas em navegador — 29/10/2026
 

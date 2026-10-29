@@ -45,9 +45,9 @@ Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão 
 | `gerenciar-agenda` | `interno/agenda`: lista, acompanhamento, contatos, agendamento, `reagendamentos`, `cancelamento` e `nao-realizacao` | [Rotas web da agenda](#rotas-web-da-agenda) |
 | `consultar-relatorios-visita`; escritas também `registrar-relatorios-visita` | `interno/relatorios`: lista, detalhe, registro da visita, `rascunho`, `finalizar` e `correcao` | [Interface Blade dos relatórios](#interface-blade-implementada-em-29102026) |
 | `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
-| `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes` e `revogacoes` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
+| `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes`, `revogacoes`, `desativacao` e `reativacao` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
 
-Não há rota para desativar funcionários ou corrigir dados de pedidos.
+Não há rota para corrigir dados de pedidos.
 
 ## Campos, mensagens e permissões
 
@@ -558,7 +558,18 @@ Tela para o administrador conceder e revogar as permissões do catálogo a funci
 - Todas as rotas exigem sessão e `gerenciar-permissoes` antes de consultar IDs; funcionário com `criar-funcionarios` não gerencia permissões. O responsável vem da sessão; campos extras são ignorados.
 - Repetir uma concessão já ativa ou revogação já efetiva não grava evento e retorna “Nenhuma alteração”. Erros de validação voltam ao detalhe com o motivo preservado apenas no formulário da permissão correspondente.
 - O efeito vale na próxima requisição do funcionário, inclusive em sessão aberta, porque os Gates consultam o banco a cada verificação. Motivos são exibidos com escape no histórico.
-- Fora do recorte: desativação de funcionários, alteração de papel, criação de admin e permissões por registro.
+- Fora do recorte: alteração de papel, criação de admin e permissões por registro.
+
+**Desativação e reativação de funcionários (29/10/2026):**
+
+| Método / caminho | Nome `interno.permissoes.*` | Entrada e efeito |
+| --- | --- | --- |
+| POST `/interno/permissoes/{funcionario}/desativacao` | `desativacao.store` | `motivo` (obrigatório, até 2.000 caracteres). Recusa com erro no bag `conta` se o funcionário for responsável por visita confirmada com início futuro. |
+| POST `/interno/permissoes/{funcionario}/reativacao` | `reativacao.store` | `motivo` (mesmas regras). Restaura o acesso com as concessões que já existiam. |
+
+- Operações em `User::desativar/reativar`: Gate `gerenciar-permissoes`, trava da conta, evento em `eventos_conta` com autor, motivo e instante; repetição retorna “Nenhuma alteração”. Somente contas de funcionário.
+- Conta desativada: login e recuperação de senha recusados com a mesma mensagem de credenciais inválidas; sessão aberta encerrada com 403 na próxima requisição; Gates negam todas as capacidades; concessões continuam gravadas e aparecem como “Suspensa”.
+- Agenda: confirmação e reagendamento recusam responsável desativado (erro em `responsavel_user_id`), e a tela de agenda não o oferece. O registro de visita já ocorrida oferece contas ativas mais o responsável previsto, mesmo desativado. Filtros de agenda e relatórios continuam listando todas as contas.
 
 ## Atendimento e relatório narrativo — especificação de 28/10/2026
 

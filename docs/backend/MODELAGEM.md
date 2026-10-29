@@ -6,7 +6,7 @@ Fonte principal: [migrations](../../database/migrations). Esta descrição repre
 
 ### Inventário em 29/10/2026
 
-São 20 migrations, todas aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`). Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
+São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`); a de desativação de contas, de 29/10/2026, ainda aguarda aplicação. Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
 
 | Recorte | Tabelas | Lote local | Detalhe |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@ São 20 migrations, todas aplicadas no banco de desenvolvimento `banco_de_leite_
 | Administrativo | `interessadas`, `solicitacoes`, `contatos_solicitacao`, `contato_pedidos`, `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`, `eventos_solicitacao`, `permissoes`, `permissao_user`, `eventos_permissao` | 3 | [Recorte administrativo](#recorte-administrativo-preparado-em-24102026) |
 | Agenda | contexto em `contatos_solicitacao`; `agendamentos`, `reservas_agenda`, `eventos_agendamento` | 5 | [Agenda](#desenho-físico-proposto-para-agenda--26102026) |
 | Visita e relatório | `atendimentos`, `relatorios_visita`, `versoes_relatorio_visita`, `eventos_atendimento`; estado `realizado` na agenda | 6 | [Atendimento e relatório](#persistência-proposta-para-atendimento-e-relatório--28102026) |
+| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | pendente | [Contas internas](#contas-internas--atualização-de-27102026) |
 
 As seções seguintes foram escritas a cada etapa e mantêm o desenho, as decisões e os limites de cada recorte; avisos de “sem aplicação ao desenvolvimento” nelas descrevem a data do registro. A tabela abaixo descreve a base Laravel.
 
@@ -288,7 +289,7 @@ Testes de schema implementados em [AgendaSchemaTest](../../tests/Feature/AgendaS
 
 As migrations têm `down()` em ordem inversa de dependência. **Rollback elimina as tabelas novas e seus dados**; o teste de reversão usa exclusivamente banco descartável. Não usar rollback como mecanismo de desfazer uma decisão de atendimento.
 
-Quando existirem registros com autoria, as FKs impedem excluir a conta referenciada. O controller de perfil agora trata essa restrição com erro no bag `userDeletion`, preservando a sessão e os dados. Contas sem vínculos ainda podem ser excluídas com senha atual; o encerramento posterior não atualiza o token da conta já removida. Política de desativação de funcionários permanece pendente.
+Quando existirem registros com autoria, as FKs impedem excluir a conta referenciada. O controller de perfil agora trata essa restrição com erro no bag `userDeletion`, preservando a sessão e os dados. Contas sem vínculos ainda podem ser excluídas com senha atual; o encerramento posterior não atualiza o token da conta já removida. Desativação de funcionários foi implementada em 29/10/2026 (ver [Contas internas](#contas-internas--atualização-de-27102026)).
 
 Teste: [AdministrativeSchemaTest](../../tests/Feature/AdministrativeSchemaTest.php), com verificação de ambiente antes de preparar o banco; exige `testing`, ausência de URL externa/configuração em cache e SQLite `:memory:` ou conexão `mysql` local para o nome exato `banco_de_leite_schema_test`. Usa `DatabaseMigrations` para isolar também o teste de DDL, sem depender de rollback transacional no MySQL/MariaDB. Utiliza queries reais para exercitar as restrições e a factory existente para contas fictícias. Fixtures de schema não representam validação de CPF ou dados de negócio.
 
@@ -300,6 +301,8 @@ Fontes de implementação consultadas: [migrations do Laravel 13](https://larave
 O schema vigente após a migration `2026_10_27_202742_restrict_users_to_internal_accounts` admite somente `users.role=admin|funcionario`, sem papel padrão. Não há conta de doadora. `criado_por_user_id` é FK anulável para preservar contas anteriores e restringe exclusão do autor; novas contas criadas pela interface registram o operador e `created_at`.
 
 A migration elimina as contas de doadora antigas, sessões e tokens de redefinição correspondentes. FKs de histórico continuam restritivas; nenhuma identidade ou solicitação é eliminada por associação de e-mail/CPF. Rollback da estrutura não recupera contas apagadas. A migration antiga de três papéis é preservada como histórico de upgrade, não como contrato atual. Execução local e evidências em Status.
+
+**Desativação de contas (29/10/2026):** a migration `2026_10_29_200000_add_desativacao_to_users_table` acrescenta `users.desativado_em` (anulável) e `users.desativado_por_user_id` (FK restrita), além da tabela `eventos_conta` (`user_id`, `autor_user_id`, `acao` `desativacao|reativacao`, `motivo`, `ocorrido_em`, `created_at`; FKs restritas; índice de histórico por conta). A conta não é excluída e as concessões em `permissao_user` não são alteradas: ficam suspensas pela verificação da conta ativa. O `down()` recusa reverter enquanto houver conta desativada, para não liberar o acesso dela; sem contas desativadas, a reversão remove a tabela e o histórico. Ainda não aplicada em `banco_de_leite_dev`.
 
 ## Persistência proposta para atendimento e relatório — 28/10/2026
 
