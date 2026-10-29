@@ -18,20 +18,21 @@
         @if ($escrita)
             <p class="small">Criado por {{ $relatorio->criadoPor->name }}. Última edição por {{ $relatorio->ultimoEditor->name }}.</p>
             @if ($rascunho['estado'] !== 'finalizado')
+                @php($semTextoSalvo = trim($rascunho['texto_rascunho'] ?? '') === '')
                 <section class="card mb-4" x-data="{ alterado: {{ $formulario === 'salvarRascunho' ? 'true' : 'false' }} }"><div class="card-body">
                     <h2 class="h4">{{ $rascunho['estado'] === 'em_correcao' ? 'Correção em elaboração' : 'Rascunho' }}</h2>
                     @if ($rascunho['estado'] === 'em_correcao')<p>A versão {{ $rascunho['base_correcao_numero'] }} continua vigente até finalizar esta correção. Motivo: {{ $rascunho['motivo_correcao'] }}</p>@endif
                     <form method="POST" action="{{ route('interno.relatorios.rascunho', $relatorio) }}">@csrf
                         <input type="hidden" name="operacao_id" value="{{ $formulario === 'salvarRascunho' ? ($entrada['operacao_id'] ?? (string) Illuminate\Support\Str::uuid()) : (string) Illuminate\Support\Str::uuid() }}">
                         <input type="hidden" name="revisao" value="{{ $formulario === 'salvarRascunho' ? ($entrada['revisao'] ?? $rascunho['revisao']) : $rascunho['revisao'] }}">
-                        <label for="texto" class="form-label">Relato da visita</label>
+                        <label for="texto" class="form-label">{{ isset($falhas['conflito']) ? 'Texto enviado e não salvo' : 'Relato da visita' }}</label>
                         <textarea id="texto" name="texto" rows="14" maxlength="30000" class="form-control mb-3" x-on:input="alterado = true" @readonly(isset($falhas['conflito']))>{{ $formulario === 'salvarRascunho' ? ($entrada['texto'] ?? '') : $rascunho['texto_rascunho'] }}</textarea>
                         <button class="btn btn-primary" @disabled(isset($falhas['conflito']))>Salvar rascunho</button>
                     </form>
-                    <p class="mt-3">Salve o rascunho antes de finalizar. A finalização publica o último texto salvo e preserva as versões anteriores.</p>
+                    <p class="mt-3">Salve o rascunho antes de finalizar. A finalização publica o último texto salvo e preserva as versões anteriores.@if ($semTextoSalvo) Ainda não há relato salvo para finalizar.@endif</p>
                     <form method="POST" action="{{ route('interno.relatorios.finalizar', $relatorio) }}">@csrf
                         <input type="hidden" name="operacao_id" value="{{ (string) Illuminate\Support\Str::uuid() }}"><input type="hidden" name="revisao" value="{{ $rascunho['revisao'] }}">
-                        <button class="btn btn-outline-success" x-bind:disabled="alterado || {{ isset($falhas['conflito']) ? 'true' : 'false' }}" @disabled(isset($falhas['conflito']))>Finalizar texto salvo</button>
+                        <button class="btn btn-outline-success" x-bind:disabled="alterado || {{ isset($falhas['conflito']) || $semTextoSalvo ? 'true' : 'false' }}" @disabled(isset($falhas['conflito']) || $semTextoSalvo)>Finalizar texto salvo</button>
                     </form>
                 </div></section>
             @else

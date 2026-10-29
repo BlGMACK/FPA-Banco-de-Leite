@@ -88,6 +88,16 @@ Sugestões de usabilidade, sem defeito funcional, para decisão da equipe:
 - Num relatório novo e vazio, “Finalizar texto salvo” fica habilitado; o backend recusa a finalização vazia, mas o botão poderia indicar isso antes.
 - Não há link “pular para o conteúdo”: são oito paradas de Tab no menu antes do conteúdo da página.
 
+**Implementação das sugestões, a pedido do usuário (mesmo dia):** as quatro foram aplicadas nas views ([Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026)), sem mudança de backend, rotas ou schema. Verificações:
+
+| Comando / ambiente | Resultado |
+| --- | --- |
+| `php vendor/bin/phpunit tests/Feature/RelatorioVisitaWebTest.php`, SQLite `:memory:` | 12 testes, 150 assertions aprovados, incluindo o novo teste das quatro mudanças. |
+| `php artisan test`, SQLite `:memory:` | 303 testes: 299 aprovados, 4 ignorados (concorrência MariaDB); 1.420 assertions. |
+| `RelatorioVisitaWebTest` e `RelatorioVisitaAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 27 testes, 190 assertions aprovados. |
+| `php vendor/bin/pint --dirty --format agent` | Aprovado. |
+| Fluxo Playwright/Edge repetido com as asserções novas | 12 de 12 cenários aprovados. A primeira versão do link de pular ficava atrás da barra de navegação (`.navbar` tem `position: relative`); corrigida com `z-3` e conferida por screenshot e `elementFromPoint`. |
+
 ### Preparação da revisão manual — 29/10/2026
 
 Após autorização para a próxima etapa, conferidos o layout `app.blade.php`, a entrada `resources/js/app.js`, as views de relatório e o controller. O layout carrega CSS/JS via Vite; a entrada importa Bootstrap, disponibiliza Alpine e executa `Alpine.start()`. Não houve alteração de código nesta revisão.

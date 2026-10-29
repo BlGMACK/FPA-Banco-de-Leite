@@ -204,6 +204,27 @@ class RelatorioVisitaWebTest extends TestCase
         $this->assertDatabaseCount('versoes_relatorio_visita', 1);
     }
 
+    public function test_forms_guide_writer_with_planned_times_saved_text_and_conflict_label(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2030-01-02 15:00:00', 'UTC'));
+        $agenda = Agendamento::factory()->create(['confirmado_em' => '2030-01-01 10:00:00',
+            'inicio_previsto_em' => '2030-01-02 12:00:00', 'fim_previsto_em' => '2030-01-02 13:00:00']);
+        ReservaAgenda::factory()->for($agenda, 'agendamento')->create(['solicitacao_id' => $agenda->solicitacao_id]);
+        $this->actingAs($this->user())->get('/interno/relatorios/visitas/'.$agenda->id)->assertOk()
+            ->assertSee('value="2030-01-02T09:00"', false)->assertSee('value="2030-01-02T10:00"', false)
+            ->assertSee('href="#conteudo"', false)->assertSee('id="conteudo"', false);
+
+        $report = RelatorioVisita::factory()->create(['texto_rascunho' => null]);
+        $url = '/interno/relatorios/'.$report->id;
+        $finalizeDisabled = '/<button[^>]*\sdisabled>Finalizar texto salvo/';
+        $this->assertMatchesRegularExpression($finalizeDisabled, $this->get($url)->assertSee('Ainda não há relato salvo')->getContent());
+        $this->post($url.'/rascunho', $this->data(1, ['texto' => 'Relato salvo']))->assertRedirect($url);
+        $saved = $this->get($url)->assertDontSee('Ainda não há relato salvo')->assertSee('Relato da visita')->getContent();
+        $this->assertDoesNotMatchRegularExpression($finalizeDisabled, $saved);
+        $this->post($url.'/rascunho', $this->data(1, ['texto' => 'Texto rejeitado']))->assertConflict()
+            ->assertSee('Texto enviado e não salvo')->assertDontSee('Relato da visita');
+    }
+
     public function test_cancelled_visit_cannot_be_opened_or_recorded(): void
     {
         $agenda = Agendamento::factory()->create(['status' => 'cancelado']);
