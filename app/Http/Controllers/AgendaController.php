@@ -21,7 +21,7 @@ class AgendaController extends Controller
             'inicio' => ['nullable', 'date_format:Y-m-d'],
             'fim' => ['nullable', 'date_format:Y-m-d', ...($request->filled('inicio') ? ['after_or_equal:inicio'] : [])],
             'modalidade' => ['nullable', 'in:domicilio,banco'],
-            'situacao' => ['nullable', 'in:confirmado,substituido,cancelado,nao_realizado'],
+            'situacao' => ['nullable', 'in:confirmado,substituido,cancelado,nao_realizado,realizado'],
             'responsavel' => ['nullable', 'integer', 'min:1'],
         ]);
         $query = Agendamento::query()->with(['solicitacao.interessada', 'responsavel']);
@@ -40,7 +40,7 @@ class AgendaController extends Controller
         return view('agenda.index', [
             'agendamentos' => $query->orderBy('inicio_previsto_em')->orderBy('id')->paginate(25)->appends($filtros),
             'pendentes' => Solicitacao::query()->where('status', 'admitida')->whereNotNull('interessada_id')
-                ->whereDoesntHave('reservaAgenda')->with('interessada')->orderBy('admitida_em')->orderBy('id')
+                ->whereDoesntHave('reservaAgenda')->whereDoesntHave('agendamentos.atendimento')->with('interessada')->orderBy('admitida_em')->orderBy('id')
                 ->paginate(25, ['*'], 'pendentes_page')->appends($filtros),
             'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->orderBy('name')->get(['id', 'name']),
             'filtros' => $filtros,
@@ -55,11 +55,12 @@ class AgendaController extends Controller
             ->orderByDesc('ocorrido_em')->orderByDesc('contatos_solicitacao.id')->paginate(15, ['contatos_solicitacao.*'], 'contatos_page');
 
         return view('agenda.show', [
+            'visitaRealizada' => $pedido->agendamentos()->whereHas('atendimento')->exists(),
             'pedido' => $pedido, 'contatos' => $contatos, 'atual' => $pedido->reservaAgenda?->agendamento,
             'confirmacoes' => $pedido->contatos()->where('contexto', 'acompanhamento')->where('resultado', 'realizado')
                 ->orderByDesc('ocorrido_em')->get(['contatos_solicitacao.id', 'ocorrido_em', 'finalidade']),
             'agendamentos' => $pedido->agendamentos()->with(['responsavel', 'eventos.autor'])->orderByDesc('id')->paginate(15, ['*'], 'historico_page'),
-            'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->orderBy('name')->get(['id', 'name']),
+            'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->whereNull('desativado_em')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

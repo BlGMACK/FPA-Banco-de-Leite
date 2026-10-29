@@ -8,9 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -24,7 +28,82 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'desativado_em' => 'immutable_datetime',
         ];
+    }
+
+    public function desativar(User $autor, string $motivo): bool
+    {
+        return $this->alterarSituacao($autor, $motivo, true);
+    }
+
+    public function reativar(User $autor, string $motivo): bool
+    {
+        return $this->alterarSituacao($autor, $motivo, false);
+    }
+
+    private function alterarSituacao(User $autor, string $motivo, bool $desativar): bool
+    {
+        Gate::forUser($autor)->authorize('gerenciar-permissoes');
+
+        if (trim($motivo) === '') {
+            throw ValidationException::withMessages(['motivo' => 'Informe o motivo da alteração da conta.']);
+        }
+
+        return DB::transaction(function () use ($autor, $motivo, $desativar): bool {
+            $conta = static::query()->lockForUpdate()->findOrFail($this->getKey());
+            Gate::forUser($autor)->authorize('gerenciar-permissoes');
+
+            if (! $conta->isFuncionario()) {
+                throw ValidationException::withMessages(['conta' => 'Somente contas de funcionário podem ser desativadas ou reativadas.']);
+            }
+
+            if ($desativar !== $conta->estaAtivo()) {
+                return false;
+            }
+
+            if ($desativar && $conta->visitasFuturas()->exists()) {
+                throw ValidationException::withMessages(['conta' => 'O funcionário é responsável por visitas futuras. Reagende-as para outra pessoa ou cancele-as antes de desativar a conta.']);
+            }
+
+            $instante = now();
+            $conta->forceFill([
+                'desativado_em' => $desativar ? $instante : null,
+                'desativado_por_user_id' => $desativar ? $autor->id : null,
+            ])->save();
+
+            $evento = new EventoConta;
+            $evento->forceFill([
+                'user_id' => $conta->id,
+                'autor_user_id' => $autor->id,
+                'acao' => $desativar ? 'desativacao' : 'reativacao',
+                'motivo' => trim($motivo),
+                'ocorrido_em' => $instante,
+            ])->save();
+
+            return true;
+        });
+    }
+
+    public function estaAtivo(): bool
+    {
+        return $this->desativado_em === null;
+    }
+
+    public function visitasFuturas(): HasMany
+    {
+        return $this->hasMany(Agendamento::class, 'responsavel_user_id')
+            ->where('status', 'confirmado')->where('inicio_previsto_em', '>', now());
+    }
+
+    public function eventosConta(): HasMany
+    {
+        return $this->hasMany(EventoConta::class, 'user_id');
+    }
+
+    public function desativadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'desativado_por_user_id');
     }
 
     public function concessoes(): HasMany
@@ -60,7 +139,7 @@ class User extends Authenticatable
             return true;
         }
 
-        return $usuario?->isFuncionario()
+        return $usuario?->isFuncionario() && $usuario->estaAtivo()
             && $usuario->concessoes()->whereNull('revogada_em')
                 ->whereHas('permissao', fn (Builder $query): Builder => $query->where('codigo', $codigo))
                 ->exists();
@@ -69,6 +148,17 @@ class User extends Authenticatable
     public function podeCriarFuncionarios(): bool
     {
         return $this->possuiPermissaoAdministrativa(Permissao::CRIAR_FUNCIONARIOS);
+    }
+
+    public function podeRegistrarRelatoriosVisita(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::REGISTRAR_RELATORIOS_VISITA);
+    }
+
+    public function podeConsultarRelatoriosVisita(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::CONSULTAR_RELATORIOS_VISITA)
+            || $this->podeRegistrarRelatoriosVisita();
     }
 
     // Métodos auxiliares de leitura — usados tanto pelo middleware quanto

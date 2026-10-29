@@ -113,6 +113,15 @@ class AgendaOperationsTest extends TestCase
         $this->assertDatabaseCount('contatos_solicitacao', 0);
     }
 
+    public function test_confirmation_rejects_deactivated_responsible(): void
+    {
+        $pedido = $this->pedido();
+        $autor = User::factory()->admin()->create();
+        $responsavel = User::factory()->funcionario()->create(['desativado_em' => now()]);
+        $this->invalid(fn () => Agendamento::confirmar($pedido->id, $autor, $this->dados($pedido, $responsavel)), 'responsavel_user_id');
+        $this->assertDatabaseCount('agendamentos', 0);
+    }
+
     public function test_confirmation_converts_local_time_and_persists_reservation_audit_and_safe_replay(): void
     {
         $pedido = $this->pedido();

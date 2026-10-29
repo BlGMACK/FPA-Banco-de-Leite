@@ -1,19 +1,23 @@
 # Roadmap do backend
 
-As prioridades e entregas técnicas abaixo são **propostas para revisão da equipe**. O primeiro fluxo e suas diretrizes estruturais foram acordados conforme relato do usuário em 23/10/2026, registrado abaixo. Campos, relações, estados e permissões detalhadas continuam propostos. Não há prazos aprovados. Responsáveis permanecem **a definir**. A base implementada está em [Status](STATUS.md).
+As prioridades e entregas técnicas abaixo são **propostas para revisão da equipe**. O primeiro fluxo e suas diretrizes estruturais foram acordados conforme relato do usuário em 23/10/2026, registrado abaixo. Campos, relações, estados e permissões detalhadas continuam propostos onde não houver acordo identificado. Não há prazos aprovados. Responsáveis permanecem **a definir**. A base implementada está no [estado atual do Status](STATUS.md#estado-atual--29102026).
+
+## Situação em 29/10/2026
+
+O primeiro fluxo está implementado até o relatório de visita: recebimento, atendimento e admissão administrativa, agenda e relatório narrativo versionado, todos aplicados no desenvolvimento. **Próximo passo:** o roteiro das telas de relatório passou em navegador automatizado ([registro](STATUS.md#teste-das-telas-em-navegador--29102026)); as sugestões de usabilidade foram aplicadas e a tela de gestão de permissões foi entregue; falta a equipe avaliar as telas. Em 29/10/2026 o usuário definiu as regras da [desativação de funcionários](#desativação-de-funcionários--acordado-em-29102026) e a estrutura da [avaliação após visita, exames e documentos](#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). A desativação foi implementada no mesmo dia e aguarda a aplicação da migration no desenvolvimento; exames ainda dependem da lista real e dos desfechos da decisão. Correção de dados do pedido continua sem definição. Esta posição não autoriza implementação.
 
 P0 indica pré-requisito de alinhamento; P1, base de implementação; P2, evolução após a base. A ordem definitiva depende dos fluxos reais do Banco de Leite.
 
-| Etapa | Prioridade proposta | Dependências | Entrega e critério de conclusão propostos | Responsável |
-| --- | --- | --- | --- | --- |
-| R1 — Definir primeiro fluxo | P0 | Discussão com equipe e usuários do serviço. | Glossário, escopo do primeiro caso de uso, regras e aceite registrados como acordados com origem da decisão. Separar conta de acesso de entidade de domínio. | a definir |
-| R2 — Revisar acesso e dados | P0 | R1 para permissões de domínio; base de autenticação já existe. | Matriz de acesso por ação/registro, política de cadastro, verificação de e-mail e exclusão/retenção discutidas e aprovadas; tratamento das rotas de teste definido. | a definir |
-| R3 — Consolidar ambiente e qualidade | P1 | Decisão de versões e ambiente de teste da equipe. | Scripts de instalação alinhados ao MySQL sem regenerar chave existente; estratégia do seeder definida; testes de papéis e integração MySQL com evidências; CI e revisão acordadas. | a definir |
-| R4 — Modelar o primeiro fluxo | P1 | R1 e R2. | Campos, relações, restrições, estados e preservação de histórico aprovados em [Modelagem](MODELAGEM.md); plano de migrations revisado. | a definir |
-| R5 — Acordar integração | P1 | R1 e R4; alinhamento com frontend. | Contrato do primeiro fluxo preenchido com entradas, view/resposta, mensagens e permissão, usando o [modelo](CONTRATOS.md); tecnologia de integração escolhida conforme necessidade. | a definir |
-| R6 — Implementar primeiro fluxo | P1 | R2 a R5. | Código, migrations e testes de sucesso, erro e acesso; interface integrada ao contrato; documentação atualizada no mesmo PR; aceite registrado. | a definir |
-| R7 — Avaliar migração do legado | P2 | R4; schema da branch local consultado, acesso ao banco e inventário de dados ainda não verificados. | Mapeamento de origem/destino, qualidade de dados, ensaio e restauração definidos e revisados; evidência de reconciliação antes de migrar dados reais. Pode subir de prioridade se R1 depender do legado. | a definir |
-| R8 — Planejar operação | P2 | Fluxo implementado e decisões de segurança. | Hospedagem, backups e teste de restauração, observabilidade, e-mail e gestão de acesso definidos; homologação antes de produção. | a definir |
+| Etapa | Prioridade proposta | Dependências | Entrega e critério de conclusão propostos | Situação em 29/10/2026 | Responsável |
+| --- | --- | --- | --- | --- | --- |
+| R1 — Definir primeiro fluxo | P0 | Discussão com equipe e usuários do serviço. | Glossário, escopo do primeiro caso de uso, regras e aceite registrados como acordados com origem da decisão. Separar conta de acesso de entidade de domínio. | Fluxo e diretrizes acordados pelo usuário; regras até o relatório definidas. Etapas clínicas (D6, D9) e aceite do serviço (D12) pendentes. | a definir |
+| R2 — Revisar acesso e dados | P0 | R1 para permissões de domínio; base de autenticação já existe. | Matriz de acesso por ação/registro, política de cadastro, verificação de e-mail e exclusão/retenção discutidas e aprovadas; tratamento das rotas de teste definido. | Parcial. Contas exclusivamente internas, permissões por capacidade e tela de gestão de permissões implementadas e testadas; rotas de teste removidas. Desativação de funcionários implementada em 29/10/2026. Verificação de e-mail, retenção e idioma pt-BR das mensagens do framework pendentes. | a definir |
+| R3 — Consolidar ambiente e qualidade | P1 | Decisão de versões e ambiente de teste da equipe. | Scripts de instalação alinhados ao MySQL sem regenerar chave existente; estratégia do seeder definida; testes de papéis e integração MySQL com evidências; CI e revisão acordadas. | Parcial. Testes em MariaDB exclusivo com guarda de isolamento e matriz de acesso por módulo. Scripts Composer, `DatabaseSeeder`, versões compartilhadas e CI pendentes. | a definir |
+| R4 — Modelar o primeiro fluxo | P1 | R1 e R2. | Campos, relações, restrições, estados e preservação de histórico aprovados em [Modelagem](MODELAGEM.md); plano de migrations revisado. | Implementado até o relatório, mais desativação de contas (21 migrations; a última aguarda aplicação local). Documentos/exames, avaliação e doadora aprovada continuam propostos. | a definir |
+| R5 — Acordar integração | P1 | R1 e R4; alinhamento com frontend. | Contrato do primeiro fluxo preenchido com entradas, view/resposta, mensagens e permissão, usando o [modelo](CONTRATOS.md); tecnologia de integração escolhida conforme necessidade. | Contratos Blade implementados até o relatório. Sem API REST. | a definir |
+| R6 — Implementar primeiro fluxo | P1 | R2 a R5. | Código, migrations e testes de sucesso, erro e acesso; interface integrada ao contrato; documentação atualizada no mesmo PR; aceite registrado. | Implementado até o relatório de visita, com testes. Faltam correção de dados do pedido, etapas clínicas, revisão visual e aceite registrado. | a definir |
+| R7 — Avaliar migração do legado | P2 | R4; schema da branch local consultado, acesso ao banco e inventário de dados ainda não verificados. | Mapeamento de origem/destino, qualidade de dados, ensaio e restauração definidos e revisados; evidência de reconciliação antes de migrar dados reais. Pode subir de prioridade se R1 depender do legado. | Não iniciado. | a definir |
+| R8 — Planejar operação | P2 | Fluxo implementado e decisões de segurança. | Hospedagem, backups e teste de restauração, observabilidade, e-mail e gestão de acesso definidos; homologação antes de produção. | Não iniciado. | a definir |
 
 ## Decisões humanas necessárias
 
@@ -92,16 +96,16 @@ Detalhes técnicos, limites de campos, normalização e resolução dos alertas 
 
 | ID | Decisão pendente | Encaminhamento |
 | --- | --- | --- |
-| D1 | Confirmar entrada pública sem conta. | Preferência do usuário: sem portal da doadora; proposta revisada nessa direção. Definir verificação no contato e correções; CPF/protocolo não concedem acesso. |
+| D1 | Confirmar entrada pública sem conta. | **Resolvido e implementado (27/10/2026):** não existem contas de doadora; o pedido é público e sem conta. Permanecem a definir a verificação no contato e o tratamento de correções; CPF/protocolo não concedem acesso. |
 | D2 | Registro interno sem conta da interessada. | Confirmado pelo usuário: permitir telefone/presencial, registrando canal e funcionário; campos mínimos ainda em D3. |
 | D3 | Campos iniciais definidos pelo usuário. | Nome completo, CPF, e-mail, município/bairro, endereço completo e fixo e/ou celular (ao menos um); detalhes adicionais opcionais. CNS e preferência de data não entram como obrigatórios; momento a definir. Tipos/limites em Modelagem são propostos. |
 | D4 | Endereço completo na abertura, confirmado pelo usuário. | Decomposição e limites propostos em Modelagem; complemento opcional. |
-| D5 | Atendimento dos pedidos agrupado em uma função. | Confirmado pelo usuário: funcionário(s) focados no tratamento de solicitações. Propor conjunto de permissões de atendimento; atribuições clínicas e alcance do administrador continuam pendentes. |
-| D6 | Aptidão, documentos, exames, validade e reavaliação. | Sequência confirmada: somente solicitar documentos/exames após visita e análise das informações, quando houver indicação. Conteúdo exigido, profissionais, critérios e validade ainda dependem do serviço; relatório narrativo é preferência atual, sujeita a revisão. |
+| D5 | Atendimento dos pedidos agrupado em uma função. | Confirmado pelo usuário e implementado como permissão `atender-solicitacoes`, acumulável com agenda e relatórios; admin com acesso automático (confirmado em 28/10/2026). Atribuições clínicas e habilitações profissionais continuam pendentes. |
+| D6 | Aptidão, documentos, exames, validade e reavaliação. | Sequência confirmada: somente solicitar documentos/exames após visita e análise das informações, quando houver indicação. **Estrutura acordada em 29/10/2026** ([avaliação e exames](#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): permissões, catálogo fixo, estados, anexos, validade e regra de avanço. Lista real de exames, prazos por tipo e desfechos da decisão ainda dependem do serviço. |
 | D7 | Alertas de correspondência e resolução humana. | Confirmado: contato que esclarece a repetição, escolha humana de qual pedido avança e qual arquiva, ou arquivamento de ambos com motivo. Comparar somente pedidos ativos e cadastros administrativamente concluídos; arquivados não geram flags. Detalhes técnicos/reabertura continuam propostos ou pendentes. |
-| D8 | Cancelamento, ausência e reagendamento. | Definir atores, prazos e efeitos sobre a solicitação. |
+| D8 | Cancelamento, ausência e reagendamento. | **Implementado na agenda:** quem tem `gerenciar-agenda` reagenda, cancela ou registra não realização com motivo, preservando a admissão e o histórico. Prazos, limites de tentativas e efeitos de política sobre a solicitação continuam a definir. |
 | D9 | Criar doadora na aprovação ou atualizar cadastro existente? | Recomendação e alternativa em Modelagem; escolha ainda pendente. |
-| D10 | Correções, exclusão de conta e retenção. | Histórico preservado é diretriz; mecanismo, prazo e acesso precisam de definição. |
+| D10 | Correções, exclusão de conta e retenção. | Histórico preservado é diretriz. **Desativação de funcionários acordada em 29/10/2026** ([regras](#desativação-de-funcionários--acordado-em-29102026)). Retenção de dados e anexos e correção de pedidos ainda precisam de definição. |
 | D11 | WhatsApp exigido para abertura. | Confirmado pelo usuário: indicar um dos telefones e declarar disponibilidade; equipe confere no contato. E-mail/telefone são secundários a critério do funcionário. Operação manual proposta; sem garantia automática de número ativo. |
 | D12 | Aceite final do serviço. | Identificar participantes e confirmar propostas e cenários; não presumir aprovação coletiva. |
 
@@ -149,6 +153,8 @@ R1 tem fluxo e diretrizes estruturais acordados conforme relato do usuário; reg
 
 ### Preparação da implementação — proposta de sequência em 24/10/2026
 
+> Registro histórico: os parágrafos abaixo foram acrescentados a cada entrega, do mais recente ao mais antigo, e descrevem a situação na data. A posição vigente está em [Situação em 29/10/2026](#situação-em-29102026).
+
 **Fluxo web da agenda em 27/10/2026:** endpoints e telas operacionais implementados, incluindo filtros, admitidas sem reserva, contatos e histórico. Acesso independente para `gerenciar-agenda`, sem dados de análise inicial ou clínica. Próximos passos: ativação autorizada do schema/catálogo no desenvolvimento e revisão visual/manual; depois, detalhar o recorte de atendimento/relatório e permissões profissionais antes de programá-lo. Evidências e limitações em Status.
 
 **Operações da agenda em 26/10/2026:** contatos após admissão, confirmação, reagendamento, cancelamento e não realização implementados no backend, com validação, Gate, versão, operação única e transação. Usuário confirmou bloqueio de sobreposição do mesmo funcionário; horários distintos no mesmo dia permanecem permitidos e deslocamento é manual. A integração às telas foi entregue na atualização acima. Aplicação de migrations/catálogo ao desenvolvimento continua separada.
@@ -182,11 +188,66 @@ Atualização de 24/10/2026: o usuário autorizou e foram implementados os model
 Visita, relatório, documentos/exames e decisão clínica continuam na sequência funcional, mas fora desta primeira entrega. Pendências de cargos clínicos não impedem especificar a entrada administrativa; a implantação dessa entrada ainda exige autorização por função, proteção da autoria, definição operacional dos limites de recebimento e revisão do contrato.
 
 Verificação: inspeção estática dos documentos, código atual e schema local legado. Sem execução do fluxo, validação clínica ou conteúdo de PDF consultado.
+## Desativação de funcionários — acordado em 29/10/2026
+
+Origem: respostas do usuário nesta data. **Implementado no mesmo dia**, após aprovação do desenho técnico ([Status](STATUS.md#desativação-de-funcionários--29102026)); a migration aguarda aplicação em `banco_de_leite_dev`. A proposta técnica abaixo foi a aprovada.
+
+- Somente o admin desativa e reativa contas de funcionário. *Suposição informada ao usuário, sem objeção até o momento:* admin não desativa outro admin.
+- A desativação bloqueia login e acesso imediatamente. As concessões ficam **suspensas**, não revogadas: ao reativar, o funcionário volta com o mesmo acesso.
+- A desativação é **bloqueada** enquanto o funcionário for responsável por visita confirmada e ainda futura; antes, a equipe reagenda para outra pessoa ou cancela.
+- Reativação permitida. Desativação e reativação exigem motivo e ficam registradas com autor e data.
+- **Proposta técnica (aprovada e implementada):** marcar desativação na conta (ex.: `desativado_em`) com histórico próprio; `EnsureInternalAccount` e os Gates passam a negar contas desativadas; listas de responsáveis da agenda e de relatórios deixam de oferecê-las; a tela fica na área “Permissões”.
+
+## Avaliação após visita, exames e documentos — acordado em 29/10/2026
+
+Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequência de 23/10/2026. Ainda **não implementado**; desenho físico e telas serão propostos antes de programar.
+
+**Fluxo.** Relatório de visita finalizado → **análise do relatório** por profissional autorizado → se as avaliações anteriores forem consideradas válidas, libera a etapa de **exames e documentos** (exames só são pedidos com essa indicação, como a próxima camada de verificação) → acompanhamento de cada item → decisão de habilitação.
+
+**Permissões (três, separadas e acumuláveis).** Nomes técnicos propostos:
+- *Consultar exames:* somente leitura dos itens e anexos, para quem não deve criar ou alterar exames.
+- *Registrar exames:* solicitar itens, anexar arquivos e atualizar estados.
+- *Avaliar doadoras:* analisar o relatório, liberar a etapa de exames e registrar a decisão. Concedida a profissionais de saúde, separada da escrita de relatórios.
+
+**Catálogo e estados.**
+- Lista **fixa** e relativamente ampla de tipos de exame e documento, mantida no sistema, sem tela de edição, para manter o uso simples. Inclui **“Outro exame”**: o funcionário informa nome e detalhes para um exame específico daquela doadora, com o mesmo estado e anexo dos demais.
+- Todo item tem **estado obrigatório** por doadora, nunca em branco. Começa em **Não solicitado**. Ciclo: Não solicitado → Solicitado → Recebido → Aceito, ou Recebido → Precisa complementar → Solicitado.
+- **Regra de avanço:** a doadora só passa às etapas seguintes quando todos os itens **solicitados** estiverem **Aceitos**, houver ao menos um item solicitado e nenhum estiver vencido. Itens “Não solicitado” não bloqueiam.
+
+**Anexos.** Arquivos de exames (fotos e PDFs recebidos pelo WhatsApp) ficam guardados no sistema de forma segura e limitada: armazenamento privado, consulta a qualquer momento por quem tem permissão e nenhum acesso público. Requisitos técnicos em [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).
+
+**Validade (alerta, não bloqueio automático).**
+- A validade conta da **data de realização/coleta**, informada obrigatoriamente ao marcar um exame como Recebido.
+- Prazo padrão por tipo, inicialmente **um mês** para todos, até a equipe definir prazos próprios.
+- Ao vencer, o item recebe sinalização e oferece duas ações: **pedir novo exame** ou **prorrogar por mais um mês com motivo**, no máximo **duas prorrogações**; depois, apenas novo exame. Tudo fica no histórico.
+
+**Documentos de identificação** (na mesma etapa, como itens com estado):
+- **CNS:** número com validação dos dígitos e registro de quem conferiu e quando, **sem guardar imagem** do cartão (minimização de dados sensíveis).
+- **Plano de saúde:** apenas a indicação de que possui ou não possui.
+
+**Desfechos.**
+- **Análise do relatório:** *Liberar para exames*, *Em aguardo* (estado de espera explícito, para quando ainda não é possível decidir) ou *Não apta* (encerra o acompanhamento, com motivo e histórico preservado).
+- **Decisão final**, possível somente quando a regra de avanço for cumprida: *Habilitada para doar*, *Habilitada temporariamente* (com prazo ou condição registrada pelo profissional) ou *Não habilitada* (com motivo e acesso controlado à justificativa).
+- **Depois de habilitada:** a habilitação pode ser **suspensa** (temporária, com retorno possível) ou **encerrada** (definitiva), ambas com motivo e histórico.
+- **Nova tentativa:** quem foi considerada não apta ou não habilitada pode enviar **novo pedido**. A equipe vê o histórico anterior no alerta de correspondência, sem aprovação nem recusa automáticas.
+
+**Pendências.** Lista real de exames e documentos (confirmado até agora: exame de sangue) e prazos por tipo, a obter com o Banco de Leite; o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9; recomendação técnica no [desenho proposto](MODELAGEM.md#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026)); formatos e tamanho máximo de arquivo; retenção dos anexos.
+
 ## Atualização de acesso — 27/10/2026
 
 O usuário confirmou retirada do autocadastro e de todas as contas de doadora. Acesso interno exclusivo de admin/funcionário; criação de funcionários por admin ou funcionário com permissão específica. Implementados formulário interno, autoria e recuperação de senha para primeira definição, sem conceder permissões automaticamente. Ainda não há interface de concessão/revogação ou desativação de funcionários; isso requer recorte próprio. Entrega real de e-mail e revisão visual permanecem pendentes. A condição anterior de decidir sobre a permanência do Breeze público foi resolvida: `/register` foi removido.
 
 ## Recorte de atendimento e relatório — 28/10/2026
+
+> Registro histórico do recorte, do mais recente ao mais antigo. Situação vigente em [Situação em 29/10/2026](#situação-em-29102026).
+
+**Preparação da revisão manual em 29/10/2026:** integração do layout/assets conferida e build aprovado. Roteiro em Status; navegador indisponível e resultado manual da equipe ainda aguardado. A etapa de revisão das telas não está encerrada, e este registro não autoriza implementar documentos/exames sem definir suas regras.
+
+**Interface entregue em 29/10/2026:** rotas/telas Blade de lista, realização, rascunho, publicação, correção e histórico, com testes HTTP em SQLite e MariaDB exclusivo. Próximo passo: revisar manualmente as telas, responsividade e interação Alpine, ajustando a usabilidade com a equipe. Documentos/exames ainda exigem definição funcional; não introduzir critérios clínicos ou uploads a partir deste roadmap.
+
+**Ativação concluída em 29/10/2026:** cinco migrations e catálogo aplicados no desenvolvimento com autorização, preservando registros e sem concessões automáticas. Próximo recorte: interface Blade de relatórios, com rotas protegidas, testes de formulário/CSRF/escape e revisão manual. O backend e a persistência estão disponíveis; o fluxo de relatório ainda não está acessível por telas.
+
+**Avanço posterior autorizado:** permissões e operações de realização, rascunho, finalização/correção implementadas; agenda integrada ao estado realizado e ao bloqueio de novo agendamento. Concorrência e rollback transacional verificados em MariaDB exclusivo. Próximo recorte: ativação local das migrations/catálogo e interface Blade própria do relatório, com testes de autorização/CSRF/escape e revisão manual. Ativação e telas ainda não foram executadas; referências a permissões/operações como próximo passo abaixo registram a sequência anterior.
 
 Após ativação local da agenda, o usuário autorizou trabalhar na etapa de definição do atendimento e relatório. [Contrato detalhado](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026) e [persistência proposta](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026) preparados sem implementar módulo ou alterar banco. Narrativa ampla, rascunho e versões após finalizar já são acordos; campos físicos e operações agora descritos são propostas.
 

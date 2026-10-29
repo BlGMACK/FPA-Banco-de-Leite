@@ -3,7 +3,9 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RelatorioVisitaController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +50,17 @@ Route::middleware(['auth', 'can:criar-funcionarios'])->prefix('interno/funcionar
     Route::post('/', [FuncionarioController::class, 'store'])->name('store');
 });
 
+Route::middleware(['auth', 'can:gerenciar-permissoes'])->prefix('interno/permissoes')->name('interno.permissoes.')->group(function (): void {
+    Route::get('/', [PermissaoController::class, 'index'])->name('index');
+    Route::get('/{funcionario}', [PermissaoController::class, 'show'])->whereNumber('funcionario')->name('show');
+    foreach (['concessoes', 'revogacoes'] as $acao) {
+        Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'alterar'])->whereNumber('funcionario')->name($acao.'.store');
+    }
+    foreach (['desativacao', 'reativacao'] as $acao) {
+        Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'situacao'])->whereNumber('funcionario')->name($acao.'.store');
+    }
+});
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -64,3 +77,15 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth', 'can:consultar-relatorios-visita'])->prefix('interno/relatorios')->name('interno.relatorios.')->group(function (): void {
+    Route::get('/', [RelatorioVisitaController::class, 'index'])->name('index');
+    Route::get('/{relatorio}', [RelatorioVisitaController::class, 'show'])->whereNumber('relatorio')->name('show');
+    Route::middleware('can:registrar-relatorios-visita')->group(function (): void {
+        Route::get('/visitas/{agendamento}', [RelatorioVisitaController::class, 'create'])->whereNumber('agendamento')->name('visitas.create');
+        Route::post('/visitas/{agendamento}', [RelatorioVisitaController::class, 'store'])->whereNumber('agendamento')->name('visitas.store');
+        foreach (['rascunho', 'finalizar', 'correcao'] as $acao) {
+            Route::post('/{relatorio}/'.$acao, [RelatorioVisitaController::class, 'update'])->whereNumber('relatorio')->name($acao);
+        }
+    });
+});

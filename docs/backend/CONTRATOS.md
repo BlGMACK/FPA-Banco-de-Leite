@@ -2,13 +2,11 @@
 
 ## Natureza e estado
 
-Próximo recorte especificado: [atendimento e relatório narrativo](#atendimento-e-relatório-narrativo--especificação-de-28102026). Ciclos de rascunho/correção e decisões R1–R3 de acesso estão acordados com o usuário. O desenho técnico permanece proposto; não há implementação desse módulo.
+Conferido em 29/10/2026. Estão **implementados** os contratos de recebimento e fila, atendimento administrativo, agenda, [relatórios de visita](#interface-blade-implementada-em-29102026) e [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026); o schema correspondente está aplicado no desenvolvimento. Não há autocadastro nem conta de doadora. Documentos/exames, avaliação de saúde, decisão e habilitação não têm contrato nem implementação.
 
-Regra vigente: [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026). Não há autocadastro nem conta de doadora. Rotas de agenda e criação interna estão descritas nas respectivas entregas abaixo; schema de contas ainda aguarda aplicação local por indisponibilidade do MySQL.
+Este documento acumula especificações feitas antes de cada entrega. Seções marcadas como **proposta** registram o planejamento da época; quando houver seção “implementado” posterior sobre o mesmo assunto, ela delimita o comportamento efetivo. A [superfície atual](#superfície-atual) e as convenções abaixo são **extraídas do código** e não representam aceite formal de produto. Acordos precisam de decisão identificada. A integração usa HTML Blade, formulários e sessão, sem API REST de negócio.
 
-A superfície atual e suas convenções abaixo são **implementadas, extraídas do código**; não representam aceite formal de produto. A seção de admissão ao final é **proposta**, baseada nas diretrizes informadas pelo usuário em 23/10/2026. Acordos precisam de decisão identificada. A integração atual usa HTML Blade, formulários e sessão, sem API REST de negócio.
-
-Fontes: [rotas web](../../routes/web.php), [rotas de autenticação](../../routes/auth.php), [controllers Auth](../../app/Http/Controllers/Auth), [ProfileController](../../app/Http/Controllers/ProfileController.php) e [views](../../resources/views).
+Fontes: [rotas web](../../routes/web.php), [rotas de autenticação](../../routes/auth.php), [controllers](../../app/Http/Controllers) e [views](../../resources/views).
 
 ## Convenções de transporte implementadas
 
@@ -38,6 +36,19 @@ Requisições que esperam JSON têm tratamento de erros previsto em [bootstrap/a
 
 [bootstrap/app.php](../../bootstrap/app.php) também registra GET `/up` como health check do framework, sem contrato de domínio.
 
+Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão e o Gate indicado antes de consultar IDs; os contratos detalhados estão nas seções vinculadas.
+
+| Acesso | Caminhos | Contrato |
+| --- | --- | --- |
+| Público, sem conta | GET `/doar`, POST `/pedidos-de-cadastro` (limite `receber-solicitacoes`), GET `/pedido-recebido` | [Recebimento e fila](#recebimento-e-fila-implementados-em-24102026) |
+| `atender-solicitacoes` | `interno/solicitacoes`: fila, registro interno, detalhe e POST de `analise`, `contatos`, `conferencias`, `resolucoes` e `admissao`; `interno/acompanhamentos`: lista e detalhe | [Recebimento e fila](#recebimento-e-fila-implementados-em-24102026), [Atendimento administrativo](#atendimento-administrativo-implementado-em-26102026) |
+| `gerenciar-agenda` | `interno/agenda`: lista, acompanhamento, contatos, agendamento, `reagendamentos`, `cancelamento` e `nao-realizacao` | [Rotas web da agenda](#rotas-web-da-agenda) |
+| `consultar-relatorios-visita`; escritas também `registrar-relatorios-visita` | `interno/relatorios`: lista, detalhe, registro da visita, `rascunho`, `finalizar` e `correcao` | [Interface Blade dos relatórios](#interface-blade-implementada-em-29102026) |
+| `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
+| `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes`, `revogacoes`, `desativacao` e `reativacao` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
+
+Não há rota para corrigir dados de pedidos.
+
 ## Campos, mensagens e permissões
 
 Cadastro e atualização de perfil exigem nome e e-mail, com limite de 255 caracteres; e-mail válido, minúsculo e único (perfil ignora a própria conta). Senhas novas usam confirmação e `Password::defaults()`; não há política própria de complexidade documentada no código. Login limita tentativas por e-mail/IP.
@@ -61,6 +72,8 @@ A integração do modal usa eventos `open-modal`/`close-modal`, identificador `c
 A matriz é exercitada por `FuncionarioCreationTest`. Rotas de demonstração foram removidas. Esconder um item no menu não autoriza o usuário no servidor; permissões de módulos continuam independentes.
 
 ## Base de models e autorização implementada em 24/10/2026
+
+> Situação posterior: o catálogo passou a cinco códigos (atendimento, agenda, criação de funcionários e consulta/registro de relatórios), todos aceitos por `conceder/revogar`; contas de doadora e rotas de apoio por papel foram removidas; criação de funcionários foi implementada. Concessão/revogação ganhou tela própria em 29/10/2026 ([Gestão de permissões](#gestão-de-permissões-implementada-em-29102026)). O texto abaixo descreve a entrega de 24/10/2026.
 
 Escopo autorizado pelo usuário: models do recorte administrativo, autorização dos funcionários e preservação de autoria. Não foram criadas rotas, telas ou API de atendimento/gestão de permissões. As rotas de apoio por papel mantêm sua finalidade anterior.
 
@@ -100,7 +113,7 @@ Nenhum fluxo futuro está aprovado por este modelo. Atualize contrato, implement
 
 ## Permissões propostas para o fluxo de admissão
 
-Origem: **G** = diretrizes do guia do usuário, registradas em [R1](ROADMAP.md); **P** = detalhamento proposto abaixo. G exige acesso da interessada apenas aos próprios dados e atuação profissional autorizada. Os papéis atuais `admin`, `funcionario` e `doadora` não implementam as permissões desta matriz.
+Origem: **G** = diretrizes do guia do usuário, registradas em [R1](ROADMAP.md); **P** = detalhamento proposto abaixo. G exige acesso da interessada apenas aos próprios dados e atuação profissional autorizada. Na época, os papéis eram `admin`, `funcionario` e `doadora`. **Situação atual:** o papel doadora foi removido e as permissões implementadas são as cinco do catálogo descritas na [superfície atual](#superfície-atual); a matriz abaixo é o planejamento original.
 
 ### Hipótese de entrada sem conta e contato manual
 
@@ -230,7 +243,7 @@ Relatórios e anexos têm permissões próprias. A função de atendimento não 
 
 ## R5 — Contrato técnico do primeiro recorte
 
-Elaborado em **24/10/2026**, por solicitação do usuário. **Estado: parcialmente implementado**, conforme recorte abaixo; os demais fluxos permanecem propostos. As regras funcionais confirmadas em R1 são a base; a implementação não equivale a homologação pela equipe.
+Elaborado em **24/10/2026**, por solicitação do usuário. **Estado em 29/10/2026: implementado** para recebimento, fila, atendimento e admissão (seções “implementado” abaixo); agenda e relatório seguiram contratos próprios. Correção de dados do pedido e as etapas clínicas permanecem propostas. As regras funcionais confirmadas em R1 são a base; a implementação não equivale a homologação pela equipe.
 
 ### Recebimento e fila implementados em 24/10/2026
 
@@ -263,11 +276,11 @@ Após autorização do usuário, o recorte avançou para início explícito de a
 - Resolução e admissão usam transação, travas nos pedidos selecionados em ordem de ID, versões, autoria e eventos. `operacao_id` é UUID apresentado no formulário interno: o mesmo identificador, autor, origem e conteúdo repetidos retornam a decisão anterior, sem duplicação; conteúdo diferente retorna 409. O UUID não concede acesso e não substitui sessão, Gate ou CSRF. Contato/análise retransmitidos com versão antiga retornam 409. Não há repetição automática de decisões.
 - Erros de formulário usam bags `contato` e `decisao`; conflitos retornam 409. A tela de acompanhamento mostra origem, autoria e visita pendente; documentos/exames aguardam indicação posterior. Não contém funções clínicas simuladas.
 
-Correção de dados por PATCH, agenda/relatório de visita e anexos continuam pendentes. As travas cobrem os registros selecionados; teste de concorrência real entre conexões, entradas simultâneas novas e desempenho sob volume permanecem pendentes. Datas dos formulários seguem o fuso configurado na aplicação, cuja adequação operacional deve ser revisada antes do uso real. Evidências e limites em [Status](STATUS.md) e [Segurança](../SEGURANCA.md).
+Correção de dados por PATCH e anexos continuam pendentes; agenda e relatório de visita foram implementados depois, nas seções próprias. A área de acompanhamento passou a consultar o estado real da visita. As travas cobrem os registros selecionados; teste de concorrência real entre conexões, entradas simultâneas novas e desempenho sob volume permanecem pendentes. Datas dos formulários seguem o fuso configurado na aplicação, cuja adequação operacional deve ser revisada antes do uso real. Evidências e limites em [Status](STATUS.md) e [Segurança](../SEGURANCA.md).
 
 ### Próximo recorte: agenda e relatório de visita — proposta em 26/10/2026
 
-**Estado:** especificação para revisão, não implementada. O usuário informou que testou o site e não encontrou problemas no fluxo atual; isso não confirma as regras novas abaixo. Fonte do fluxo: relato do usuário (G). A separação de agenda, atendimento e triagem já aparece na proposta de Modelagem (P), inspirada no legado (L). Não há PDF disponível nem critérios clínicos extraídos dele.
+**Estado:** especificação de 26/10/2026, usada como base das entregas seguintes. O comportamento efetivo está em [agenda implementada](#fluxo-web-da-agenda-implementado-em-27102026) e [relatórios implementados](#interface-blade-implementada-em-29102026); o texto abaixo preserva o planejamento. Na época, o usuário informou que testou o site e não encontrou problemas no fluxo atual; isso não confirma as regras novas abaixo. Fonte do fluxo: relato do usuário (G). A separação de agenda, atendimento e triagem já aparece na proposta de Modelagem (P), inspirada no legado (L). Não há PDF disponível nem critérios clínicos extraídos dele.
 
 **Definições confirmadas pelo usuário em 26/10/2026, após as perguntas de refinamento:** visita nos dois locais, preferencialmente no domicílio para conhecer o ambiente da interessada, podendo ocorrer no Banco conforme a ocasião; funções/permissões separadas, acumuláveis pela mesma pessoa; relatório com rascunho editável e correções em novas versões após finalizar. São acordos de produto com o usuário, não confirmação de cargos profissionais pelo serviço. O restante do desenho abaixo permanece proposto.
 
@@ -324,6 +337,8 @@ Cobertura proposta: negar acesso sem permissão; impedir leitura clínica por at
 As três questões iniciais receberam resposta explícita do usuário em 26/10/2026, registrada acima. Próximo trabalho técnico: detalhar persistência e autorização da agenda, incluindo contatos após admissão e testes da combinação de permissões. A implementação de regras clínicas depende das definições profissionais restantes; não preencher essas lacunas com critérios inventados.
 
 ### Contrato técnico proposto da agenda — 26/10/2026
+
+> Situação em 29/10/2026: agenda implementada (models, Gate, operações, rotas e telas) e schema aplicado no desenvolvimento desde 28/10/2026. Os parágrafos de atualização abaixo registram cada etapa na data; o comportamento efetivo está em [Operações de backend](#operações-de-backend-implementadas-em-26102026) e [Fluxo web da agenda](#fluxo-web-da-agenda-implementado-em-27102026).
 
 **Atualização de implementação:** os models `Agendamento`, `ReservaAgenda` e `EventoAgendamento`, suas factories e o Gate `gerenciar-agenda` foram implementados após autorização do usuário. Solicitação e contato possuem relações com a agenda. Models mantêm proteção de atribuição em massa; os vínculos/casts não executam confirmação, reagendamento ou validações operacionais. Não há endpoints/telas de agenda nesta entrega.
 
@@ -403,9 +418,11 @@ IDs numéricos e segmentos estáticos diferenciados; sem consulta pública, excl
 - Reagendamento: versão do compromisso, novo contato confirmando a alteração, novos dados de agenda, motivo e operação. Cancelamento/não realização: versão, motivo e operação. Motivos não incluem parecer clínico. `responsavel_user_id` deve apontar para conta interna existente; fluxo para desativação e qualificação profissional continua pendente.
 - Não realização não é recusa nem penalidade automática. Encaixe sem agenda, registro retroativo de visita realizada e aprovação para doação não entram neste incremento. Datas de confirmação novas são futuras; ausência só é registrada após o horário combinado. Fuso e validação precisam de testes específicos.
 - Resposta válida: 302 para contexto operacional com mensagem clara. Entrada inválida: 302 com erros e valores seguros; sem sessão: login; sem permissão: 403; ID inexistente/incompatível: 404; versão/reserva/operação em conflito: 409 orientando recarregar; CSRF inválido: 419. Reenvio comprovado não duplica contato/agendamento/evento.
-- Não haverá promessa de disponibilidade automática: duração, deslocamento e capacidade não foram definidos. O bloqueio de sobreposição do mesmo responsável descrito na Modelagem é proposta para revisão; se não adotado, a interface deve sinalizar conflitos e deixar explícita a limitação. Testar concorrência real antes de afirmar garantia contra dupla reserva.
+- Não haverá promessa de disponibilidade automática: duração, deslocamento e capacidade não foram definidos. O bloqueio de sobreposição do mesmo responsável foi confirmado pelo usuário e implementado em 26/10/2026. Testar concorrência real antes de afirmar garantia contra dupla reserva.
 
 #### Ordem da futura implementação
+
+> Sequência planejada em 26/10/2026. Passos 1 a 3 e as telas do passo 4 foram concluídos até 28/10/2026; a revisão visual continua pendente.
 
 1. Migrations aditivas e testes de integridade em banco exclusivo; preservar contatos legados como análise.
 2. Catálogo/Gate/concessões de agenda e testes da matriz acima, inclusive usuário com apenas agenda e revogação em sessão aberta.
@@ -524,10 +541,73 @@ O usuário determinou a retirada integral do acesso de doadoras e autorizou a re
 - `GET /interno/funcionarios/novo` (`interno.funcionarios.create`) e `POST /interno/funcionarios` (`interno.funcionarios.store`) exigem sessão e `criar-funcionarios`. Admin tem a capacidade; funcionários precisam de concessão explícita, revogável e auditada pela administração.
 - Entrada: nome e e-mail válidos/únicos. Servidor fixa `role=funcionario`, senha aleatória não divulgada e `criado_por_user_id`. Campos de papel, senha, autoria ou permissões enviados pelo cliente não são aplicados. Não há criação de admin nem concessão de capacidades por esse formulário.
 - A pessoa define sua própria senha pela recuperação por e-mail já existente. O cadastro não envia automaticamente convite, não inicia sessão da pessoa criada e não troca a sessão do operador. Entrega real de e-mail depende da configuração operacional; não foi homologada nesta tarefa.
-- A migration `2026_10_27_202742_restrict_users_to_internal_accounts` remove contas antigas com papel `doadora`, suas sessões de banco e tokens de recuperação; restringe o enum a `admin|funcionario`, sem padrão implícito, e acrescenta autoria da criação. Não altera interessadas, solicitações ou dados clínicos. FKs continuam ativas: vínculo inesperado impede a exclusão, sem apagar histórico em cascata. `down()` não restaura contas excluídas.
+- A migration `2026_10_27_202742_restrict_users_to_internal_accounts` remove contas antigas com papel `doadora`, suas sessões de banco e tokens de recuperação; restringe o enum a `admin|funcionario`, sem padrão implícito, e acrescenta autoria da criação. Não altera interessadas, solicitações ou dados clínicos. FKs continuam ativas: vínculo inesperado impede a exclusão, sem apagar histórico em cascata. `down()` não restaura contas excluídas. Aplicada no desenvolvimento em 28/10/2026 (lote 4), sem contas de doadora remanescentes.
 - Seeder de desenvolvimento passa a criar somente admin/funcionário; catálogo inclui a permissão nova sem concedê-la automaticamente. Referências anteriores deste documento a autocadastro ou perfil doadora são histórico superado por esta decisão.
 
+## Gestão de permissões implementada em 29/10/2026
+
+Tela para o administrador conceder e revogar as permissões do catálogo a funcionários, usando `Permissao::conceder/revogar` (Gate `gerenciar-permissoes`, transação com trava, evento com autor, motivo e instante). Fontes: [PermissaoController](../../app/Http/Controllers/PermissaoController.php) e [views](../../resources/views/permissoes).
+
+| Método / caminho | Nome `interno.permissoes.*` | Entrada e efeito |
+| --- | --- | --- |
+| GET `/interno/permissoes` | `index` | Funcionários em ordem de nome, 20 por página, com permissões ativas. Contas admin não aparecem. |
+| GET `/interno/permissoes/{funcionario}` | `show` | Cinco permissões do catálogo com estado (ativa desde/por quem, ou não concedida), descrição e formulário; histórico de alterações em páginas de 15. Conta inexistente ou admin: 404. |
+| POST `/interno/permissoes/{funcionario}/concessoes` | `concessoes.store` | `permissao_id` (existente) e `motivo` (obrigatório, até 2.000 caracteres, não só espaços). Redireciona ao detalhe com status. |
+| POST `/interno/permissoes/{funcionario}/revogacoes` | `revogacoes.store` | Mesmas entradas; revoga a concessão ativa. |
+
+- Todas as rotas exigem sessão e `gerenciar-permissoes` antes de consultar IDs; funcionário com `criar-funcionarios` não gerencia permissões. O responsável vem da sessão; campos extras são ignorados.
+- Repetir uma concessão já ativa ou revogação já efetiva não grava evento e retorna “Nenhuma alteração”. Erros de validação voltam ao detalhe com o motivo preservado apenas no formulário da permissão correspondente.
+- O efeito vale na próxima requisição do funcionário, inclusive em sessão aberta, porque os Gates consultam o banco a cada verificação. Motivos são exibidos com escape no histórico.
+- Fora do recorte: alteração de papel, criação de admin e permissões por registro.
+
+**Desativação e reativação de funcionários (29/10/2026):**
+
+| Método / caminho | Nome `interno.permissoes.*` | Entrada e efeito |
+| --- | --- | --- |
+| POST `/interno/permissoes/{funcionario}/desativacao` | `desativacao.store` | `motivo` (obrigatório, até 2.000 caracteres). Recusa com erro no bag `conta` se o funcionário for responsável por visita confirmada com início futuro. |
+| POST `/interno/permissoes/{funcionario}/reativacao` | `reativacao.store` | `motivo` (mesmas regras). Restaura o acesso com as concessões que já existiam. |
+
+- Operações em `User::desativar/reativar`: Gate `gerenciar-permissoes`, trava da conta, evento em `eventos_conta` com autor, motivo e instante; repetição retorna “Nenhuma alteração”. Somente contas de funcionário.
+- Conta desativada: login e recuperação de senha recusados com a mesma mensagem de credenciais inválidas; sessão aberta encerrada com 403 na próxima requisição; Gates negam todas as capacidades; concessões continuam gravadas e aparecem como “Suspensa”.
+- Agenda: confirmação e reagendamento recusam responsável desativado (erro em `responsavel_user_id`), e a tela de agenda não o oferece. O registro de visita já ocorrida oferece contas ativas mais o responsável previsto, mesmo desativado. Filtros de agenda e relatórios continuam listando todas as contas.
+
 ## Atendimento e relatório narrativo — especificação de 28/10/2026
+
+### Interface Blade implementada em 29/10/2026
+
+Menu **Relatórios de visita** disponível com `consultar-relatorios-visita` (incluindo quem tem escrita e admin). Sete rotas em `interno/relatorios`, sob autenticação e Gates antes da consulta dos IDs:
+
+| Método / caminho relativo | Nome `interno.relatorios.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/` | `index` | Leitura: relatórios com versão publicada, filtros fechados de estado/responsável e paginação de 20. Escrita inclui rascunhos e lista separada de visitas confirmadas a registrar, paginada em 15. Filtros aplicam-se aos relatórios. |
+| GET `/{relatorio}` | `show` | Detalhe e versão vigente; `?versao=N` consulta outra publicação do mesmo relatório. Histórico de versões em páginas de 15. Leitor não acessa relatório sem publicação (404), rascunho ou motivo da correção em elaboração. |
+| GET `/visitas/{agendamento}` | `visitas.create` | Escrita: contexto mínimo próprio e formulário de realização. Exige compromisso confirmado/reservado de pedido admitido ainda não atendido. Não registra nada por GET. |
+| POST `/visitas/{agendamento}` | `visitas.store` | Escrita: delega realização ao método transacional; redireciona ao relatório criado, inclusive em replay idêntico. |
+| POST `/{relatorio}/rascunho` | `rascunho` | Escrita: envia texto, UUID e revisão para salvar. |
+| POST `/{relatorio}/finalizar` | `finalizar` | Escrita: publica somente o texto já salvo daquela revisão. Texto adicional no pedido não é aplicado. |
+| POST `/{relatorio}/correcao` | `correcao` | Escrita: exige motivo e abre correção da vigente. |
+
+Controller `RelatorioVisitaController` e views `resources/views/relatorios/{index,visita,show}.blade.php`. Não exigem `gerenciar-agenda` nem `atender-solicitacoes`; o contexto autorizado é acessível dentro da própria área. Formulários usam CSRF, campos permitidos e operações existentes. HTML/narrativas/motivos são escapados pelo Blade; quebras de linha são preservadas sem aceitar HTML. Views usam Bootstrap e um estado Alpine para bloquear o botão de finalizar enquanto houver edição local não salva. A mensagem orienta salvar antes de publicar; sem JavaScript o contrato do backend continua sendo publicar exclusivamente o texto persistido. Desde 29/10/2026, após o teste em navegador: o registro da visita pré-preenche início e fim efetivos com o horário previsto (Marília); “Finalizar texto salvo” vem desabilitado no servidor enquanto não houver relato salvo, sem mudar a recusa 422 do backend; no conflito entre rascunhos, o editor somente leitura recebe o rótulo “Texto enviado e não salvo”. O layout interno ganhou o link “Pular para o conteúdo”, visível ao receber foco, apontando para `main#conteudo`.
+
+Erros de validação de escrita retornam **422 na própria tela**, mantendo apenas entradas escalares do formulário. Não usam `withInput()`/flash de narrativa na sessão. Conflitos de relatório retornam **409**, mostram o texto enviado para cópia, desabilitam novas ações nessa resposta e orientam recarregar/revisar; não atualizam a revisão para repetir automaticamente a escrita. Se outro profissional já finalizou, o texto rejeitado permanece em uma área separada para cópia. Conflitos de realização usam a resposta 409 existente, sem reaplicar a operação. Autorização é reavaliada ao construir respostas restritas; revogação retorna 403 sem exibir o texto enviado. GETs e respostas de formulário dessa área enviam `Cache-Control: private, no-store`.
+
+Validação HTTP não substitui revisão visual, teste real de Alpine, acessibilidade e responsividade. Não houve nova migration, seeder ou concessão; schema/catálogo já estavam ativados. Esta entrega não implementa uploads, exames, aprovação clínica, retorno ou exportação. Evidências em [Status](STATUS.md#interface-web-dos-relatórios--29102026).
+
+### Backend implementado após autorização em 28/10/2026
+
+**Ativação posterior em 29/10/2026:** migrations e catálogo aplicados no desenvolvimento com autorização, sem concessões automáticas. A exigência de ativação citada abaixo foi atendida, e as telas/rotas foram entregues na [interface Blade](#interface-blade-implementada-em-29102026); os “limites da entrega” ao final desta seção descrevem o estado de 28/10/2026. Evidência em [Status](STATUS.md#ativação-local-dos-relatórios--29102026).
+
+- Catálogo/Gates `consultar-relatorios-visita` e `registrar-relatorios-visita`: admin tem ambos; funcionário depende de concessão atual, revogável pelo mecanismo auditado existente. Escrita inclui consulta; leitura isolada não permite consultar rascunho. Não há bypass para aprovação de doações nem permissão implícita por atribuição na agenda. Seeder somente define os cinco itens atuais do catálogo, sem concessões.
+- `Atendimento::registrar(agendamentoId, autor, dados)` exige escrita, UUID, versão da agenda, datas efetivas locais, responsável/modalidade/local e `realizacao_confirmada`. Mudança de responsável/local exige motivo; período deve ser posterior à confirmação, ter fim maior que início e não estar no futuro. Grava atendimento/rascunho/eventos, marca `realizado`, libera reserva e incrementa agenda/pedido em uma transação. O evento da agenda contém somente identificação operacional, estado/revisão e mensagem fixa, sem motivo de divergência.
+- `RelatorioVisita::salvarRascunho`, `finalizar` e `iniciarCorrecao` exigem escrita, `operacao_id` e `revisao`. Salvamento recebe `texto` (anulável, até 30.000 caracteres); finalização publica o rascunho persistido daquela revisão, sem aceitar texto novo escondido no pedido. Correção exige `motivo` até 2.000 caracteres e copia a vigente. Cada ação incrementa revisão e registra editor/evento; finalização cria versão numerada, preserva anteriores e limpa o rascunho. Qualquer escritor autorizado pode continuar trabalho de outro autor. Não há descarte de correção.
+- Consultas de backend: `consultarVersao(relatorioId, numero, autor)` retorna campos explícitos da versão publicada sob leitura/escrita; `consultarRascunho(relatorioId, autor)` exige escrita. Gate antecede consulta de existência. Models continuam disponíveis ao código interno confiável; não usar relações diretamente como substituto dessas autorizações em futuras rotas.
+- Escritas verificam autorização antes de validar e novamente sob trava; reenvio idêntico retorna o evento anterior, outra entrada/autor/alvo com mesma operação ou revisão vencida recebe 409. Realização usa travas de responsáveis em ordem, pedido e agenda; operações de relatório travam somente o relatório e seu evento de operação, sem adquirir depois travas de agenda. Falha de auditoria reverte a transação.
+- Atualização/exclusão de instância de `VersaoRelatorioVisita` é recusada por eventos Eloquent. SQL direto, Query Builder e métodos que suprimem eventos continuam sendo caminhos privilegiados fora dessa proteção; não há trigger nem garantia contra acesso direto ao banco. As operações implementadas somente inserem novas versões.
+- Agenda filtra/exibe `realizado`, retira atendidas da fila de pendentes e não oferece confirmação no detalhe. Backend também bloqueia confirmação/reagendamento de acompanhamento com atendimento. Textos administrativos deixaram de afirmar “pendente” sem consultar o estado. Nenhum conteúdo narrativo aparece na agenda.
+
+**Limites da entrega:** operações de backend e integração operacional com telas existentes; nenhuma rota, formulário ou tela de relatório foi criada. Não há envio externo, exame, anexo, aprovação, retorno ou critério clínico. Dados ainda entram por métodos internos/testes; CSRF, escape e fluxo web do relatório serão testados quando suas rotas existirem. Migrations/catálogo ainda não foram aplicados ao desenvolvimento: ativação exige as cinco migrations `2026_10_28_183700` a `183704` e `PermissaoSeeder`, sem concessões automáticas. Não disponibilizar a agenda atualizada com schema antigo. Evidências em Status.
+
+### Histórico da especificação e etapas anteriores
 
 **Base de models implementada em recorte posterior autorizado:** as quatro entidades agora têm relações, casts e factories, conforme Modelagem. A relação de agenda com atendimento está disponível no código, sem alterar a fila ou registrar visitas automaticamente. A serialização padrão omite textos/motivos narrativos e hash; acesso PHP continua possível e deve ser autorizado na próxima etapa. Nenhuma permissão, rota ou operação de relatório foi adicionada. A preservação de versões é uma exigência do fluxo futuro, não uma garantia já implementada por esses models.
 

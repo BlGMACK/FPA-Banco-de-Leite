@@ -9,7 +9,9 @@ Mudanças de comportamento devem atualizar a documentação correspondente **no 
 ## Código: observado e orientação existente
 
 - **Implementado:** namespaces PSR-4, controllers e models no padrão Laravel; views Blade reutilizam layouts e componentes.
-- **Implementado:** validação mista, em Form Requests (login/perfil) e controllers (cadastro/senha). Não há evidência de decisão por uma abordagem exclusiva.
+- **Implementado:** validação mista. Form Requests em login, perfil, solicitação, atendimento e criação de funcionário; validação no controller para filtros e senha; regras de estado, versão e coerência nos métodos transacionais dos models (agenda e relatórios). Não há evidência de decisão por uma abordagem exclusiva.
+- **Implementado (convenção observada):** operações de negócio como métodos de model que autorizam, travam, validam versão, gravam em transação e registram evento com autoria, com UUID de operação e hash de conteúdo para reconhecer reenvio. Controllers traduzem conflitos para 409 e erros de validação para 422. Ver [Arquitetura](ARQUITETURA.md#backend-e-frontend).
+- **Implementado:** testes por módulo separados em schema, models, autorização, operações, concorrência e web. Testes que preparam banco chamam a guarda de isolamento de [TestCase](../tests/TestCase.php), que aceita somente SQLite em memória ou o banco local `banco_de_leite_schema_test`.
 - **Orientação existente:** nomes descritivos, tipos e retornos explícitos, chaves em estruturas de controle, reutilização de componentes e respeito às convenções próximas ao arquivo.
 - **Orientação existente:** novas mudanças de schema em migrations; evitar editar migrations já aplicadas.
 - **Orientação existente:** Pint para PHP alterado, testes proporcionais ao comportamento modificado e uso das skills pertinentes.
@@ -36,7 +38,7 @@ Implementação não equivale a validação. Registre comando, data, ambiente e 
 
 ## Permissões e dados
 
-O comportamento atual está em [Contratos](backend/CONTRATOS.md); não existe um CRUD administrativo de papéis. Novas permissões por módulo e acesso por registro dependem de discussão.
+O comportamento atual está em [Contratos](backend/CONTRATOS.md). Papéis fixos são apenas `admin` e `funcionario`; capacidades de funcionário vêm do catálogo de permissões concedidas individualmente pelo admin, na tela “Permissões”, com motivo e histórico. Novas permissões por módulo e acesso por registro dependem de discussão.
 
 **Orientações existentes:** não versionar `.env`, dependências instaladas, credenciais, dados pessoais ou registros reais de saúde; usar dados fictícios. Cada integrante mantém seu banco local; migrations compartilham estrutura, não registros.
 

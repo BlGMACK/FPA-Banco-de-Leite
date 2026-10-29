@@ -4,7 +4,7 @@
         <h1 class="h3 mt-3">Cadastros em acompanhamento</h1>
         <p>Admissão administrativa não representa aprovação para doar.</p>
         @forelse($pedidos as $pedido)
-            <div class="card mb-3"><div class="card-body"><a href="{{ route('interno.acompanhamentos.show', $pedido) }}">{{ $pedido->interessada->nome_completo }} — pedido #{{ $pedido->id }}</a><p class="mb-0">Visita pendente</p></div></div>
+            <div class="card mb-3"><div class="card-body"><a href="{{ route('interno.acompanhamentos.show', $pedido) }}">{{ $pedido->interessada->nome_completo }} — pedido #{{ $pedido->id }}</a><p class="mb-0">Consulte a situação da visita com a equipe responsável.</p></div></div>
         @empty<p>Nenhum cadastro admitido.</p>@endforelse
         {{ $pedidos->links() }}
     </div>

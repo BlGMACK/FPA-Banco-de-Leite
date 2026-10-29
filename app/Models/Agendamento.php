@@ -101,8 +101,10 @@ class Agendamento extends Model
                 $antes = $atual?->snapshotAgenda();
                 $novo = null;
                 if ($cria) {
+                    abort_if($pedido->agendamentos()->whereHas('atendimento')->exists(), 409, 'Este acompanhamento já possui visita realizada. Retornos exigem um fluxo próprio.');
                     $responsavel = $usuarios->get($dados['responsavel_user_id']);
                     self::exigir($responsavel !== null && ($responsavel->isAdmin() || $responsavel->isFuncionario()), 'responsavel_user_id', 'Selecione um responsável com conta interna.');
+                    self::exigir($responsavel->estaAtivo(), 'responsavel_user_id', 'O responsável selecionado está com a conta desativada.');
                     $contato = ContatoSolicitacao::query()->lockForUpdate()->findOrFail($dados['contato_id']);
                     self::exigir($contato->contexto === 'acompanhamento' && $contato->resultado === 'realizado'
                         && $contato->solicitacoes()->whereKey($pedido->id)->exists(), 'contato_id', 'Selecione um contato realizado deste acompanhamento que confirme a combinação.');

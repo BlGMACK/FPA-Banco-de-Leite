@@ -4,12 +4,25 @@
 
 Fonte principal: [migrations](../../database/migrations). Esta descrição representa o schema declarado pelo código, não uma inspeção atual de cada banco de integrante.
 
-Em **24/10/2026**, foram preparadas seis migrations do recorte administrativo e verificadas em SQLite em memória e, posteriormente, em MariaDB 10.4.32 em banco exclusivo para testes. Após autorização posterior do usuário, foram aplicadas ao banco `banco_de_leite_dev`, preservando as contas existentes; veja [Status](STATUS.md#ativação-local--24102026). O schema físico novo está em [Recorte administrativo preparado](#recorte-administrativo-preparado-em-24102026); a tabela abaixo descreve a base anterior.
+### Inventário em 29/10/2026
+
+São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`); a de desativação de contas, de 29/10/2026, ainda aguarda aplicação. Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
+
+| Recorte | Tabelas | Lote local | Detalhe |
+| --- | --- | --- | --- |
+| Base Laravel | `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` | 1 | Tabela abaixo |
+| Papel de acesso | coluna `users.role` | 2 (criação), 4 (restrição a `admin\|funcionario` e autoria `criado_por_user_id`) | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Administrativo | `interessadas`, `solicitacoes`, `contatos_solicitacao`, `contato_pedidos`, `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`, `eventos_solicitacao`, `permissoes`, `permissao_user`, `eventos_permissao` | 3 | [Recorte administrativo](#recorte-administrativo-preparado-em-24102026) |
+| Agenda | contexto em `contatos_solicitacao`; `agendamentos`, `reservas_agenda`, `eventos_agendamento` | 5 | [Agenda](#desenho-físico-proposto-para-agenda--26102026) |
+| Visita e relatório | `atendimentos`, `relatorios_visita`, `versoes_relatorio_visita`, `eventos_atendimento`; estado `realizado` na agenda | 6 | [Atendimento e relatório](#persistência-proposta-para-atendimento-e-relatório--28102026) |
+| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | pendente | [Contas internas](#contas-internas--atualização-de-27102026) |
+
+As seções seguintes foram escritas a cada etapa e mantêm o desenho, as decisões e os limites de cada recorte; avisos de “sem aplicação ao desenvolvimento” nelas descrevem a data do registro. A tabela abaixo descreve a base Laravel.
 
 | Tabela | Campos e restrições relevantes | Origem |
 | --- | --- | --- |
 | `users` | `id` PK; `name`; `email` único; `email_verified_at` anulável; `password`; `remember_token` anulável; timestamps. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
-| `users.role` | Enum atual `admin`, `funcionario`, sem padrão; migration de retirada remove o papel e as contas antigas de doadora. Aplicação local pendente. | [migration atual](../../database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php) |
+| `users.role` | Enum atual `admin`, `funcionario`, sem padrão; migration de retirada remove o papel e as contas antigas de doadora. Aplicada localmente em 28/10/2026. | [migration atual](../../database/migrations/2026_10_27_202742_restrict_users_to_internal_accounts.php) |
 | `password_reset_tokens` | `email` PK, `token`, `created_at` anulável. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
 | `sessions` | `id` PK; `user_id` anulável/indexado; `ip_address` e `user_agent` anuláveis; `payload`; `last_activity` indexado. | [migration inicial](../../database/migrations/0001_01_01_000000_create_users_table.php) |
 | `cache` | `key` PK; `value`; `expiration` indexado. | [migration de cache](../../database/migrations/0001_01_01_000001_create_cache_table.php) |
@@ -26,15 +39,15 @@ O Laravel também mantém `migrations` como controle das migrações aplicadas; 
 
 Há associação lógica entre sessão e conta por `sessions.user_id`, mas a migration não declara `constrained()` nem chave estrangeira. Tokens de recuperação usam e-mail como identificador, sem FK declarada para `users`. Não há entidades de coleta/estoque.
 
-Em 24/10/2026 foram implementados `Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`, `Permissao`, `ConcessaoPermissao` e `EventoPermissao`, em [Models](../../app/Models), com factories fictícias. As três associações com chave composta usam relações `belongsToMany`, sem model com chave primária composta. Metadados JSON dessas associações permanecem no pivot, sem cast próprio.
+Em 24/10/2026 foram implementados `Interessada`, `Solicitacao`, `ContatoSolicitacao`, `ResolucaoSolicitacao`, `EventoSolicitacao`, `Permissao`, `ConcessaoPermissao` e `EventoPermissao`, em [Models](../../app/Models), com factories fictícias. As três associações com chave composta usam relações `belongsToMany`, sem model com chave primária composta. Metadados JSON dessas associações permanecem no pivot, sem cast próprio. Depois foram acrescentados `Agendamento`, `ReservaAgenda` e `EventoAgendamento` (26/10/2026) e `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento` (28/10/2026), descritos nas seções de agenda e relatório. Operações de negócio desses recortes são métodos transacionais dos próprios models.
 
 Os models usam tabelas/chaves explícitas, casts de JSON, booleanos, versões e datas imutáveis; registros sem `updated_at` declaram `UPDATED_AT = null`. Novos models mantêm a proteção padrão contra atribuição em massa de todos os campos. A futura camada de escrita deve validar e atribuir explicitamente os valores; factories não representam validação de dados de negócio. Relações/casts não executam admissão, triagem, validação clínica ou controle de acesso automaticamente.
 
-Conta com papel `doadora` representa autorização, não um cadastro de doadora com dados de saúde. Não há tabela de domínio para esse cadastro.
+Não existe papel nem conta de doadora: contas são apenas internas. A interessada é representada por `interessadas` e `solicitacoes`, sem vínculo com `users`. Não há tabela de doadora aprovada (D9 pendente).
 
 ## Dados e ambiente
 
-A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta por papel, com valores fixos de demonstração; não é idempotente.
+A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta admin e uma funcionário, com valores fixos de demonstração; não é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
 
 Conexão local, migrations e diferença entre MySQL e SQLite de testes: [Ambiente](../AMBIENTE.md). O levantamento original de 22/10/2026 não inspecionou o legado; a consulta posterior está registrada abaixo e não comprova compatibilidade.
 
@@ -49,6 +62,8 @@ Para discutir o primeiro fluxo, o schema mostra `SOLICITACAO → VISITA → FICH
 Antes de reutilizar o desenho, confirmar a identificação da pessoa, a regra de duplicidade, o momento do cadastro e a separação entre identificação e avaliação de aptidão. O usuário informou posteriormente que não há PDF ou artefato detalhado e forneceu um guia textual. Suas diretrizes e pendências estão em [R1 no Roadmap](ROADMAP.md#r1--solicitação-até-habilitação-para-doar). Nenhuma regra de PDF foi analisada.
 
 ## Proposta do fluxo de admissão — não implementada
+
+> Situação em 29/10/2026: a parte administrativa (pedido, identidade, contatos, resoluções, admissão), a agenda e o relatório narrativo foram implementados com desenho próprio, descrito nas seções finais deste documento. Continuam apenas propostos: doadora aprovada (D9), triagem estruturada, avaliação de saúde, requisitos, documentos/exames e anexos.
 
 Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acima; **P** = nova proposta. O [Roadmap](ROADMAP.md) identifica acordos e decisões D1–D12. O desenho completo abaixo continua **P**, mesmo quando materializa uma diretriz G. A autorização posterior de 24/10/2026 permitiu preparar apenas o schema administrativo descrito ao final; operações e tabelas clínicas continuam propostas. **PDF indisponível:** não há campos clínicos ou limites de aptidão atribuídos a ele.
 
@@ -218,7 +233,9 @@ O conjunto de atendimento pode conduzir o pedido e contato sem obter automaticam
 
 Base Eloquent implementada posteriormente: [Agendamento](../../app/Models/Agendamento.php), [ReservaAgenda](../../app/Models/ReservaAgenda.php) e [EventoAgendamento](../../app/Models/EventoAgendamento.php), com factories e relações de solicitação/contato/autoria/histórico. Reserva usa `solicitacao_id` como chave não incremental e não possui timestamps; evento não possui `updated_at`. Datas usam casts imutáveis, snapshots usam arrays e versões usam inteiros. Após nova autorização, foram implementadas as operações transacionais descritas em [Contratos](CONTRATOS.md#operações-de-backend-implementadas-em-26102026); ter uma relação isolada não valida a coerência funcional dos registros.
 
-**Atualização após autorização em 26/10/2026:** o schema abaixo foi preparado em quatro migrations aditivas, sem aplicação ao banco de desenvolvimento. Models, autorização e operações transacionais estão implementados; o fluxo web foi integrado em 27/10/2026, sem novas mudanças de schema. Não inclui schema clínico ou relatório. Base conferida: migrations de solicitações/contatos/permissões e os models atuais; as migrations antigas foram preservadas.
+**Situação em 29/10/2026:** as quatro migrations abaixo estão aplicadas no desenvolvimento (28/10/2026, lote 5). O estado `realizado` em `agendamentos` e a ação `realizacao` em `eventos_agendamento` foram acrescentados pela migration `2026_10_28_183704_add_realizacao_to_agenda_tables` (lote 6).
+
+**Atualização após autorização em 26/10/2026:** o schema abaixo foi preparado em quatro migrations aditivas, sem aplicação ao banco de desenvolvimento naquela data. Models, autorização e operações transacionais estão implementados; o fluxo web foi integrado em 27/10/2026, sem novas mudanças de schema. Não inclui schema clínico ou relatório. Base conferida: migrations de solicitações/contatos/permissões e os models atuais; as migrations antigas foram preservadas.
 
 Arquivos: [contexto dos contatos](../../database/migrations/2026_10_26_035200_add_contexto_agenda_to_contatos_solicitacao_table.php), [agendamentos](../../database/migrations/2026_10_26_035201_create_agendamentos_table.php), [reservas](../../database/migrations/2026_10_26_035203_create_reservas_agenda_table.php) e [eventos](../../database/migrations/2026_10_26_035204_create_eventos_agendamento_table.php). Evidências e limites em [Status](STATUS.md). `down()` remove os novos campos/tabelas e, portanto, perde os dados desse recorte se já estiverem preenchidos; não é procedimento autorizado para o desenvolvimento. O teste de upgrade preserva contas, pedidos e contatos legados no banco descartável.
 
@@ -272,7 +289,7 @@ Testes de schema implementados em [AgendaSchemaTest](../../tests/Feature/AgendaS
 
 As migrations têm `down()` em ordem inversa de dependência. **Rollback elimina as tabelas novas e seus dados**; o teste de reversão usa exclusivamente banco descartável. Não usar rollback como mecanismo de desfazer uma decisão de atendimento.
 
-Quando existirem registros com autoria, as FKs impedem excluir a conta referenciada. O controller de perfil agora trata essa restrição com erro no bag `userDeletion`, preservando a sessão e os dados. Contas sem vínculos ainda podem ser excluídas com senha atual; o encerramento posterior não atualiza o token da conta já removida. Política de desativação de funcionários permanece pendente.
+Quando existirem registros com autoria, as FKs impedem excluir a conta referenciada. O controller de perfil agora trata essa restrição com erro no bag `userDeletion`, preservando a sessão e os dados. Contas sem vínculos ainda podem ser excluídas com senha atual; o encerramento posterior não atualiza o token da conta já removida. Desativação de funcionários foi implementada em 29/10/2026 (ver [Contas internas](#contas-internas--atualização-de-27102026)).
 
 Teste: [AdministrativeSchemaTest](../../tests/Feature/AdministrativeSchemaTest.php), com verificação de ambiente antes de preparar o banco; exige `testing`, ausência de URL externa/configuração em cache e SQLite `:memory:` ou conexão `mysql` local para o nome exato `banco_de_leite_schema_test`. Usa `DatabaseMigrations` para isolar também o teste de DDL, sem depender de rollback transacional no MySQL/MariaDB. Utiliza queries reais para exercitar as restrições e a factory existente para contas fictícias. Fixtures de schema não representam validação de CPF ou dados de negócio.
 
@@ -285,13 +302,21 @@ O schema vigente após a migration `2026_10_27_202742_restrict_users_to_internal
 
 A migration elimina as contas de doadora antigas, sessões e tokens de redefinição correspondentes. FKs de histórico continuam restritivas; nenhuma identidade ou solicitação é eliminada por associação de e-mail/CPF. Rollback da estrutura não recupera contas apagadas. A migration antiga de três papéis é preservada como histórico de upgrade, não como contrato atual. Execução local e evidências em Status.
 
+**Desativação de contas (29/10/2026):** a migration `2026_10_29_200000_add_desativacao_to_users_table` acrescenta `users.desativado_em` (anulável) e `users.desativado_por_user_id` (FK restrita), além da tabela `eventos_conta` (`user_id`, `autor_user_id`, `acao` `desativacao|reativacao`, `motivo`, `ocorrido_em`, `created_at`; FKs restritas; índice de histórico por conta). A conta não é excluída e as concessões em `permissao_user` não são alteradas: ficam suspensas pela verificação da conta ativa. O `down()` recusa reverter enquanto houver conta desativada, para não liberar o acesso dela; sem contas desativadas, a reversão remove a tabela e o histórico. Ainda não aplicada em `banco_de_leite_dev`.
+
 ## Persistência proposta para atendimento e relatório — 28/10/2026
+
+**Integração web em 29/10/2026:** as tabelas existentes passaram a ser utilizadas pelas rotas/telas de relatório, sem novas alterações físicas. Escritas continuam nos métodos transacionais; consultas exibem versões publicadas para leitura e rascunhos somente para escrita. Detalhes e limites em Contratos/Status.
+
+**Aplicação local em 29/10/2026:** as cinco migrations deste recorte estão aplicadas no desenvolvimento, lote 6, com tabelas novas vazias e dados anteriores preservados. O catálogo tem cinco permissões, sem concessões. A pendência de aplicação descrita nos registros históricos abaixo está resolvida; ver [Status](STATUS.md#ativação-local-dos-relatórios--29102026).
+
+**Evolução funcional posterior:** os models agora possuem operações transacionais e Gates descritos em [Contratos](CONTRATOS.md#backend-implementado-após-autorização-em-28102026). Registro da realização e rascunho/finalização/correção mantêm vínculos, revisão, numeração e autoria juntos; não houve nova alteração de schema. Atualização/exclusão de instâncias de versões é bloqueada por eventos Eloquent, sem pretender impedir SQL privilegiado ou Query Builder. Factories continuam fixtures independentes das operações. As limitações das etapas anteriores abaixo são históricas.
 
 **Base Eloquent implementada posteriormente, com autorização:** `Atendimento`, `RelatorioVisita`, `VersaoRelatorioVisita` e `EventoAtendimento`, com factories de dados fictícios. `Agendamento::atendimento()` dá acesso ao fato registrado; a identidade continua ligada pelo agendamento/solicitação, sem duplicação. Relações identificam criador, editor, finalizador, responsável efetivo e autor de eventos separadamente. Versão-base/correções e eventos têm relações explícitas; versões/eventos não usam `updated_at`. Datas do domínio são imutáveis e números de versão/revisão usam casts inteiros.
 
 A proteção padrão de atribuição em massa foi mantida. Textos de rascunho/versão, motivos narrativos e hash de evento ficam ocultos em `toArray()`/JSON, inclusive nas relações carregadas. Continuam acessíveis em PHP: `$hidden` não é autorização nem criptografia. Não há carregamento automático de relações clínicas. Factories não substituem operações de negócio: não liberam reservas, não mantêm ponteiros/sequências automaticamente e não fazem finalização ou auditoria transacional. Não foram criados seeders de conteúdo clínico nem inseridos dados de desenvolvimento. Imutabilidade contra alterações explícitas, autorização e transições permanecem na etapa funcional seguinte.
 
-**Schema implementado após autorização em 28/10/2026, sem aplicação ao desenvolvimento.** Derivado dos acordos de narrativa/rascunho/versões e da agenda atual; nenhum PDF ou critério clínico fundamenta estes campos. As regras de operação continuam propostas e ainda não foram implementadas. Contrato funcional e decisões R1–R3 em [Contratos](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026).
+**Schema implementado após autorização em 28/10/2026** (aplicado ao desenvolvimento em 29/10/2026). Derivado dos acordos de narrativa/rascunho/versões e da agenda; nenhum PDF ou critério clínico fundamenta estes campos. As regras de operação foram implementadas depois, conforme os parágrafos acima; a tabela a seguir mantém o desenho aprovado para o schema. Contrato funcional e decisões R1–R3 em [Contratos](CONTRATOS.md#atendimento-e-relatório-narrativo--especificação-de-28102026).
 
 Arquivos: `2026_10_28_183700_create_atendimentos_table`, `183701_create_relatorios_visita_table`, `183702_create_versoes_relatorio_visita_table`, `183703_create_eventos_atendimento_table` e `183704_add_realizacao_to_agenda_tables`, em `database/migrations`. Migrations anteriores preservadas. Os nomes abreviados compartilham o prefixo `2026_10_28_`.
 
@@ -313,3 +338,33 @@ Estender `agendamentos.status` com `realizado` por nova migration e suportar eve
 Ao evoluir a lista de pendências, combinar ausência de reserva com ausência de atendimento realizado. Bloquear também a nova confirmação para acompanhamento já atendido até definir retornos, evitando que apenas a tela imponha a regra. Manter histórico de agendamentos cancelados/substituídos disponível conforme o acesso atual.
 
 Preparação futura deve testar upgrade com registros existentes, restrições/FKs, rollback estrutural e concorrência no banco exclusivo. Rollback que remove texto/versionamento é destrutivo e não é plano de recuperação de dados reais. Correção de fato registrado indevidamente, retenção e descarte de rascunhos continuam pendentes; não apagar nem reescrever versões para simulá-los.
+
+## Desenho físico proposto para avaliação, exames e documentos — 29/10/2026
+
+**Estado: proposta técnica para revisão, não implementada.** Materializa as regras [acordadas em 29/10/2026](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). Nomes de tabelas, campos e limites são propostos; a implementação depende de autorização e da lista real de exames (o catálogo pode começar só com "Exame de sangue" e "Outro exame").
+
+### Estruturas
+
+| Estrutura | Campos principais | Finalidade e integridade |
+| --- | --- | --- |
+| `tipos_exame` | `codigo` único, `nome`, `categoria` (`exame` ou `documento`), `validade_dias` (anulável; 30 por padrão para exames), `exige_numero` (CNS), `ativo`, `ordem`. | Catálogo **fixo**, preenchido por seeder idempotente versionado no código, sem tela de edição. Tipos usados nunca são apagados, só desativados para novas avaliações. |
+| `avaliacoes` | `atendimento_id` único/FK; `estado` (`aguardando_analise`, `em_aguardo`, `liberada_exames`, `nao_apta`, `habilitada`, `habilitada_temporariamente`, `nao_habilitada`); `possui_plano_saude` (anulável); `versao`; timestamps. | Uma avaliação por visita realizada, criada quando o relatório tem a primeira versão publicada. Liga identidade, visita e relatório sem duplicar dados. |
+| `decisoes_avaliacao` | `avaliacao_id`; `etapa` (`analise_relatorio` ou `habilitacao`); `resultado`; `motivo`; `condicao` e `valida_ate` (habilitação temporária); `versao_relatorio_id` analisada; `autor_user_id`; `decidido_em`; `operacao_id` único; `conteudo_hash`. | Histórico imutável das decisões, com autoria e fundamento. Uma nova decisão não apaga a anterior. |
+| `itens_avaliacao` | `avaliacao_id`; `tipo_exame_id` (anulável apenas para "Outro"); `nome_outro`/`detalhes_outro`; `estado` (`nao_solicitado`, `solicitado`, `recebido`, `aceito`, `precisa_complementar`); `numero_documento` (CNS, validado); `realizado_em` (obrigatório ao marcar recebido); `valido_ate`; `prorrogacoes` (0 a 2); `versao`; timestamps. | Ao liberar para exames, a transação cria **um item por tipo ativo** em `nao_solicitado`, garantindo que nenhum fique sem estado. Único (`avaliacao_id`, `tipo_exame_id`) para tipos do catálogo; "Outro" pode repetir. |
+| `eventos_item_avaliacao` | `item_id`; `acao` (`solicitacao`, `recebimento`, `aceite`, `complementacao`, `prorrogacao`, `novo_pedido`); estados anterior/novo; `motivo`; `autor_user_id`; `ocorrido_em`; `operacao_id` único. | Auditoria de cada mudança de estado, prorrogação e novo pedido. |
+| `anexos_item_avaliacao` | `item_id`; `caminho` no disco privado; `nome_original`; `tipo_conteudo`; `tamanho`; `sha256`; `enviado_por_user_id`; `enviado_em`; `substituido_por_id` (anulável). | Arquivos nunca são sobrescritos nem servidos por URL pública: o download passa por controller com Gate. Um novo arquivo substitui o anterior na exibição, mas o anterior fica preservado. |
+| `habilitacoes` (D9) | `interessada_id`; `avaliacao_id`; `tipo` (`definitiva` ou `temporaria`); `inicio_em`; `valida_ate`; `estado` (`ativa`, `suspensa`, `encerrada`); eventos de suspensão, retomada e encerramento com motivo. | **Recomendação para D9:** em vez de uma tabela "doadoras" com cópia dos dados, a habilitação é um registro próprio ligado à identidade já conferida. Futuros módulos de coleta consultam a habilitação vigente. Suporta suspensão e encerramento, e uma nova habilitação após novo pedido. |
+
+### Regras propostas nas operações
+
+- **Permissões:** `consultar-exames` (leitura de itens e anexos), `registrar-exames` (inclui consulta; solicita, anexa, atualiza estados, prorroga) e `avaliar-doadoras` (inclui consulta de exames e de relatórios publicados; decide a análise e a habilitação). Admin com acesso explícito, como nos demais módulos.
+- **Análise do relatório:** permitida com relatório publicado e avaliação em `aguardando_analise` ou `em_aguardo`. `liberada_exames` cria os itens; `nao_apta` encerra o acompanhamento; `em_aguardo` exige motivo.
+- **Transições de item:** `nao_solicitado → solicitado → recebido → aceito`, ou `recebido → precisa_complementar → solicitado`. Voltar a `nao_solicitado` só antes de qualquer recebimento, com motivo. CNS só aceito com número válido.
+- **Validade:** `valido_ate = realizado_em + validade_dias`. Item vencido recebe sinalização, sem mudança automática de estado. Prorrogar soma 30 dias, exige motivo e é limitado a 2 vezes; "novo pedido" volta o item a `solicitado` preservando anexos e histórico.
+- **Decisão de habilitação:** só com ao menos um item solicitado, todos os solicitados `aceito` e nenhum vencido, verificados sob trava na mesma transação da decisão.
+- **Anexos:** disco `local` (`storage/app/private`), nome gerado, validação de tipo real (proposta: PDF, JPEG, PNG) e tamanho máximo (proposta: 10 MB, a confirmar), resposta com `no-store`.
+- **Concorrência e reenvio:** mesmas convenções dos recortes anteriores (`operacao_id`, hash, `versao`, travas em ordem estável, 409 em conflito).
+
+### Pendências antes de implementar
+
+Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; retenção dos anexos; aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).

@@ -4,12 +4,12 @@ Documento principal de requisitos, instalação, execução e testes. Consulte [
 
 ## Requisitos e fontes
 
-- PHP: o projeto declara `^8.3` em [composer.json](../composer.json), mas a combinação completa do lock deve ser respeitada. O ambiente usado anteriormente nesta sessão tinha PHP 8.5.1. Confirme compatibilidade com `composer check-platform-reqs`; não considere apenas o mínimo do framework.
+- PHP: o projeto declara `^8.3` em [composer.json](../composer.json), mas a combinação completa do lock deve ser respeitada. O ambiente de desenvolvimento usado em 29/10/2026 tinha PHP 8.5.10. Confirme compatibilidade com `composer check-platform-reqs`; não considere apenas o mínimo do framework.
 - Composer 2 e as versões fixadas em [composer.lock](../composer.lock).
-- Node.js e npm compatíveis com os campos `engines` de [package-lock.json](../package-lock.json). A versão LTS a padronizar pela equipe está pendente; Node 25.5.0 foi usado na preparação anterior, sem constituir padrão.
-- MySQL/MariaDB local, inclusive via XAMPP. O exemplo compartilhado usa conexão MySQL.
-- PHP com extensões exigidas pelo Composer, incluindo `fileinfo`, `mbstring`, XML/DOM e `pdo_mysql`. Os testes atuais também precisam de `pdo_sqlite`; `zip` facilita a instalação.
-- Git para branches e pull requests. Sua disponibilidade não foi confirmada neste ambiente.
+- Node.js e npm compatíveis com os campos `engines` de [package-lock.json](../package-lock.json). A versão LTS a padronizar pela equipe está pendente; Node 25.5.0 foi usado na preparação inicial, sem constituir padrão.
+- MySQL/MariaDB local, inclusive via XAMPP (MariaDB 10.4.32 nas validações registradas). O exemplo compartilhado usa conexão MySQL.
+- PHP com extensões exigidas pelo Composer, incluindo `fileinfo`, `mbstring`, XML/DOM e `pdo_mysql`. Os testes também precisam de `pdo_sqlite`; `zip` facilita a instalação. Sem `intl`, `php artisan db:table` não conclui.
+- Git para branches e pull requests.
 
 Na raiz da aplicação, confira:
 
@@ -55,6 +55,8 @@ npm.cmd run build
 
 Não importe o schema legado por cima das migrations. Não use `migrate:fresh` em banco com dados a preservar.
 
+Depois das migrations, provisione o catálogo de permissões com `php artisan db:seed --class=PermissaoSeeder --no-interaction`. O seeder é idempotente e não concede permissões a ninguém: o admin acessa todos os módulos automaticamente, e funcionários dependem de concessão explícita. Conceda-as entrando como admin, no menu “Permissões”.
+
 O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `database/database.sqlite` remanescente da preparação anterior não representa a conexão MySQL. Os testes usam outro banco: SQLite em memória.
 
 ### Dados fictícios opcionais
@@ -84,6 +86,19 @@ npm.cmd run build
 ```
 
 O [phpunit.xml](../phpunit.xml) usa SQLite `:memory:`, cache/sessão em memória e notificações simuladas em parte dos testes. Uma execução verde não prova integração MySQL, entrega de e-mail nem comportamento visual. Para mudanças nesses pontos, faça verificações específicas e registre o resultado no PR.
+
+No PowerShell, o wrapper `npm.ps1` pode ser bloqueado pela política de execução; use `npm.cmd` sem alterar a política do sistema.
+
+### Testes em MariaDB exclusivo
+
+Quatro testes de concorrência (agenda e relatórios) são ignorados em SQLite e exigem MariaDB com conexões independentes. As validações de módulo também foram repetidas em MariaDB. Use somente um banco descartável chamado exatamente `banco_de_leite_schema_test`, criado vazio com `utf8mb4`/`utf8mb4_unicode_ci`; a guarda em [TestCase](../tests/TestCase.php) recusa outros bancos, URLs externas e configuração em cache. Defina as variáveis apenas no processo, sem editar o `.env`:
+
+```powershell
+$env:APP_ENV = 'testing'; $env:DB_CONNECTION = 'mysql'; $env:DB_DATABASE = 'banco_de_leite_schema_test'; $env:DB_URL = ''
+php vendor/bin/phpunit tests/Feature/AgendaConcurrencyTest.php tests/Feature/RelatorioVisitaConcurrencyTest.php
+```
+
+Feche o terminal ou remova as variáveis depois. Os testes recriam e revertem as tabelas desse banco; nunca aponte para `banco_de_leite_dev`.
 
 Não execute `composer run setup` indiscriminadamente em ambiente existente: o script gera chave e aplica migrations. O script de criação de projeto ainda menciona SQLite. São pendências de alinhamento; não foram alterados nesta tarefa.
 
