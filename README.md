@@ -16,6 +16,7 @@ Comece pelo [Guia e ordem de leitura](docs/GUIA.md).
 - [Modelagem](docs/backend/MODELAGEM.md): schema atual e questões em aberto.
 - [Contratos](docs/backend/CONTRATOS.md): integração Laravel/Blade e modelo para futuros fluxos.
 - [Segurança](docs/SEGURANCA.md): controles, verificações pendentes e evidências por assunto.
+- [Desenvolvimento do frontend](docs/frontend/DESENVOLVIMENTO.md): trabalho tela por tela, branches, diretórios permitidos e checklist de PR.
 
 Agentes devem iniciar por [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) aponta para a mesma referência.
 

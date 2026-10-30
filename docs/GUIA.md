@@ -48,6 +48,8 @@ As instruções de documentação e limites de atuação solicitadas pelo usuár
 7. [Roadmap](backend/ROADMAP.md): propostas futuras e dependências.
 8. [Segurança](SEGURANCA.md): controles, reforços, testes pendentes e evidências por assunto.
 
+Quem trabalha na interface começa por [Desenvolvimento do frontend](frontend/DESENVOLVIMENTO.md), que delimita a leitura por tela e dispensa os demais documentos na maior parte das tarefas.
+
 Cada assunto tem um documento principal acima. Evite repetir instruções nos demais: use links. Ao concluir uma etapa, atualize o **Estado atual** do Status e acrescente o registro datado ao histórico, em vez de empilhar avisos no topo dos demais documentos.
 
 Para análises ou correções de segurança, comece pelos IDs aplicáveis em [Segurança](SEGURANCA.md), confira suas fontes no código e atualize as evidências junto com a mudança. O checklist orienta a revisão e não autoriza, por si só, implementar todos os itens pendentes.
