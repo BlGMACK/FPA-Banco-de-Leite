@@ -1,6 +1,6 @@
-<x-dynamic-component :component="$interno ? 'app-layout' : 'guest-layout'">
-    <div class="{{ $interno ? 'container py-4 blh-form-width' : '' }}">
-        <h1 class="h3">{{ $interno ? 'Registrar solicitação' : 'Quero doar leite humano' }}</h1>
+<x-dynamic-component :component="$interno ? 'app-layout' : 'public-layout'">
+    <div class="{{ $interno ? 'container py-4 blh-form-width' : 'blh-pagina' }}">
+        <h1 class="{{ $interno ? 'h3' : '' }}">{{ $interno ? 'Registrar solicitação' : 'Quero doar leite humano' }}</h1>
         <p>Preencha seus dados para que a equipe do Banco de Leite entre em contato pelo WhatsApp. O envio não significa aprovação para doar nem agendamento confirmado.</p>
         <p class="small text-body-secondary">Campos obrigatórios, exceto complemento e outros detalhes. Informe pelo menos um telefone.</p>
         @if ($errors->any())
@@ -74,7 +74,7 @@
                     <p class="form-text" id="detalhes-ajuda">Até 2.000 caracteres. Não envie exames, documentos ou dados de outras pessoas neste campo.</p>
                 </div>
                 <div class="col-12 d-flex flex-wrap gap-2">
-                    <button type="submit" class="btn btn-success">Enviar solicitação</button>
+                    <button type="submit" class="btn {{ $interno ? 'btn-success' : 'btn-blh' }}">Enviar solicitação</button>
                     @if ($interno)<a class="btn btn-outline-secondary" href="{{ route('interno.solicitacoes.index') }}">Voltar à fila</a>@endif
                 </div>
             </div>

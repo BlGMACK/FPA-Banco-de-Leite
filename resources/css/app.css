@@ -4,3 +4,129 @@
 .blh-auth { max-width: 32rem; }
 .blh-form-width { max-width: 42rem; }
 .blh-stack > * + * { margin-top: 1.5rem; }
+
+/* ==========================================================================
+   Área pública (início, /doar, pedido recebido)
+   Tokens e componentes com prefixo blh- para não colidir com o Bootstrap.
+   Dourado = referência ao Agosto Dourado, campanha brasileira de aleitamento.
+   ========================================================================== */
+:root {
+    --blh-papel: #fafaf6;
+    --blh-tinta: #1b2b38;
+    --blh-tinta-suave: #4a5b68;
+    --blh-azul: #1d4e6b;
+    --blh-azul-claro: #e6eff4;
+    --blh-ouro: #e8a317;
+    --blh-ouro-forte: #f2b335;
+    --blh-fonte-titulo: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --blh-fonte-texto: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.blh-site {
+    margin: 0;
+    background: var(--blh-papel);
+    color: var(--blh-tinta);
+    font-family: var(--blh-fonte-texto);
+    line-height: 1.6;
+}
+.blh-site *, .blh-site *::before, .blh-site *::after { box-sizing: border-box; }
+.blh-site :focus-visible { outline: 3px solid var(--blh-azul); outline-offset: 3px; }
+.blh-site a { color: var(--blh-azul); }
+
+.blh-wrap {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* Cabeçalho e rodapé */
+.blh-topo { border-bottom: 1px solid rgba(27, 43, 56, .12); }
+.blh-topo__linha { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .9rem; }
+.blh-marca { display: inline-flex; align-items: center; gap: .6rem; color: var(--blh-azul); text-decoration: none; font-family: var(--blh-fonte-titulo); font-size: 1.15rem; font-weight: 700; }
+.blh-marca svg { width: 1.5rem; height: 1.9rem; flex: none; }
+.blh-marca { white-space: nowrap; }
+.blh-topo__acesso { font-size: .9rem; color: var(--blh-tinta-suave); text-align: right; }
+@media (max-width: 26rem) { .blh-marca { font-size: 1rem; } .blh-topo__acesso { font-size: .85rem; } }
+.blh-rodape { margin-top: 4rem; border-top: 1px solid rgba(27, 43, 56, .12); padding-block: 1.75rem; color: var(--blh-tinta-suave); font-size: .9rem; }
+
+/* Botões (usa as variáveis do .btn do Bootstrap) */
+.btn-blh {
+    --bs-btn-padding-x: 1.6rem;
+    --bs-btn-padding-y: .85rem;
+    --bs-btn-font-weight: 700;
+    --bs-btn-border-radius: .6rem;
+    --bs-btn-color: var(--blh-tinta);
+    --bs-btn-bg: var(--blh-ouro);
+    --bs-btn-border-color: var(--blh-ouro);
+    --bs-btn-hover-color: var(--blh-tinta);
+    --bs-btn-hover-bg: var(--blh-ouro-forte);
+    --bs-btn-hover-border-color: var(--blh-ouro-forte);
+    --bs-btn-active-color: var(--blh-tinta);
+    --bs-btn-active-bg: #d1920f;
+    --bs-btn-active-border-color: #d1920f;
+    --bs-btn-focus-shadow-rgb: 29, 78, 107;
+}
+
+/* Abertura */
+.blh-hero { background: var(--blh-azul); color: #fff; overflow: hidden; }
+.blh-hero :focus-visible { outline-color: #fff; }
+.blh-hero__grade { display: grid; align-items: center; gap: 2rem; padding-block: clamp(2.5rem, 7vw, 5.5rem); }
+.blh-hero h1 { margin: 0 0 1.25rem; font-family: var(--blh-fonte-titulo); font-weight: 700; font-size: clamp(2.3rem, 1.2rem + 4.6vw, 4.1rem); line-height: 1.08; letter-spacing: -.01em; text-wrap: balance; }
+.blh-hero__texto { max-width: 38rem; margin: 0 0 2rem; font-size: 1.15rem; color: rgba(255, 255, 255, .9); }
+.blh-hero__nota { margin: 1rem 0 0; font-size: .95rem; color: rgba(255, 255, 255, .8); }
+.blh-gota { display: block; width: min(15rem, 55vw); height: auto; margin-inline: auto; }
+
+@media (min-width: 52rem) {
+    .blh-hero__grade { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+    .blh-gota { width: min(23rem, 100%); margin-block: -2rem -4.5rem; }
+}
+
+/* Secções */
+.blh-secao { padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+.blh-secao h2 { margin: 0 0 1.5rem; font-family: var(--blh-fonte-titulo); font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem); line-height: 1.2; color: var(--blh-azul); }
+
+/* Passos: sequência real, por isso numerada */
+.blh-passos { display: grid; gap: 1.5rem; margin: 0; padding: 0; list-style: none; counter-reset: passo; }
+.blh-passos li { position: relative; padding-left: 3.5rem; counter-increment: passo; }
+.blh-passos li::before {
+    content: counter(passo);
+    position: absolute; left: 0; top: 0;
+    display: grid; place-items: center;
+    width: 2.5rem; height: 2.5rem; border-radius: 50%;
+    background: var(--blh-azul); color: #fff;
+    font-family: var(--blh-fonte-titulo); font-size: 1.2rem; font-weight: 700;
+}
+.blh-passos h3 { margin: 0 0 .25rem; font-size: 1.1rem; font-weight: 700; }
+.blh-passos p { margin: 0; max-width: 32rem; color: var(--blh-tinta-suave); }
+
+@media (min-width: 52rem) {
+    .blh-passos { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; }
+    .blh-passos li { padding: 3.6rem 0 0; }
+    .blh-passos li:not(:last-child)::after {
+        content: ""; position: absolute; top: 1.25rem; left: 3.25rem; right: -1.5rem;
+        border-top: 2px dotted rgba(29, 78, 107, .4);
+    }
+}
+
+/* Antes de começar */
+.blh-preparo { display: grid; gap: 1.5rem; }
+.blh-preparo__bloco { padding: 1.5rem; border-radius: .9rem; background: var(--blh-azul-claro); }
+.blh-preparo__bloco--aviso { background: #fdf3da; border-left: .35rem solid var(--blh-ouro); }
+.blh-preparo h3 { margin: 0 0 .75rem; font-size: 1.1rem; font-weight: 700; }
+.blh-preparo ul { margin: 0; padding-left: 1.2rem; }
+.blh-preparo li + li { margin-top: .35rem; }
+.blh-preparo p { margin: 0; }
+.blh-preparo p + p { margin-top: .6rem; }
+.blh-acao { margin-top: 2rem; }
+@media (min-width: 52rem) { .blh-preparo { grid-template-columns: 1fr 1fr; } }
+
+/* Páginas de formulário e confirmação */
+.blh-pagina { width: 100%; max-width: 44rem; margin-inline: auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem) 0; }
+.blh-pagina h1 { font-family: var(--blh-fonte-titulo); font-weight: 700; color: var(--blh-azul); font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.6rem); line-height: 1.15; margin-bottom: 1rem; }
+.blh-site .form-control:focus, .blh-site .form-select:focus { border-color: var(--blh-azul); box-shadow: 0 0 0 .25rem rgba(29, 78, 107, .25); }
+.blh-site .form-check-input:checked { background-color: var(--blh-azul); border-color: var(--blh-azul); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .btn-blh { transition: background-color .15s ease, border-color .15s ease; }
+}
