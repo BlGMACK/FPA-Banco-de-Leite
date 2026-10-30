@@ -15,25 +15,25 @@
             <div class="row g-3">
                 @php
                     $campos = [
-                        'nome_completo' => ['Nome completo', 'text', 150, 'name'],
-                        'cpf' => ['CPF', 'text', 14, 'off'],
-                        'telefone_fixo' => ['Telefone fixo com DDD', 'tel', 20, 'tel'],
-                        'telefone_celular' => ['Celular com DDD', 'tel', 20, 'tel'],
-                        'email_contato' => ['E-mail', 'email', 255, 'email'],
-                        'municipio' => ['Município', 'text', 150, 'address-level2'],
-                        'bairro' => ['Bairro', 'text', 150, 'address-level3'],
-                        'uf' => ['UF', 'text', 2, 'address-level1'],
-                        'cep' => ['CEP', 'text', 9, 'postal-code'],
-                        'logradouro' => ['Rua / avenida', 'text', 255, 'address-line1'],
-                        'numero' => ['Número (ou s/n)', 'text', 20, 'off'],
-                        'complemento' => ['Complemento (opcional)', 'text', 150, 'address-line2'],
+                        'nome_completo' => ['Nome completo', 'text', 150, 'name', 'Ex.: Maria da Silva'],
+                        'cpf' => ['CPF', 'text', 14, 'off', 'XXX.XXX.XXX-XX'],
+                        'telefone_fixo' => ['Telefone fixo com DDD', 'tel', 20, 'tel', '(XX) XXXX-XXXX'],
+                        'telefone_celular' => ['Celular com DDD', 'tel', 20, 'tel', '(XX) 9XXXX-XXXX'],
+                        'email_contato' => ['E-mail', 'email', 255, 'email', 'nome@exemplo.com'],
+                        'municipio' => ['Município', 'text', 150, 'address-level2', 'Ex.: Marília'],
+                        'bairro' => ['Bairro', 'text', 150, 'address-level3', 'Ex.: Centro'],
+                        'uf' => ['UF', 'text', 2, 'address-level1', 'Ex.: SP'],
+                        'cep' => ['CEP', 'text', 9, 'postal-code', 'XXXXX-XXX'],
+                        'logradouro' => ['Rua / avenida', 'text', 255, 'address-line1', 'Ex.: Rua das Flores'],
+                        'numero' => ['Número (ou s/n)', 'text', 20, 'off', 'Ex.: 123'],
+                        'complemento' => ['Complemento (opcional)', 'text', 150, 'address-line2', 'Ex.: apto 12, bloco B'],
                     ];
                 @endphp
-                @foreach ($campos as $campo => [$rotulo, $tipo, $limite, $autocomplete])
+                @foreach ($campos as $campo => [$rotulo, $tipo, $limite, $autocomplete, $exemplo])
                     <div class="{{ in_array($campo, ['nome_completo', 'email_contato', 'logradouro']) ? 'col-12' : 'col-md-6' }}">
                         <label for="{{ $campo }}" class="form-label">{{ $rotulo }}</label>
                         <input id="{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" maxlength="{{ $limite }}"
-                               autocomplete="{{ $autocomplete }}" value="{{ old($campo) }}"
+                               autocomplete="{{ $autocomplete }}" placeholder="{{ $exemplo }}" value="{{ old($campo) }}"
                                @required(!in_array($campo, ['telefone_fixo', 'telefone_celular', 'complemento']))
                                class="form-control @error($campo) is-invalid @enderror"
                                aria-invalid="{{ $errors->has($campo) ? 'true' : 'false' }}"
@@ -70,7 +70,7 @@
                 @endif
                 <div class="col-12">
                     <label class="form-label" for="outros_detalhes">Outros detalhes (opcional)</label>
-                    <textarea id="outros_detalhes" name="outros_detalhes" rows="4" maxlength="2000" class="form-control" aria-describedby="detalhes-ajuda">{{ old('outros_detalhes') }}</textarea>
+                    <textarea id="outros_detalhes" name="outros_detalhes" rows="4" maxlength="2000" placeholder="Ex.: melhor horário para falarmos com você" class="form-control" aria-describedby="detalhes-ajuda">{{ old('outros_detalhes') }}</textarea>
                     <p class="form-text" id="detalhes-ajuda">Até 2.000 caracteres. Não envie exames, documentos ou dados de outras pessoas neste campo.</p>
                 </div>
                 <div class="col-12 d-flex flex-wrap gap-2">
