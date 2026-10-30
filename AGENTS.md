@@ -2,6 +2,8 @@
 
 Leia [docs/GUIA.md](docs/GUIA.md) antes de atuar. Consulte o documento principal do assunto e confira suas afirmações no código atual. [CLAUDE.md](CLAUDE.md) remete a estas mesmas instruções.
 
+Em tarefas de interface (uma tela), leia apenas [docs/frontend/DESENVOLVIMENTO.md](docs/frontend/DESENVOLVIMENTO.md) e os arquivos que ele lista para a tela; respeite os diretórios permitidos ali.
+
 ## Escopo e limites
 
 - Diferencie proposto, acordado, implementado e validado conforme o Guia. Roadmap e novas convenções não autorizam implementação e dependem de revisão da equipe.
