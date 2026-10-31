@@ -14,6 +14,9 @@
                 @can('consultar-relatorios-visita')
                     <li class="nav-item"><a class="nav-link" href="{{ route('interno.relatorios.index') }}">Relatórios de visita</a></li>
                 @endcan
+                @can('consultar-avaliacoes')
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.avaliacoes.*') ? 'active' : '' }}" href="{{ route('interno.avaliacoes.index') }}">Avaliações</a></li>
+                @endcan
                 @can('criar-funcionarios')
                     <li class="nav-item"><a class="nav-link" href="{{ route('interno.funcionarios.create') }}">Cadastrar funcionário</a></li>
                 @endcan

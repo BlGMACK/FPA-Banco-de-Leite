@@ -2,9 +2,9 @@
 
 ## Situação em 29/10/2026
 
-O primeiro fluxo (solicitação até habilitação para doar) está implementado até o **relatório de visita**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas e relatório narrativo com rascunho, finalização e correções versionadas. Das 21 migrations, 20 estão aplicadas no banco de desenvolvimento; a de desativação de contas aguarda aplicação. A suíte automatizada passa (312 testes, 4 ignorados por exigirem MariaDB).
+O primeiro fluxo (solicitação até habilitação para doar) está implementado até o **relatório de visita**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas, relatório narrativo com rascunho, finalização e correções versionadas, e **análise do relatório** (liberar para exames, em aguardo ou não apta), implementada em 31/10/2026. As 23 migrations estão aplicadas no banco de desenvolvimento. Mensagens do sistema e do framework em português (pt-BR). A suíte automatizada passa (342 testes, 4 ignorados por exigirem MariaDB).
 
-O administrador concede e revoga permissões e desativa ou reativa funcionários pela tela “Permissões”. Ainda não existem: documentos/exames, avaliação de saúde, decisão e habilitação; correção de dados do pedido; coleta, estoque e distribuição. O fluxo completo foi exercitado em navegador automatizado em 29/10/2026, sem defeitos funcionais; falta a avaliação de usabilidade pela equipe.
+O administrador concede e revoga permissões e desativa ou reativa funcionários pela tela “Permissões”. Ainda não existem: documentos/exames, decisão de habilitação e sua revogação; correção de dados do pedido; coleta, estoque e distribuição. O fluxo completo foi exercitado em navegador automatizado em 29/10/2026, sem defeitos funcionais; falta a avaliação de usabilidade pela equipe.
 
 O retrato completo, com fontes e evidências, está no [Estado atual do Status](backend/STATUS.md#estado-atual--29102026). O código e as migrations são as evidências de implementação; ideias, propostas e arquivos antigos não comprovam funcionalidades disponíveis.
 
@@ -23,6 +23,7 @@ O retrato completo, com fontes e evidências, está no [Estado atual do Status](
 | 27/10/2026 | Telas da agenda; contas exclusivamente internas e cadastro de funcionários. |
 | 28/10/2026 | Ativação local da agenda; especificação, schema, models e operações dos relatórios de visita. |
 | 29/10/2026 | Ativação local dos relatórios e telas Blade de relatório; teste em navegador e ajustes de usabilidade; tela de gestão de permissões; regras acordadas para desativação de funcionários e para avaliação, exames e documentos ([Roadmap](backend/ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). |
+| 31/10/2026 | Migration de desativação aplicada no desenvolvimento; mensagens do sistema e do framework em português (pt-BR); análise do relatório (avaliação) com trava de correção após decisão definitiva. |
 
 Cada etapa, com comandos, resultados e limites, está no [histórico do Status](backend/STATUS.md#histórico-de-verificações).
 

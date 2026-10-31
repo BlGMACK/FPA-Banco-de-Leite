@@ -684,3 +684,26 @@ Atendimento administrativo e agenda, isoladamente, continuam sem acesso ao texto
 6. HTML escapado, CSRF, atribuição em massa e URL direta protegidos; datas/fuso, histórico e separação de conteúdo comprovados em testes. Migrations e concorrência em banco exclusivo; revisão visual posterior em navegador.
 
 O desenho físico proposto está em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026). R1–R3 foram respondidas explicitamente pelo usuário em 28/10/2026; isso fecha as decisões funcionais de acesso, sem converter os detalhes técnicos propostos em implementação ou homologação.
+
+## Análise do relatório (avaliação) — implementada em 31/10/2026
+
+Primeira parte da [avaliação após a visita](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026), conforme as decisões do usuário de 31/10/2026. Exames, documentos, anexos e habilitação ainda não existem. Fontes: [Avaliacao](../../app/Models/Avaliacao.php), [DecisaoAvaliacao](../../app/Models/DecisaoAvaliacao.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php) e [views](../../resources/views/avaliacoes).
+
+**Permissões.** `consultar-avaliacoes` lê a situação e o histórico de decisões, sem decidir e sem acesso ao texto do relatório (o link “Ler o relatório” só aparece para quem consulta relatórios). `avaliar-doadoras` decide e inclui a consulta de avaliações e de relatórios **publicados**; não permite escrever relatórios. Admin tem ambas.
+
+**Criação.** A primeira finalização de um relatório cria, na mesma transação, uma avaliação em `aguardando_analise` para aquela visita (única por atendimento). Correções posteriores não criam outra. A migration preenche avaliações para relatórios já publicados.
+
+| Método / caminho | Nome `interno.avaliacoes.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/avaliacoes` | `index` | `consultar-avaliacoes`. Lista com interessada, visita, responsável e situação; filtro fechado de situação; 20 por página. |
+| GET `/interno/avaliacoes/{avaliacao}` | `show` | `consultar-avaliacoes`. Situação, versão vigente do relatório, formulário de decisão (só para `avaliar-doadoras`, com análise aberta e relatório sem correção em andamento) e histórico de decisões em páginas de 15, com autor, data, versão analisada e motivo. |
+| POST `/interno/avaliacoes/{avaliacao}/decisoes` | `decisoes.store` | `avaliar-doadoras`. Entradas `operacao_id` (UUID), `versao`, `resultado` (`liberada_exames`, `em_aguardo`, `nao_apta`) e `motivo` (até 2.000 caracteres; obrigatório para `em_aguardo` e `nao_apta`). Redireciona ao detalhe com status. |
+
+**Regras.**
+- Decisão permitida com avaliação em `aguardando_analise` ou `em_aguardo` e relatório `finalizado`. Com correção do relatório em andamento, a decisão espera a finalização da correção (409); a decisão registra a versão vigente analisada.
+- `em_aguardo` não conclui a análise: a avaliação permanece aberta até um profissional registrar nova decisão (inclusive outro aguardo). Não há prazo nem mudança automática.
+- `liberada_exames` e `nao_apta` **concluem a análise**: novas decisões são recusadas e o relatório deixa de aceitar correções (`iniciarCorrecao` retorna 409 e a tela do relatório troca o formulário pelo aviso “O relatório não pode mais ser corrigido.”). Correções continuam possíveis enquanto a avaliação estiver aguardando análise ou em aguardo.
+- Decisões são imutáveis (o model recusa alteração e exclusão) e registram autor, instante, operação e hash; reenvio idêntico devolve a mesma decisão, reenvio alterado e versão desatualizada retornam 409. Relatório e avaliação são travados nessa ordem, a mesma da abertura de correção.
+- Erros de validação voltam **422** na própria tela, com resultado e motivo preservados só na resposta; conflitos voltam **409** com a mensagem do motivo e link para recarregar. Respostas com `Cache-Control: private, no-store`; motivos exibidos com escape.
+
+**Fora desta entrega:** itens de exames e documentos, anexos, decisão de habilitação, revogação de habilitação, nova visita durante o aguardo (a agenda continua impedindo novo agendamento após visita realizada) e efeitos de “não apta” na fila ou no alerta de correspondência. Evidências em [Status](STATUS.md#análise-do-relatório-avaliação--31102026).

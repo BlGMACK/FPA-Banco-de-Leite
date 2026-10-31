@@ -35,6 +35,8 @@
                         <button class="btn btn-outline-success" x-bind:disabled="alterado || {{ isset($falhas['conflito']) || $semTextoSalvo ? 'true' : 'false' }}" @disabled(isset($falhas['conflito']) || $semTextoSalvo)>Finalizar texto salvo</button>
                     </form>
                 </div></section>
+            @elseif ($analiseConcluida)
+                <p class="mb-4">A análise deste relatório foi concluída na avaliação. O relatório não pode mais ser corrigido.</p>
             @else
                 <form method="POST" action="{{ route('interno.relatorios.correcao', $relatorio) }}" class="mb-4">@csrf
                     <h2 class="h4">Iniciar correção</h2><p>A correção parte da última versão vigente e não altera o histórico publicado.</p>

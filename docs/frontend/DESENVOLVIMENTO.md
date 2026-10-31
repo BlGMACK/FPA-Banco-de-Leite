@@ -87,10 +87,11 @@ Rotas internas exigem login. A coluna “Permissão” indica quem enxerga a tel
 | 10 | `front/permissoes` | Permissões e situação da conta | `/interno/permissoes`, `/interno/permissoes/{id}` | `permissoes/` | `PermissaoController` | `PermissaoWebTest`, `DesativacaoFuncionarioTest` | admin |
 | 11 | `front/perfil` | Perfil, troca de senha e exclusão de conta | `/profile` | `profile/` | `ProfileController` | `ProfileTest`, `tests/Feature/Auth/PasswordUpdateTest.php` | logado |
 | 12 | `front/erros` | Página de conflito (409) e páginas de erro | — | `errors/` | — | `RelatorioVisitaWebTest` | — |
+| 13 | `front/avaliacoes` | Lista de avaliações, situação, decisão da análise do relatório e histórico | `/interno/avaliacoes`, `/interno/avaliacoes/{id}` | `avaliacoes/` | `AvaliacaoController` | `AvaliacaoWebTest` | `consultar-avaliacoes` / `avaliar-doadoras` |
 
 Os caminhos de view são relativos a `resources/views/`. Os controllers ficam em `app/Http/Controllers/` e os testes em `tests/Feature/`.
 
-**Ordem sugerida:** 0 primeiro, sozinha. Depois 1–4 (telas públicas e de entrada) e 5–12 em paralelo, uma pessoa por tela. `welcome.blade.php` é remanescente sem rota: não trabalhe nele.
+**Ordem sugerida:** 0 primeiro, sozinha. Depois 1–4 (telas públicas e de entrada) e 5–13 em paralelo, uma pessoa por tela. `welcome.blade.php` é remanescente sem rota: não trabalhe nele.
 
 ## O que cada view precisa preservar
 
@@ -126,7 +127,7 @@ npm.cmd run dev          # outro terminal: recarrega CSS/JS
 
 Para ter dados nas telas internas, crie registros fictícios pelo próprio sistema: envie uma solicitação em `/doar`, admita-a na fila, agende a visita e registre o relatório. Use apenas dados inventados.
 
-As mensagens padrão do framework (por exemplo, de validação genérica) ainda aparecem em inglês: a configuração de idioma é uma pendência registrada no [Status](../backend/STATUS.md#estado-atual--29102026). Não crie arquivos de tradução nem altere `lang/` ou `config/` para contornar.
+As mensagens padrão do framework (validação, login, recuperação de senha, paginação) estão em português, em `lang/pt_BR/` e `lang/pt_BR.json` ([Status](../backend/STATUS.md#ativação-da-desativação-e-mensagens-em-pt-br--31102026)). Se uma mensagem aparecer em inglês, confira se o seu `.env` tem `APP_LOCALE=pt_BR`; tarefas de tela não alteram `lang/` nem `config/`.
 
 ## Checklist do pull request
 
@@ -191,7 +192,8 @@ Atualize esta tabela no próprio PR da tela.
 | 10 | Permissões | não iniciada | — | — |
 | 11 | Perfil | não iniciada | — | — |
 | 12 | Páginas de erro | não iniciada | — | — |
+| 13 | Avaliações | não iniciada | — | Tela de apoio entregue em 31/10/2026. |
 
 Situações: não iniciada, em andamento, em revisão (PR aberto), integrada (merge em `frontend`), em `main`.
 
-Novas telas do backend (por exemplo avaliação e exames, quando forem implementadas) entram nesta tabela com uma nova linha, depois que a view de apoio existir.
+Novas telas do backend (por exemplo exames, quando forem implementados) entram nesta tabela com uma nova linha, depois que a view de apoio existir.

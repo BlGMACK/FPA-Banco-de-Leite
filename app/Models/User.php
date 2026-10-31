@@ -158,7 +158,17 @@ class User extends Authenticatable
     public function podeConsultarRelatoriosVisita(): bool
     {
         return $this->possuiPermissaoAdministrativa(Permissao::CONSULTAR_RELATORIOS_VISITA)
-            || $this->podeRegistrarRelatoriosVisita();
+            || $this->podeRegistrarRelatoriosVisita() || $this->podeAvaliarDoadoras();
+    }
+
+    public function podeAvaliarDoadoras(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::AVALIAR_DOADORAS);
+    }
+
+    public function podeConsultarAvaliacoes(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::CONSULTAR_AVALIACOES) || $this->podeAvaliarDoadoras();
     }
 
     // Métodos auxiliares de leitura — usados tanto pelo middleware quanto

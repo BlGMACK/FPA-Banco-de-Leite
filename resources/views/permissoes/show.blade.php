@@ -5,6 +5,8 @@
         'criar-funcionarios' => 'Cadastrar contas de funcionário. Não permite conceder permissões.',
         'consultar-relatorios-visita' => 'Ler as versões publicadas dos relatórios de visita, sem rascunhos.',
         'registrar-relatorios-visita' => 'Registrar visitas e escrever, finalizar e corrigir relatórios. Inclui a consulta.',
+        'consultar-avaliacoes' => 'Ler a situação e o histórico de decisões das avaliações, sem decidir.',
+        'avaliar-doadoras' => 'Analisar o relatório publicado e decidir: liberar para exames, deixar em aguardo ou considerar não apta. Inclui a consulta de avaliações e de relatórios publicados.',
     ];
 @endphp
 <x-app-layout>
