@@ -6,7 +6,7 @@ Fonte principal: [migrations](../../database/migrations). Esta descrição repre
 
 ### Inventário em 29/10/2026
 
-São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`); a de desativação de contas, de 29/10/2026, ainda aguarda aplicação. Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
+São 23 migrations, todas aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status` em 31/10/2026; a de desativação de contas entrou no lote 7 e as duas da avaliação no lote 8). Além do relatório narrativo, só há o registro da análise do relatório; nenhuma tabela de exames, doadora aprovada, anexos, coleta ou estoque.
 
 | Recorte | Tabelas | Lote local | Detalhe |
 | --- | --- | --- | --- |
@@ -15,7 +15,8 @@ São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento
 | Administrativo | `interessadas`, `solicitacoes`, `contatos_solicitacao`, `contato_pedidos`, `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`, `eventos_solicitacao`, `permissoes`, `permissao_user`, `eventos_permissao` | 3 | [Recorte administrativo](#recorte-administrativo-preparado-em-24102026) |
 | Agenda | contexto em `contatos_solicitacao`; `agendamentos`, `reservas_agenda`, `eventos_agendamento` | 5 | [Agenda](#desenho-físico-proposto-para-agenda--26102026) |
 | Visita e relatório | `atendimentos`, `relatorios_visita`, `versoes_relatorio_visita`, `eventos_atendimento`; estado `realizado` na agenda | 6 | [Atendimento e relatório](#persistência-proposta-para-atendimento-e-relatório--28102026) |
-| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | pendente | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | 7 | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Análise do relatório | `avaliacoes` (uma por atendimento, estado, `versao`); `decisoes_avaliacao` (imutável: resultado, motivo, versão do relatório analisada, autor, instante, `operacao_id` único, hash) | 8 | [Desenho de avaliação](#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026) |
 
 As seções seguintes foram escritas a cada etapa e mantêm o desenho, as decisões e os limites de cada recorte; avisos de “sem aplicação ao desenvolvimento” nelas descrevem a data do registro. A tabela abaixo descreve a base Laravel.
 
@@ -340,6 +341,8 @@ Ao evoluir a lista de pendências, combinar ausência de reserva com ausência d
 Preparação futura deve testar upgrade com registros existentes, restrições/FKs, rollback estrutural e concorrência no banco exclusivo. Rollback que remove texto/versionamento é destrutivo e não é plano de recuperação de dados reais. Correção de fato registrado indevidamente, retenção e descarte de rascunhos continuam pendentes; não apagar nem reescrever versões para simulá-los.
 
 ## Desenho físico proposto para avaliação, exames e documentos — 29/10/2026
+
+**Atualização de 31/10/2026:** `avaliacoes` e `decisoes_avaliacao` foram **implementadas** apenas para a análise do relatório: `avaliacoes.estado` aceita só `aguardando_analise`, `em_aguardo`, `liberada_exames` e `nao_apta`; `decisoes_avaliacao.etapa` só `analise_relatorio`, com `versao_analisada` no lugar de “versão”; `possui_plano_saude`, `condicao` e `valida_ate` ficaram para as etapas de documentos e habilitação, que acrescentarão valores e colunas por novas migrations. A permissão de leitura chama-se `consultar-avaliacoes` (separada de `consultar-exames`). Decisão definitiva trava correções do relatório ([Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026)). O restante desta seção continua proposto.
 
 **Estado: proposta técnica para revisão, não implementada.** Materializa as regras [acordadas em 29/10/2026](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). Nomes de tabelas, campos e limites são propostos; a implementação depende de autorização e da lista real de exames (o catálogo pode começar só com "Exame de sangue" e "Outro exame").
 
