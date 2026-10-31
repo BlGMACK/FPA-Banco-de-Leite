@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
+use App\Http\Controllers\AvaliacaoController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
@@ -88,4 +89,10 @@ Route::middleware(['auth', 'can:consultar-relatorios-visita'])->prefix('interno/
             Route::post('/{relatorio}/'.$acao, [RelatorioVisitaController::class, 'update'])->whereNumber('relatorio')->name($acao);
         }
     });
+});
+
+Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/avaliacoes')->name('interno.avaliacoes.')->group(function (): void {
+    Route::get('/', [AvaliacaoController::class, 'index'])->name('index');
+    Route::get('/{avaliacao}', [AvaliacaoController::class, 'show'])->whereNumber('avaliacao')->name('show');
+    Route::post('/{avaliacao}/decisoes', [AvaliacaoController::class, 'store'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('decisoes.store');
 });

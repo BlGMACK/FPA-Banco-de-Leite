@@ -141,4 +141,9 @@ class Atendimento extends Model
     {
         return $this->hasMany(EventoAtendimento::class, 'atendimento_id');
     }
+
+    public function avaliacao(): HasOne
+    {
+        return $this->hasOne(Avaliacao::class, 'atendimento_id');
+    }
 }

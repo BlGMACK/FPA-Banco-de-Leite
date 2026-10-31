@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agendamento;
 use App\Models\Atendimento;
+use App\Models\Avaliacao;
 use App\Models\Permissao;
 use App\Models\RelatorioVisita;
 use App\Models\User;
@@ -130,7 +131,8 @@ class RelatorioVisitaController extends Controller
         $rascunho = $escrita ? RelatorioVisita::consultarRascunho($id, auth()->user()) : null;
 
         return $this->pagina('relatorios.show', ['relatorio' => $relatorio, 'versao' => $versao, 'rascunho' => $rascunho,
-            'escrita' => $escrita, 'formulario' => $formulario, 'entrada' => $this->escalares($entrada), 'falhas' => $falhas,
+            'escrita' => $escrita, 'formulario' => $formulario,
+            'analiseConcluida' => (bool) Avaliacao::query()->where('atendimento_id', $relatorio->atendimento_id)->first()?->concluida(), 'entrada' => $this->escalares($entrada), 'falhas' => $falhas,
             'finalizador' => $versao ? User::query()->findOrFail($versao['finalizado_por_user_id'])->name : null,
             'versoes' => $relatorio->versoes()->select(['id', 'relatorio_visita_id', 'numero', 'finalizado_por_user_id', 'finalizado_em'])
                 ->with('finalizadoPor')->orderByDesc('numero')->paginate(15)->appends(['versao' => $numero])], $status);

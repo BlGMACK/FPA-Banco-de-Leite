@@ -37,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define(Permissao::CRIAR_FUNCIONARIOS, fn (User $user): bool => $user->podeCriarFuncionarios());
         Gate::define(Permissao::CONSULTAR_RELATORIOS_VISITA, fn (User $user): bool => $user->podeConsultarRelatoriosVisita());
         Gate::define(Permissao::REGISTRAR_RELATORIOS_VISITA, fn (User $user): bool => $user->podeRegistrarRelatoriosVisita());
+        Gate::define(Permissao::CONSULTAR_AVALIACOES, fn (User $user): bool => $user->podeConsultarAvaliacoes());
+        Gate::define(Permissao::AVALIAR_DOADORAS, fn (User $user): bool => $user->podeAvaliarDoadoras());
         Gate::define('gerenciar-permissoes', fn (User $user): bool => $user->podeGerenciarPermissoes());
     }
 }
