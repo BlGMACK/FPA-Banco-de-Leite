@@ -27,7 +27,7 @@ class AvaliacaoOperationsTest extends TestCase
 
     private function decisao(int $versao, string $resultado, ?string $motivo = 'Motivo fictício.'): array
     {
-        return ['operacao_id' => (string) Str::uuid(), 'versao' => $versao, 'resultado' => $resultado, 'motivo' => $motivo];
+        return ['operacao_id' => (string) Str::uuid(), 'versao' => $versao, 'resultado' => $resultado, 'motivo' => $motivo, 'confirmacao_definitiva' => '1'];
     }
 
     private function conflito(callable $callback, string $mensagem): void
@@ -213,6 +213,85 @@ class AvaliacaoOperationsTest extends TestCase
 
         $this->expectException(AuthorizationException::class);
         Avaliacao::factory()->create()->decidir($user, $this->decisao(1, 'liberada_exames'));
+    }
+
+    #[DataProvider('definitiveResults')]
+    public function test_definitive_decision_requires_confirmation(string $resultado): void
+    {
+        $avaliacao = Avaliacao::factory()->create();
+
+        try {
+            $avaliacao->decidir(User::factory()->admin()->create(), array_replace($this->decisao(1, $resultado), ['confirmacao_definitiva' => null]));
+            $this->fail('Expected validation error.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(['confirmacao_definitiva' => ['Confirme que a decisão é definitiva e impede novas correções do relatório.']], $exception->errors());
+        }
+        $this->assertSame('aguardando_analise', $avaliacao->fresh()->estado);
+        $this->assertDatabaseCount('decisoes_avaliacao', 0);
+    }
+
+    public function test_waiting_decision_does_not_require_confirmation(): void
+    {
+        $avaliacao = Avaliacao::factory()->create();
+
+        $avaliacao->decidir(User::factory()->admin()->create(), array_replace($this->decisao(1, 'em_aguardo'), ['confirmacao_definitiva' => null]));
+
+        $this->assertSame('em_aguardo', $avaliacao->fresh()->estado);
+    }
+
+    public function test_reservation_blocks_other_professionals_until_decision(): void
+    {
+        $avaliacao = Avaliacao::factory()->create();
+        $analista = User::factory()->admin()->create(['name' => 'Analista']);
+        $outro = User::factory()->admin()->create();
+        $relatorio = $avaliacao->atendimento->relatorio;
+
+        $avaliacao->iniciarAnalise($analista);
+        $mensagem = $avaliacao->fresh()->mensagemReserva();
+        $this->assertStringStartsWith('A avaliação está em análise por Analista até ', $mensagem);
+        $this->conflito(fn () => $avaliacao->iniciarAnalise($outro), $mensagem);
+        $this->conflito(fn () => $avaliacao->decidir($outro, $this->decisao(1, 'em_aguardo')), $mensagem);
+        $this->conflito(fn () => $relatorio->iniciarCorrecao($outro, ['operacao_id' => (string) Str::uuid(), 'revisao' => 1, 'motivo' => 'Ajuste']),
+            $mensagem.' Abra a correção depois que a análise for encerrada.');
+        $this->assertSame('finalizado', $relatorio->fresh()->estado);
+
+        $avaliacao->decidir($analista, $this->decisao(1, 'em_aguardo'));
+        $this->assertNull($avaliacao->fresh()->analise_por_user_id);
+        $avaliacao->decidir($outro, $this->decisao(2, 'em_aguardo'));
+        $this->assertDatabaseCount('decisoes_avaliacao', 2);
+    }
+
+    public function test_reservation_expires_and_only_owner_releases_it(): void
+    {
+        $avaliacao = Avaliacao::factory()->create();
+        $analista = User::factory()->admin()->create();
+        $outro = User::factory()->admin()->create();
+
+        $avaliacao->iniciarAnalise($analista);
+        $avaliacao->encerrarAnalise($outro);
+        $this->assertSame($analista->id, $avaliacao->fresh()->analise_por_user_id);
+        $avaliacao->encerrarAnalise($analista);
+        $this->assertNull($avaliacao->fresh()->analise_por_user_id);
+
+        $avaliacao->iniciarAnalise($analista);
+        $this->travel(Avaliacao::MINUTOS_ANALISE + 1)->minutes();
+        $avaliacao->iniciarAnalise($outro);
+        $this->assertSame($outro->id, $avaliacao->fresh()->analise_por_user_id);
+    }
+
+    public function test_reservation_requires_open_evaluation_and_finalized_report(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $emCorrecao = Avaliacao::factory()->create();
+        $emCorrecao->atendimento->relatorio->iniciarCorrecao($admin, ['operacao_id' => (string) Str::uuid(), 'revisao' => 1, 'motivo' => 'Ajuste']);
+        $this->conflito(fn () => $emCorrecao->iniciarAnalise($admin), 'O relatório está em correção. Decida depois que a correção for finalizada.');
+
+        $concluida = Avaliacao::factory()->create();
+        $concluida->decidir($admin, $this->decisao(1, 'liberada_exames'));
+        $this->conflito(fn () => $concluida->iniciarAnalise($admin), 'A análise do relatório já foi concluída.');
+
+        $this->expectException(AuthorizationException::class);
+        Avaliacao::factory()->create()->iniciarAnalise(User::factory()->funcionario()->create());
     }
 
     public function test_recorded_decisions_reject_update_and_delete(): void

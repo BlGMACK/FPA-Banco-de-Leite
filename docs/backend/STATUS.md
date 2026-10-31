@@ -13,7 +13,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado em 31/10/2026 (mig
 | Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
-| Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
+| Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Reserva da análise por 30 minutos e confirmação das decisões definitivas. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
 | Documentos/exames, decisão de habilitação e revogação | **Não implementado.** Estrutura acordada em 29/10/2026; faltam a lista real de exames, os prazos por tipo e a decisão D9. | [Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
@@ -25,6 +25,8 @@ Conferência somente leitura em 29/10/2026 (`php artisan migrate:status` e conta
 Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_200000_add_desativacao_to_users_table`) foi aplicada no lote 7, após conferência do SQL com `--pretend`: **21 migrations aplicadas, nenhuma pendente**. Duas contas internas preservadas, nenhuma desativada ([registro](#ativação-da-desativação-e-mensagens-em-pt-br--31102026)).
 
 **Ativação da avaliação (31/10/2026):** com autorização do usuário, após conferência do SQL com `--pretend`, as migrations `2026_10_31_062119_create_avaliacoes_table` e `2026_10_31_062120_create_decisoes_avaliacao_table` foram aplicadas no lote 8 e o `PermissaoSeeder` foi executado: **23 migrations aplicadas, nenhuma pendente**; catálogo com sete permissões e zero concessões; duas contas preservadas. Não havia relatório publicado, então nenhuma avaliação foi preenchida.
+
+**Pendente:** a migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` (reserva da análise, 31/10/2026) ainda não foi aplicada no desenvolvimento.
 
 ### Verificação automatizada
 
@@ -69,6 +71,41 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
 
+### Reserva da análise e confirmação das decisões definitivas — 31/10/2026
+
+A pedido do usuário, a partir das observações do teste em navegador abaixo. Migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` (três colunas anuláveis em `avaliacoes`; rollback só remove as colunas), métodos `iniciarAnalise`/`encerrarAnalise` em `Avaliacao`, bloqueio da decisão e da abertura de correção do relatório durante reserva alheia, duas rotas novas, botão “Iniciar análise”, aviso na lista e no detalhe, caixa de confirmação para *Liberar para exames* e *Não apta* e exibição do motivo não registrado em conflito. Contrato em [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php artisan test`, SQLite `:memory:` | 351 testes: 347 aprovados, 4 ignorados; 1.709 assertions. Novos casos: confirmação obrigatória só nas definitivas, reserva bloqueando outro profissional (início, decisão e correção), liberação pela decisão, encerramento só pelo dono, vencimento, recusa com correção aberta ou análise concluída, telas, 403 para leitora e CSRF nas rotas novas. |
+| Testes de avaliação, relatórios (operações, web, concorrência) e `EmployeeAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 85 testes, 490 assertions aprovados. |
+| Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 10 de 10: só “Iniciar análise” antes da reserva; formulário e aviso após; confirmação oculta sem resultado e em *Em aguardo*, visível em *Liberar para exames*; navegador impede envio sem marcar; outra avaliadora vê a reserva sem botões; lista mostra “Em análise por”; decisão definitiva registrada; encerrar libera. Sem erros de console. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+**Migration ainda não aplicada em `banco_de_leite_dev`:** aplicar com `php artisan migrate` (conferir antes com `--pretend`) antes de usar as telas no desenvolvimento.
+
+### Teste das telas de avaliação em navegador — 31/10/2026
+
+A pedido do usuário, mesmo método de [29/10/2026](#teste-das-telas-em-navegador--29102026): Playwright (`playwright-core` 1.56.1) em pasta temporária fora do projeto, Microsoft Edge headless, servidor `php -S` com `DB_DATABASE=banco_de_leite_schema_test`, sem tocar em `banco_de_leite_dev` nem no `.env`. Dados fictícios só nesse banco: `PermissaoSeeder`, uma conta admin, uma funcionária com `avaliar-doadoras`, outra só com `consultar-avaliacoes`, uma visita confirmada já ocorrida e três avaliações de fábrica (uma em aguardo, com `<script>` no motivo).
+
+| Cenário | Resultado |
+| --- | --- |
+| Registro da visita, rascunho e finalização do relatório | A avaliação nasce na finalização e aparece na lista como *Aguardando análise*; menu “Avaliações” ativo. |
+| *Em aguardo* sem motivo, depois com motivo | 422 com mensagem em português e opção mantida; em seguida decisão registrada no histórico, formulário ainda disponível. |
+| Correção do relatório durante *Em aguardo* | Avaliação informa a correção em elaboração e oculta o formulário; após finalizar a correção, a decisão passa a valer para a versão 2. |
+| *Liberar para exames* e conflito entre abas | Análise concluída; a aba desatualizada recebe 409 com mensagem e link “Recarregar a situação atual”; após recarregar, situação atual sem formulário. O relatório deixa de oferecer correção. |
+| Filtro por situação | Retorna somente a situação escolhida; valor inválido volta com validação, sem erro de servidor. |
+| Avaliadora | Registra *Não apta*; lê o relatório publicado sem formulários de escrita; menu Painel, Relatórios de visita e Avaliações; agenda responde 403. |
+| Leitora | Sem formulário de decisão nem link para o relatório; menu Painel e Avaliações; `<script>` do motivo exibido como texto, sem diálogo. |
+| Celular (390 px) e teclado | Sem rolagem horizontal na lista, no detalhe concluído e no formulário; ordem de Tab lógica (pular para o conteúdo → menu → voltar → ler relatório → resultado → motivo → registrar), com foco visível. |
+
+Console sem erros JavaScript; apenas os 422, 409 e 403 esperados. Limites iguais aos de 29/10/2026: não substitui avaliação humana, leitor de tela, outros navegadores ou dispositivo real.
+
+Observações para decisão da equipe, sem defeito funcional (ambas tratadas no mesmo dia, ver registro acima):
+
+- Quando o conflito ocorre porque a outra aba já concluiu a análise, o formulário some e o motivo digitado não é exibido. Na prática não há nova decisão possível, mas quem digitou perde o texto sem aviso.
+- *Liberar para exames* e *Não apta* são definitivas e travam a correção do relatório, mas são registradas com um clique, sem etapa de confirmação.
+
 ### Análise do relatório (avaliação) — 31/10/2026
 
 Implementação autorizada pelo usuário após as decisões de 31/10/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). Migrations `avaliacoes` e `decisoes_avaliacao` (com preenchimento das avaliações de relatórios já publicados e rollback recusado havendo decisões), models `Avaliacao` e `DecisaoAvaliacao` com factories, permissões `consultar-avaliacoes` e `avaliar-doadoras` (Gates, seeder, tela de permissões), criação da avaliação na primeira finalização do relatório, trava de correção após decisão definitiva, `AvaliacaoController`, views `avaliacoes/{index,show}`, menu “Avaliações” e aviso na tela do relatório. Contrato em [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026).
@@ -80,7 +117,7 @@ Implementação autorizada pelo usuário após as decisões de 31/10/2026 ([Road
 | Testes de avaliação, operações/web/concorrência de relatórios e `EmployeeAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 76 testes, 434 assertions aprovados. |
 | `vendor/bin/pint --dirty --format agent` | Aprovado. |
 
-Ativação no desenvolvimento registrada em [Banco de desenvolvimento](#banco-de-desenvolvimento). Limites: telas não revisadas em navegador; não há teste de concorrência específico entre decisão e abertura de correção (a ordem de travas é a mesma da correção, verificada por leitura do código).
+Ativação no desenvolvimento registrada em [Banco de desenvolvimento](#banco-de-desenvolvimento). Limites: telas revisadas em navegador automatizado no mesmo dia ([registro](#teste-das-telas-de-avaliação-em-navegador--31102026)); não há teste de concorrência específico entre decisão e abertura de correção (a ordem de travas é a mesma da correção, verificada por leitura do código).
 
 ### Ativação da desativação e mensagens em pt-BR — 31/10/2026
 
