@@ -31,7 +31,7 @@ class AvaliacaoWebTest extends TestCase
 
     private function data(int $version, string $result, ?string $reason = null): array
     {
-        return ['operacao_id' => (string) Str::uuid(), 'versao' => $version, 'resultado' => $result, 'motivo' => $reason];
+        return ['operacao_id' => (string) Str::uuid(), 'versao' => $version, 'resultado' => $result, 'motivo' => $reason, 'confirmacao_definitiva' => '1'];
     }
 
     public function test_routes_authorize_before_looking_up_records(): void
@@ -68,7 +68,10 @@ class AvaliacaoWebTest extends TestCase
         $evaluator = $this->user();
 
         $this->actingAs($evaluator)->get('/interno/avaliacoes/'.$evaluation->id)->assertOk()
-            ->assertSee('Registrar decisão')->assertSee('Ler o relatório');
+            ->assertSee('Iniciar análise')->assertDontSee('Registrar decisão')->assertSee('Ler o relatório');
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise')->assertRedirect(route('interno.avaliacoes.show', $evaluation));
+        $this->get('/interno/avaliacoes/'.$evaluation->id)->assertSee('Registrar decisão')->assertSee('Análise reservada para você')
+            ->assertSee('name="confirmacao_definitiva"', false);
         $this->post('/interno/avaliacoes/'.$evaluation->id.'/decisoes', $this->data(1, 'liberada_exames'))
             ->assertRedirect(route('interno.avaliacoes.show', $evaluation))->assertSessionHas('status', 'Decisão registrada. O histórico foi preservado.');
 
@@ -99,6 +102,48 @@ class AvaliacaoWebTest extends TestCase
         $this->assertDatabaseCount('decisoes_avaliacao', 1);
     }
 
+    public function test_reservation_hides_form_from_others_and_release_frees_it(): void
+    {
+        $evaluation = Avaliacao::factory()->create();
+        $owner = $this->user();
+        $other = $this->user();
+
+        $this->actingAs($owner)->post('/interno/avaliacoes/'.$evaluation->id.'/analise')->assertRedirect();
+        $this->actingAs($other)->get('/interno/avaliacoes/'.$evaluation->id)->assertOk()
+            ->assertSee('A avaliação está em análise por '.$owner->name)->assertDontSee('Iniciar análise')->assertDontSee('Registrar decisão');
+        $this->get('/interno/avaliacoes')->assertSee('Em análise por '.$owner->name);
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise')->assertStatus(409)->assertSee('A avaliação está em análise por');
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/decisoes', $this->data(1, 'nao_apta', 'Motivo concorrente'))
+            ->assertStatus(409)->assertSee('Motivo enviado e não registrado')->assertSee('Motivo concorrente');
+
+        $this->actingAs($owner)->post('/interno/avaliacoes/'.$evaluation->id.'/analise/encerrar')
+            ->assertSessionHas('status', 'Análise encerrada sem decisão. A avaliação ficou livre para outro profissional.');
+        $this->actingAs($other)->get('/interno/avaliacoes/'.$evaluation->id)->assertSee('Iniciar análise');
+        $this->assertDatabaseCount('decisoes_avaliacao', 0);
+    }
+
+    public function test_missing_confirmation_returns_form_with_message(): void
+    {
+        $evaluation = Avaliacao::factory()->create();
+        $evaluator = $this->user();
+        $evaluation->iniciarAnalise($evaluator);
+
+        $this->actingAs($evaluator)->post('/interno/avaliacoes/'.$evaluation->id.'/decisoes', array_replace($this->data(1, 'liberada_exames'), ['confirmacao_definitiva' => null]))
+            ->assertStatus(422)->assertSee('Confirme que a decisão é definitiva e impede novas correções do relatório.')
+            ->assertSee('Registrar decisão');
+        $this->assertDatabaseCount('decisoes_avaliacao', 0);
+    }
+
+    public function test_reader_cannot_reserve_analysis(): void
+    {
+        $evaluation = Avaliacao::factory()->create();
+
+        $this->actingAs($this->user(Permissao::CONSULTAR_AVALIACOES))->get('/interno/avaliacoes/'.$evaluation->id)->assertDontSee('Iniciar análise');
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise')->assertForbidden();
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise/encerrar')->assertForbidden();
+        $this->assertNull($evaluation->fresh()->analise_por_user_id);
+    }
+
     public function test_csrf_protects_decision_route(): void
     {
         $this->app->instance(PreventRequestForgery::class, new class($this->app, $this->app['encrypter']) extends PreventRequestForgery
@@ -112,7 +157,10 @@ class AvaliacaoWebTest extends TestCase
         $this->actingAs($this->user());
 
         $this->post('/interno/avaliacoes/'.$evaluation->id.'/decisoes', $this->data(1, 'liberada_exames'))->assertStatus(419);
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise')->assertStatus(419);
+        $this->post('/interno/avaliacoes/'.$evaluation->id.'/analise/encerrar')->assertStatus(419);
         $this->assertDatabaseCount('decisoes_avaliacao', 0);
+        $this->assertNull($evaluation->fresh()->analise_por_user_id);
     }
 
     public function test_navigation_shows_evaluations_only_with_permission(): void

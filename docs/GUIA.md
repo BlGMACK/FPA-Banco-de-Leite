@@ -23,7 +23,7 @@ O retrato completo, com fontes e evidências, está no [Estado atual do Status](
 | 27/10/2026 | Telas da agenda; contas exclusivamente internas e cadastro de funcionários. |
 | 28/10/2026 | Ativação local da agenda; especificação, schema, models e operações dos relatórios de visita. |
 | 29/10/2026 | Ativação local dos relatórios e telas Blade de relatório; teste em navegador e ajustes de usabilidade; tela de gestão de permissões; regras acordadas para desativação de funcionários e para avaliação, exames e documentos ([Roadmap](backend/ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). |
-| 31/10/2026 | Migration de desativação aplicada no desenvolvimento; mensagens do sistema e do framework em português (pt-BR); análise do relatório (avaliação) com trava de correção após decisão definitiva. |
+| 31/10/2026 | Migration de desativação aplicada no desenvolvimento; mensagens do sistema e do framework em português (pt-BR); análise do relatório (avaliação) com trava de correção após decisão definitiva; teste das telas de avaliação em navegador automatizado; reserva da análise e confirmação das decisões definitivas. |
 
 Cada etapa, com comandos, resultados e limites, está no [histórico do Status](backend/STATUS.md#histórico-de-verificações).
 

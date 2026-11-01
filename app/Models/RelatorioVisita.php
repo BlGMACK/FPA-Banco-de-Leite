@@ -87,8 +87,9 @@ class RelatorioVisita extends Model
                 $versao = null;
                 if ($acao === 'abertura_correcao') {
                     abort_unless($relatorio->estado === 'finalizado', 409, 'O relatório não está disponível para iniciar uma correção.');
-                    abort_if(Avaliacao::query()->where('atendimento_id', $relatorio->atendimento_id)->lockForUpdate()->first()?->concluida(),
-                        409, 'A análise deste relatório já foi concluída. O relatório não pode mais ser corrigido.');
+                    $avaliacao = Avaliacao::query()->where('atendimento_id', $relatorio->atendimento_id)->lockForUpdate()->first();
+                    abort_if($avaliacao?->concluida(), 409, 'A análise deste relatório já foi concluída. O relatório não pode mais ser corrigido.');
+                    abort_if($avaliacao?->reservadaPorOutro($autor), 409, $avaliacao?->mensagemReserva().' Abra a correção depois que a análise for encerrada.');
                     $base = $relatorio->versoes()->where('numero', $relatorio->numero_versao_vigente)->firstOrFail();
                     $relatorio->forceFill(['estado' => 'em_correcao', 'base_correcao_numero' => $base->numero,
                         'texto_rascunho' => $base->texto, 'motivo_correcao' => $dados['motivo']]);

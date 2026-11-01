@@ -94,5 +94,7 @@ Route::middleware(['auth', 'can:consultar-relatorios-visita'])->prefix('interno/
 Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/avaliacoes')->name('interno.avaliacoes.')->group(function (): void {
     Route::get('/', [AvaliacaoController::class, 'index'])->name('index');
     Route::get('/{avaliacao}', [AvaliacaoController::class, 'show'])->whereNumber('avaliacao')->name('show');
+    Route::post('/{avaliacao}/analise', [AvaliacaoController::class, 'iniciarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.iniciar');
+    Route::post('/{avaliacao}/analise/encerrar', [AvaliacaoController::class, 'encerrarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.encerrar');
     Route::post('/{avaliacao}/decisoes', [AvaliacaoController::class, 'store'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('decisoes.store');
 });

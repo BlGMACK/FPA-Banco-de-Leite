@@ -11,7 +11,7 @@
         </form>
         <div class="table-responsive"><table class="table"><thead><tr><th>Interessada</th><th>Visita</th><th>Situação</th><th>Avaliação</th></tr></thead><tbody>
             @forelse ($avaliacoes as $item)
-                <tr><td>{{ $item->atendimento->agendamento->solicitacao->interessada->nome_completo }}</td><td>{{ $item->atendimento->inicio_efetivo_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }}<br>{{ $item->atendimento->responsavel->name }}</td><td>{{ App\Models\Avaliacao::ESTADOS[$item->estado] }}</td><td><a href="{{ route('interno.avaliacoes.show', $item) }}">Abrir avaliação #{{ $item->id }}</a></td></tr>
+                <tr><td>{{ $item->atendimento->agendamento->solicitacao->interessada->nome_completo }}</td><td>{{ $item->atendimento->inicio_efetivo_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }}<br>{{ $item->atendimento->responsavel->name }}</td><td>{{ App\Models\Avaliacao::ESTADOS[$item->estado] }}@if (! $item->concluida() && $item->analise_expira_em?->isFuture())<br><small>Em análise por {{ $item->analisadaPor?->name }}</small>@endif</td><td><a href="{{ route('interno.avaliacoes.show', $item) }}">Abrir avaliação #{{ $item->id }}</a></td></tr>
             @empty<tr><td colspan="4">Nenhuma avaliação encontrada.</td></tr>@endforelse
         </tbody></table></div>
         {{ $avaliacoes->links() }}
