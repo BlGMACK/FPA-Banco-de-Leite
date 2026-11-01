@@ -26,7 +26,7 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 **Ativação da avaliação (31/10/2026):** com autorização do usuário, após conferência do SQL com `--pretend`, as migrations `2026_10_31_062119_create_avaliacoes_table` e `2026_10_31_062120_create_decisoes_avaliacao_table` foram aplicadas no lote 8 e o `PermissaoSeeder` foi executado: **23 migrations aplicadas, nenhuma pendente**; catálogo com sete permissões e zero concessões; duas contas preservadas. Não havia relatório publicado, então nenhuma avaliação foi preenchida.
 
-**Pendente:** a migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` (reserva da análise, 31/10/2026) ainda não foi aplicada no desenvolvimento.
+**Ativação da reserva da análise (01/11/2026):** com autorização do usuário, após conferência do SQL com `--pretend` (somente três colunas anuláveis e a chave estrangeira), a migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` foi aplicada no lote 9: **24 migrations aplicadas, nenhuma pendente**; duas contas e zero avaliações preservadas.
 
 ### Verificação automatizada
 
@@ -82,7 +82,7 @@ A pedido do usuário, a partir das observações do teste em navegador abaixo. M
 | Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 10 de 10: só “Iniciar análise” antes da reserva; formulário e aviso após; confirmação oculta sem resultado e em *Em aguardo*, visível em *Liberar para exames*; navegador impede envio sem marcar; outra avaliadora vê a reserva sem botões; lista mostra “Em análise por”; decisão definitiva registrada; encerrar libera. Sem erros de console. |
 | `vendor/bin/pint --dirty --format agent` | Aprovado. |
 
-**Migration ainda não aplicada em `banco_de_leite_dev`:** aplicar com `php artisan migrate` (conferir antes com `--pretend`) antes de usar as telas no desenvolvimento.
+Migration aplicada em `banco_de_leite_dev` em 01/11/2026 ([Banco de desenvolvimento](#banco-de-desenvolvimento)).
 
 ### Teste das telas de avaliação em navegador — 31/10/2026
 
