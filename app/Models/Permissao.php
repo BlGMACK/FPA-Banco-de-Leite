@@ -29,6 +29,10 @@ class Permissao extends Model
 
     public const AVALIAR_DOADORAS = 'avaliar-doadoras';
 
+    public const CONSULTAR_EXAMES = 'consultar-exames';
+
+    public const REGISTRAR_EXAMES = 'registrar-exames';
+
     protected $table = 'permissoes';
 
     public function conceder(User $funcionario, User $responsavel, string $motivo): bool
@@ -55,7 +59,7 @@ class Permissao extends Model
             Gate::forUser($responsavel)->authorize('gerenciar-permissoes');
 
             if (! in_array($permissao->codigo, [self::ATENDER_SOLICITACOES, self::GERENCIAR_AGENDA, self::CRIAR_FUNCIONARIOS,
-                self::CONSULTAR_RELATORIOS_VISITA, self::REGISTRAR_RELATORIOS_VISITA, self::CONSULTAR_AVALIACOES, self::AVALIAR_DOADORAS], true)) {
+                self::CONSULTAR_RELATORIOS_VISITA, self::REGISTRAR_RELATORIOS_VISITA, self::CONSULTAR_AVALIACOES, self::AVALIAR_DOADORAS, self::CONSULTAR_EXAMES, self::REGISTRAR_EXAMES], true)) {
                 throw ValidationException::withMessages(['permissao' => 'Permissão fora do recorte administrativo.']);
             }
 

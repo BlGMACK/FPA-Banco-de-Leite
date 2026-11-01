@@ -171,6 +171,17 @@ class User extends Authenticatable
         return $this->possuiPermissaoAdministrativa(Permissao::CONSULTAR_AVALIACOES) || $this->podeAvaliarDoadoras();
     }
 
+    public function podeRegistrarExames(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::REGISTRAR_EXAMES);
+    }
+
+    public function podeConsultarExames(): bool
+    {
+        return $this->possuiPermissaoAdministrativa(Permissao::CONSULTAR_EXAMES)
+            || $this->podeRegistrarExames() || $this->podeAvaliarDoadoras();
+    }
+
     // Métodos auxiliares de leitura — usados tanto pelo middleware quanto
     // pelas views Blade (ex.: @if($user->isAdmin()) para esconder um botão).
     // Mantêm o nome do papel ("admin", "funcionario"...) como o único lugar

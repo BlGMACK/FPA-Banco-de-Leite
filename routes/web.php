@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\AvaliacaoController;
+use App\Http\Controllers\ExameController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
@@ -97,4 +98,11 @@ Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/avaliac
     Route::post('/{avaliacao}/analise', [AvaliacaoController::class, 'iniciarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.iniciar');
     Route::post('/{avaliacao}/analise/encerrar', [AvaliacaoController::class, 'encerrarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.encerrar');
     Route::post('/{avaliacao}/decisoes', [AvaliacaoController::class, 'store'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('decisoes.store');
+});
+
+Route::middleware(['auth', 'can:consultar-exames'])->prefix('interno/exames')->name('interno.exames.')->group(function (): void {
+    Route::get('/', [ExameController::class, 'index'])->name('index');
+    Route::get('/{avaliacao}', [ExameController::class, 'show'])->whereNumber('avaliacao')->name('show');
+    Route::post('/{avaliacao}/itens', [ExameController::class, 'incluir'])->middleware('can:registrar-exames')->whereNumber('avaliacao')->name('itens.incluir');
+    Route::post('/itens/{item}/eventos', [ExameController::class, 'registrar'])->middleware('can:registrar-exames')->whereNumber('item')->name('itens.registrar');
 });

@@ -200,13 +200,19 @@ Origem: respostas do usuário nesta data. **Implementado no mesmo dia**, após a
 
 ## Avaliação após visita, exames e documentos — acordado em 29/10/2026
 
-Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequência de 23/10/2026. A **análise do relatório** foi implementada em 31/10/2026 ([Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026)); exames, documentos, anexos e habilitação continuam **não implementados**.
+Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequência de 23/10/2026. A **análise do relatório** foi implementada em 31/10/2026 ([Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026)); os itens de exame e documento (etapa 1) foram implementados em 01/11/2026; anexos e habilitação continuam **não implementados**.
 
 **Decisões do usuário em 31/10/2026** (análise do relatório):
 - Desenho técnico aprovado, com uma permissão própria só de leitura da avaliação (`consultar-avaliacoes`), além de `avaliar-doadoras`.
 - A avaliação é criada quando a visita é concluída, isto é, na primeira publicação do relatório.
 - O relatório **não pode mais ser corrigido** depois de uma decisão definitiva da análise (*Liberar para exames* ou *Não apta*); *Em aguardo* ainda permite corrigir. Fundamento do usuário: o relatório e as informações anteriores servem à decisão; depois de analisados, não há lógica em editá-los. Para rever uma aprovação, o caminho será uma **revogação** da habilitação (com motivo, por revisão dos dados ou outra razão), a desenhar com a etapa de habilitação.
 - *Em aguardo* termina somente quando um funcionário registra nova decisão, depois de reagendamento, espera de exames, revisão de documentos ou outro motivo. Sem prazo automático.
+
+**Decisões do usuário em 01/11/2026** (exames, documentos e habilitação):
+- **D9:** a doadora habilitada será registrada numa **tabela `doadoras`** criada na aprovação, em vez da tabela `habilitacoes` recomendada no desenho técnico. O desenho da tabela (vínculo com a interessada, dados copiados ou referenciados, suspensão, encerramento e nova habilitação) será detalhado na etapa 3.
+- **Catálogo provisório:** começar com “Exame de sangue” (validade de 30 dias) e “Outro exame” (nome livre); a lista real entra depois por seeder versionado, sem tela de edição.
+- **Anexos:** PDF, JPEG e PNG até 10 MB.
+- **Entrega por etapas**, cada uma com testes, revisão e PR próprios: (1) itens de exame e documento, com catálogo, estados, validade e prorrogação — **implementada em 01/11/2026** ([Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026)); (2) anexos; (3) decisão de habilitação e tabela `doadoras`.
 
 **Pendência criada por essas decisões:** “reagendamento” durante o aguardo exige nova visita no mesmo acompanhamento, que a agenda hoje bloqueia após a visita realizada. Definir antes de implementar: nova visita gera novo relatório e nova avaliação, ou complementa a avaliação existente?
 

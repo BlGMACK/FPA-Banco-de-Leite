@@ -16,7 +16,9 @@ class PermissaoSeeder extends Seeder
             Permissao::CONSULTAR_RELATORIOS_VISITA => 'Consulta de relatórios de visita',
             Permissao::REGISTRAR_RELATORIOS_VISITA => 'Registro de relatórios de visita',
             Permissao::CONSULTAR_AVALIACOES => 'Consulta de avaliações',
-            Permissao::AVALIAR_DOADORAS => 'Avaliação de doadoras'] as $codigo => $nome) {
+            Permissao::AVALIAR_DOADORAS => 'Avaliação de doadoras',
+            Permissao::CONSULTAR_EXAMES => 'Consulta de exames e documentos',
+            Permissao::REGISTRAR_EXAMES => 'Registro de exames e documentos'] as $codigo => $nome) {
             $permissao = Permissao::query()->where('codigo', $codigo)->first() ?? new Permissao;
             $permissao->codigo = $codigo;
             $permissao->nome = $nome;
