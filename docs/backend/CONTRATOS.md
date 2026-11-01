@@ -711,4 +711,36 @@ Primeira parte da [avaliação após a visita](ROADMAP.md#avaliação-após-visi
 - Num conflito em que o formulário não pode mais ser exibido, o motivo enviado aparece somente leitura em “Motivo enviado e não registrado”.
 - Erros de validação voltam **422** na própria tela, com resultado e motivo preservados só na resposta; conflitos voltam **409** com a mensagem do motivo e link para recarregar. Respostas com `Cache-Control: private, no-store`; motivos exibidos com escape.
 
-**Fora desta entrega:** itens de exames e documentos, anexos, decisão de habilitação, revogação de habilitação, nova visita durante o aguardo (a agenda continua impedindo novo agendamento após visita realizada) e efeitos de “não apta” na fila ou no alerta de correspondência. Evidências em [Status](STATUS.md#análise-do-relatório-avaliação--31102026).
+**Fora desta entrega:** itens de exames e documentos (entregues em 01/11/2026, [seção própria](#exames-e-documentos-etapa-1--implementada-em-01112026)), anexos, decisão de habilitação, revogação de habilitação, nova visita durante o aguardo (a agenda continua impedindo novo agendamento após visita realizada) e efeitos de “não apta” na fila ou no alerta de correspondência. Evidências em [Status](STATUS.md#análise-do-relatório-avaliação--31102026).
+
+## Exames e documentos (etapa 1) — implementada em 01/11/2026
+
+Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): itens de exame e documento com catálogo, estados, validade e prorrogação. **Fora desta etapa:** anexos (etapa 2), decisão de habilitação e tabela `doadoras` (etapa 3) e indicação de plano de saúde. Fontes: [ItemAvaliacao](../../app/Models/ItemAvaliacao.php), [EventoItemAvaliacao](../../app/Models/EventoItemAvaliacao.php), [TipoExame](../../app/Models/TipoExame.php), [TipoExameSeeder](../../database/seeders/TipoExameSeeder.php), [ExameController](../../app/Http/Controllers/ExameController.php) e [views](../../resources/views/exames).
+
+**Permissões.** `consultar-exames` lê itens e histórico, sem alterar. `registrar-exames` altera e inclui a consulta. `avaliar-doadoras` inclui a consulta de exames. Admin tem todas. A tela de exames mostra só a identificação da interessada e da visita; o link para a avaliação aparece apenas para quem consulta avaliações.
+
+**Catálogo provisório** (seeder idempotente, sem tela de edição): *Exame de sangue* (exame, validade de 30 dias) e *Cartão Nacional de Saúde (CNS)* (documento, exige número, sem validade). O CNS entra pela regra acordada em 29/10/2026 para documentos de identificação. *Outro exame* não está no catálogo: é incluído por avaliação com nome e detalhes livres, já como solicitado, e vale 30 dias. Tipos usados não são apagados; desativá-los só afeta avaliações liberadas depois. O seeder também acrescenta, em *não solicitado*, tipos novos às avaliações já liberadas.
+
+**Criação.** Na mesma transação de *Liberar para exames*, a avaliação recebe um item por tipo ativo, em *Não solicitado*. Um tipo do catálogo aparece uma vez por avaliação (índice único); *Outro exame* pode repetir.
+
+| Método / caminho | Nome `interno.exames.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/exames` | `index` | `consultar-exames`. Avaliações liberadas ou com itens, com contagem de solicitados, aceitos e vencidos e situação das exigências; 20 por página. |
+| GET `/interno/exames/{avaliacao}` | `show` | `consultar-exames`. Itens com estado, datas, número e prorrogações; formulários da ação cabível (só `registrar-exames` com avaliação liberada); inclusão de outro exame; histórico em páginas de 20. 404 para avaliação sem etapa de exames. |
+| POST `/interno/exames/{avaliacao}/itens` | `itens.incluir` | `registrar-exames`. `operacao_id`, `nome_outro` (até 150) e `detalhes_outro` (até 2.000, opcional). |
+| POST `/interno/exames/itens/{item}/eventos` | `itens.registrar` | `registrar-exames`. `operacao_id`, `versao`, `acao` e, conforme a ação, `motivo`, `realizado_em` (AAAA-MM-DD) ou `numero_documento`. |
+
+**Ações e transições.**
+- `solicitacao`: *Não solicitado* ou *Precisa complementar* → *Solicitado*.
+- `cancelamento_solicitacao`: *Solicitado* → *Não solicitado*, com motivo, só se o item nunca foi recebido.
+- `recebimento`: *Solicitado* → *Recebido*. Exames exigem a data de realização ou coleta (não futura) e calculam `valido_ate` = data + validade do tipo. O CNS exige número válido (15 dígitos, início 1, 2, 7, 8 ou 9 e soma ponderada múltipla de 11), guardado só com dígitos e sem imagem.
+- `aceite`: *Recebido* → *Aceito*. Autor e instante ficam no evento, o que registra quem conferiu e quando.
+- `complementacao`: *Recebido* → *Precisa complementar*, com motivo.
+- `prorrogacao`: item vencido; soma 30 dias à validade, com motivo, no máximo 2 vezes.
+- `novo_pedido`: item vencido → *Solicitado*, limpando data, validade e prorrogações. O histórico preserva os valores anteriores.
+
+**Validade.** Vencido é o item *Recebido* ou *Aceito* com validade anterior a hoje (horário de São Paulo). O vencimento só sinaliza, sem mudar o estado.
+
+**Regra de avanço** (`Avaliacao::exigenciasCumpridas`): ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido; itens não solicitados não bloqueiam. A tela só informa o resultado, porque a decisão de habilitação é da etapa 3.
+
+**Garantias.** Operações só com a avaliação em *Liberada para exames* (409 em outro estado). Cada operação trava a avaliação e depois o item, confere a versão do item e grava um evento imutável com autor, instante, estados, motivo, datas, operação e hash. Reenvio idêntico devolve o mesmo evento; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 na seção do item, com a entrada preservada. Conflitos voltam 409 com link para recarregar e mostram o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. As migrations recusam rollback com itens em andamento ou eventos registrados.

@@ -6,7 +6,9 @@
         'consultar-relatorios-visita' => 'Ler as versões publicadas dos relatórios de visita, sem rascunhos.',
         'registrar-relatorios-visita' => 'Registrar visitas e escrever, finalizar e corrigir relatórios. Inclui a consulta.',
         'consultar-avaliacoes' => 'Ler a situação e o histórico de decisões das avaliações, sem decidir.',
-        'avaliar-doadoras' => 'Analisar o relatório publicado e decidir: liberar para exames, deixar em aguardo ou considerar não apta. Inclui a consulta de avaliações e de relatórios publicados.',
+        'avaliar-doadoras' => 'Analisar o relatório publicado e decidir: liberar para exames, deixar em aguardo ou considerar não apta. Inclui a consulta de avaliações, de relatórios publicados e de exames.',
+        'consultar-exames' => 'Ler os exames e documentos das avaliações liberadas e seu histórico, sem alterar.',
+        'registrar-exames' => 'Solicitar exames e documentos, registrar recebimento, aceitar, pedir complementação, prorrogar e pedir novo exame. Inclui a consulta.',
     ];
 @endphp
 <x-app-layout>

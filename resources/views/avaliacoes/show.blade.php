@@ -16,6 +16,7 @@
                 @if ($leituraRelatorio)<a href="{{ route('interno.relatorios.show', $relatorio->id) }}">Ler o relatório</a>@endif
             </p>
             @if ($avaliacao->concluida())<p class="mb-0">A análise do relatório foi concluída. O relatório não pode mais ser corrigido.</p>@endif
+            @if ($avaliacao->estado === 'liberada_exames' && auth()->user()->can('consultar-exames'))<p class="mb-0 mt-1"><a href="{{ route('interno.exames.show', $avaliacao) }}">Exames e documentos</a></p>@endif
         </div></section>
         @if ($podeDecidir)
             <section class="card mb-4" x-data="{ resultado: @js($entrada['resultado'] ?? '') }"><div class="card-body">

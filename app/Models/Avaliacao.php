@@ -139,6 +139,9 @@ class Avaliacao extends Model
                     'versao_analisada' => $dados['versao']])->save();
                 $avaliacao->forceFill(['estado' => $dados['resultado'], 'versao' => $avaliacao->versao + 1,
                     'analise_por_user_id' => null, 'analise_iniciada_em' => null, 'analise_expira_em' => null])->save();
+                if ($avaliacao->estado === 'liberada_exames') {
+                    ItemAvaliacao::criarParaAvaliacao($avaliacao->id);
+                }
 
                 return $decisao;
             });
@@ -153,6 +156,24 @@ class Avaliacao extends Model
     protected function casts(): array
     {
         return ['versao' => 'integer', 'analise_iniciada_em' => 'immutable_datetime', 'analise_expira_em' => 'immutable_datetime'];
+    }
+
+    /**
+     * Regra de avanço acordada: ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido.
+     * Itens não solicitados não bloqueiam.
+     *
+     * @param  iterable<ItemAvaliacao>  $itens
+     */
+    public static function exigenciasCumpridas(iterable $itens): bool
+    {
+        $pedidos = collect($itens)->reject(fn (ItemAvaliacao $item): bool => $item->estado === 'nao_solicitado');
+
+        return $pedidos->isNotEmpty() && $pedidos->every(fn (ItemAvaliacao $item): bool => $item->estado === 'aceito' && ! $item->vencido());
+    }
+
+    public function itens(): HasMany
+    {
+        return $this->hasMany(ItemAvaliacao::class, 'avaliacao_id');
     }
 
     public function analisadaPor(): BelongsTo
