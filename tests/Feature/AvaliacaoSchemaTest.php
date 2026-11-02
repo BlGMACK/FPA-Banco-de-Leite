@@ -28,10 +28,12 @@ class AvaliacaoSchemaTest extends TestCase
 
     public function test_upgrade_backfills_evaluations_only_for_published_reports(): void
     {
+        $anexos = require database_path('migrations/2026_11_01_200000_create_anexos_item_avaliacao_table.php');
         $eventos = require database_path('migrations/2026_11_01_100002_create_eventos_item_avaliacao_table.php');
         $itens = require database_path('migrations/2026_11_01_100001_create_itens_avaliacao_table.php');
         $decisoes = require database_path('migrations/2026_10_31_062120_create_decisoes_avaliacao_table.php');
         $avaliacoes = require database_path('migrations/2026_10_31_062119_create_avaliacoes_table.php');
+        $anexos->down();
         $eventos->down();
         $itens->down();
         $decisoes->down();
@@ -43,6 +45,7 @@ class AvaliacaoSchemaTest extends TestCase
         $decisoes->up();
         $itens->up();
         $eventos->up();
+        $anexos->up();
 
         $this->assertSame([$publicado->atendimento_id], Avaliacao::query()->pluck('atendimento_id')->all());
         $this->assertSame('aguardando_analise', Avaliacao::query()->sole()->estado);

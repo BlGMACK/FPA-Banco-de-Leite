@@ -15,7 +15,8 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado em 31/10/2026 (mig
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
 | Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Reserva da análise por 30 minutos e confirmação das decisões definitivas. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
 | Exames e documentos (etapa 1) | **Implementado e aplicado em 01/11/2026.** Catálogo provisório (exame de sangue e CNS), outro exame de nome livre, estados, validade, prorrogação, novo pedido, regra de avanço e histórico. Telas em `interno/exames`. | [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026) |
-| Anexos, decisão de habilitação e revogação | **Não implementado.** Etapas 2 e 3 acordadas em 01/11/2026 (anexos PDF/JPEG/PNG até 10 MB; tabela `doadoras`). Falta a lista real de exames e prazos. | [Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026) |
+| Anexos dos exames (etapa 2) | **Implementado em 01/11/2026 e aplicado em 02/11/2026.** PDF, JPEG e PNG até 10 MB, conferidos pelo conteúdo, em disco privado com nome gerado; download só com `consultar-exames`. Sem descarte automático. | [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026) |
+| Decisão de habilitação e revogação | **Não implementado.** Etapa 3 acordada em 01/11/2026 (tabela `doadoras`). Falta a lista real de exames e prazos. | [Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
@@ -31,10 +32,13 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 **Ativação dos exames e documentos (01/11/2026):** com autorização do usuário, após conferência do SQL com `--pretend` (somente criação de `tipos_exame`, `itens_avaliacao` e `eventos_item_avaliacao`), as três migrations foram aplicadas no lote 10 e foram executados `PermissaoSeeder` e `TipoExameSeeder`: **27 migrations aplicadas, nenhuma pendente**; catálogo com nove permissões e zero concessões; tipos `exame_sangue` e `cns`; duas contas preservadas; nenhuma avaliação, portanto nenhum item criado.
 
+**Ativação dos anexos (02/11/2026):** com autorização do usuário, após a suíte completa (398 testes: 394 aprovados, 4 ignorados) e conferência do SQL com `--pretend` (somente criação de `anexos_item_avaliacao`, chaves estrangeiras e índices), a migration `2026_11_01_200000_create_anexos_item_avaliacao_table` foi aplicada no lote 11: **28 migrations aplicadas, nenhuma pendente**; duas contas preservadas; zero anexos.
+
 ### Verificação automatizada
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 02/11/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **398 testes: 394 aprovados, 4 ignorados; 1.934 assertions**, antes da ativação dos anexos. |
 | 31/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **342 testes: 338 aprovados, 4 ignorados; 1.653 assertions** ([registro](#análise-do-relatório-avaliação--31102026)). |
 | 29/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **312 testes: 308 aprovados, 4 ignorados; 1.539 assertions.** Os quatro ignorados são os testes de concorrência de agenda e relatório, que exigem MariaDB; os de agenda passaram no MariaDB exclusivo na mesma data ([desativação](#desativação-de-funcionários--29102026)). |
 | 29/10/2026 | `npm.cmd run build` | Aprovado (registrado na [preparação da revisão manual](#preparação-da-revisão-manual--29102026)). |
@@ -51,7 +55,8 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 ### Pendências de implementação ou decisão
 
 - Correção de dados do pedido após o recebimento.
-- Anexos (etapa 2), decisão de habilitação com tabela `doadoras` e sua revogação (etapa 3), e indicação de plano de saúde ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). A lista real de exames e os prazos por tipo ainda faltam; o catálogo atual é provisório.
+- Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
+- Decisão de habilitação com tabela `doadoras` e sua revogação (etapa 3), e indicação de plano de saúde ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). A lista real de exames e os prazos por tipo ainda faltam; o catálogo atual é provisório.
 - Nova visita durante *Em aguardo*: a agenda bloqueia novo agendamento após visita realizada; definir se uma nova visita gera nova avaliação ou complementa a existente.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
 - `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
@@ -73,6 +78,20 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Anexos dos exames (etapa 2) — 01/11/2026
+
+Implementação autorizada pelo usuário, sem descarte automático porque a retenção ainda não foi definida. Migration `anexos_item_avaliacao` (rollback recusado havendo anexos), disco privado `anexos` em `config/filesystems.php`, model `AnexoItemAvaliacao`, `ItemAvaliacao::anexar`, duas rotas, lista de arquivos e formulário de envio em cada item. Contrato em [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `AnexoExameTest`, SQLite `:memory:` com `Storage::fake` | 11 testes: PDF e PNG gravados com nome gerado, reenvio idempotente e operação reutilizada com outro arquivo (409), executável e HTML renomeados recusados, limite de 10 MB, arquivo ausente, nome com caminho manipulado, estados e CNS recusados sem deixar arquivo, leitora e permissão revogada sem envio, imutabilidade, rollback recusado, tela, escape do nome, 422, download com permissão e cabeçalhos, 403, 404 e CSRF. |
+| `php artisan test`, SQLite `:memory:` | 398 testes: 394 aprovados, 4 ignorados; 1.934 assertions. `AvaliacaoSchemaTest` recria também a tabela de anexos. |
+| Anexos, exames, avaliação e schema, MariaDB `banco_de_leite_schema_test` | 75 testes, 315 assertions aprovados. |
+| Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 9 de 9 com upload real: formulário só no item solicitado e não no CNS; HTML disfarçado de PDF recusado (422); PDF e PNG listados com autor; “Abrir” inline com `nosniff` e `no-store`; “Baixar” com o nome original; leitora vê e abre sem formulário; sem login redireciona. Acesso direto a `/storage/...` com o caminho dos arquivos respondeu 403. Os dois arquivos gravados pelo teste em `storage/app/private/anexos` foram apagados ao final. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+**Aplicado em `banco_de_leite_dev` em 02/11/2026** (lote 11), conforme o [banco de desenvolvimento](#banco-de-desenvolvimento).
 
 ### Exames e documentos (etapa 1) — 01/11/2026
 
