@@ -719,7 +719,7 @@ Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliaç
 
 **Permissões.** `consultar-exames` lê itens e histórico, sem alterar. `registrar-exames` altera e inclui a consulta. `avaliar-doadoras` inclui a consulta de exames. Admin tem todas. A tela de exames mostra só a identificação da interessada e da visita; o link para a avaliação aparece apenas para quem consulta avaliações.
 
-**Catálogo provisório** (seeder idempotente, sem tela de edição): *Exame de sangue* (exame, validade de 30 dias) e *Cartão Nacional de Saúde (CNS)* (documento, exige número, sem validade). O CNS entra pela regra acordada em 29/10/2026 para documentos de identificação. *Outro exame* não está no catálogo: é incluído por avaliação com nome e detalhes livres, já como solicitado, e vale 30 dias. Tipos usados não são apagados; desativá-los só afeta avaliações liberadas depois. O seeder também acrescenta, em *não solicitado*, tipos novos às avaliações já liberadas.
+**Catálogo** (seeder idempotente, sem tela de edição; **definido pelo usuário em 02/11/2026**: o único exame do catálogo é o de sangue, com 30 dias, mantidos o CNS e *Outro exame*): *Exame de sangue* (exame, validade de 30 dias) e *Cartão Nacional de Saúde (CNS)* (documento, exige número, sem validade). O CNS entra pela regra acordada em 29/10/2026 para documentos de identificação. *Outro exame* não está no catálogo: é incluído por avaliação com nome e detalhes livres, já como solicitado, e vale 30 dias. Tipos usados não são apagados; desativá-los só afeta avaliações liberadas depois. O seeder também acrescenta, em *não solicitado*, tipos novos às avaliações já liberadas.
 
 **Criação.** Na mesma transação de *Liberar para exames*, a avaliação recebe um item por tipo ativo, em *Não solicitado*. Um tipo do catálogo aparece uma vez por avaliação (índice único); *Outro exame* pode repetir.
 
@@ -800,4 +800,4 @@ Todos exigem a indicação de plano de saúde (possui ou não possui), guardada 
 
 **Garantias.** Mesmas convenções dos recortes anteriores: Gate antes e dentro da transação; a decisão trava a avaliação, os itens e a interessada e confere versão, estado e exigências; as ações travam a doadora e conferem a versão. Reenvio idêntico devolve o mesmo registro; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 com a entrada preservada; conflitos voltam 409 com link para recarregar e o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. Decisões e eventos recusam alteração e exclusão; as migrations recusam rollback com decisões de habilitação, doadoras ou eventos.
 
-**Fora desta etapa:** lista real de exames e prazos por tipo; nova visita durante *Em aguardo*; uso da habilitação por coleta e estoque; retenção dos dados.
+**Fora desta etapa:** nova visita durante *Em aguardo*; uso da habilitação por coleta e estoque; retenção dos dados.

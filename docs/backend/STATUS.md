@@ -14,9 +14,9 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado em 31/10/2026 (mig
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
 | Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Reserva da análise por 30 minutos e confirmação das decisões definitivas. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
-| Exames e documentos (etapa 1) | **Implementado e aplicado em 01/11/2026.** Catálogo provisório (exame de sangue e CNS), outro exame de nome livre, estados, validade, prorrogação, novo pedido, regra de avanço e histórico. Telas em `interno/exames`. | [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026) |
+| Exames e documentos (etapa 1) | **Implementado e aplicado em 01/11/2026.** Catálogo definido em 02/11/2026 (exame de sangue, 30 dias, e o documento CNS), outro exame de nome livre, estados, validade, prorrogação, novo pedido, regra de avanço e histórico. Telas em `interno/exames`. | [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026) |
 | Anexos dos exames (etapa 2) | **Implementado em 01/11/2026 e aplicado em 02/11/2026.** PDF, JPEG e PNG até 10 MB, conferidos pelo conteúdo, em disco privado com nome gerado; download só com `consultar-exames`. Sem descarte automático. | [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026) |
-| Decisão de habilitação e doadoras (etapa 3) | **Implementado e aplicado em 02/11/2026.** Decisão final (*Habilitada*, *Habilitada temporariamente* com data-limite e condição, *Não habilitada* com motivo), plano de saúde obrigatório, tabela `doadoras` ligada à interessada, suspensão, retomada, renovação, conversão em definitiva, encerramento e revogação, com histórico. Telas em `interno/doadoras`. | [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026) |
+| Decisão de habilitação e doadoras (etapa 3) | **Implementado e aplicado em 02/11/2026.** Decisão final (*Habilitada*, *Habilitada temporariamente* com data-limite e condição, *Não habilitada* com motivo), plano de saúde obrigatório, tabela `doadoras` ligada à interessada, suspensão, retomada, renovação, conversão em definitiva, encerramento e revogação, com histórico. Telas em `interno/doadoras`, testadas em navegador automatizado ([registro](#teste-das-telas-de-habilitação-em-navegador--02112026)). | [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
@@ -59,7 +59,6 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 - Correção de dados do pedido após o recebimento.
 - Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
-- A lista real de exames e os prazos por tipo ainda faltam; o catálogo atual é provisório ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)).
 - Nova visita durante *Em aguardo*: a agenda bloqueia novo agendamento após visita realizada; definir se uma nova visita gera nova avaliação ou complementa a existente.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
 - `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
@@ -82,6 +81,23 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
 
+### Teste das telas de habilitação em navegador — 02/11/2026
+
+A pedido do usuário, mesmo método das etapas anteriores: Playwright (`playwright-core` 1.56.1) em pasta temporária fora do projeto, Microsoft Edge headless, servidor `php -S` com `DB_DATABASE=banco_de_leite_schema_test`, sem tocar em `banco_de_leite_dev` (conferido depois: duas contas, nenhuma avaliação) nem no `.env`. O banco de teste foi recriado com `migrate:fresh`, `PermissaoSeeder` e `TipoExameSeeder`; dados fictícios: admin, uma funcionária com `avaliar-doadoras`, outra só com `consultar-avaliacoes`, três avaliações com exame de sangue aceito, uma com item só solicitado e uma doadora temporária com prazo vencido.
+
+| Cenário | Resultado |
+| --- | --- |
+| Exigências pendentes | Aviso de quando a decisão fica disponível, sem formulário. |
+| *Habilitada temporariamente* | Condição e data-limite só aparecem ao escolher a opção; o navegador impede o envio sem elas e sem a confirmação. Decisão registrada com plano de saúde, condição e data no histórico; link “Habilitação: Ativa”; exames passam a só consulta. |
+| *Não habilitada* sem motivo, depois com `<script>` no motivo | 422 com mensagem e opções mantidas; em seguida registrada, sem doadora, com o texto exibido escapado. |
+| *Habilitada para doar* e ações | Doadora definitiva sem opções de prazo; suspensão e retomada no histórico; o navegador impede encerrar sem confirmação; encerrada fica sem ações. |
+| Prazo vencido e conflito entre abas | Sinal “Prazo vencido” na lista e no detalhe; aba desatualizada recebe 409 com link para recarregar e o motivo não registrado; renovação remove o sinal; conversão em definitiva remove as opções de prazo. |
+| Lista e filtro | Menu “Doadoras” ativo; filtro por situação correto; valor inválido sem erro de servidor. |
+| Leitora e sem login | Leitora vê a doadora sem ações e a avaliação sem formulário; sem login redireciona. |
+| Largura | Sem rolagem horizontal a 390 px na lista, no detalhe e no formulário de decisão. |
+
+Resultado: 33 de 33 cenários; console só com o 422 e o 409 provocados. **Defeito encontrado e corrigido:** com o item “Doadoras”, o menu do admin passava da largura da tela a 1200 e 1280 px, cortando “Perfil” e “Sair” (as verificações por linha não detectaram; o screenshot mostrou). O menu passou a recolher abaixo de 1400 px (`navbar-expand-xxl`); medido de novo: cabe de 1200 a 1920 px, recolhido abaixo de 1400 px, e o botão abre o menu com “Doadoras” a 1280 px, sem rolagem. Suíte repetida depois da correção: 433 testes, 429 aprovados, 4 ignorados. Avaliação de usabilidade pela equipe continua pendente.
+
 ### Decisão de habilitação e doadoras (etapa 3) — 02/11/2026
 
 Implementação autorizada pelo usuário, com as decisões de 02/11/2026: `doadoras` referencia a interessada sem copiar dados; temporária com data-limite e condição, só sinalizada ao vencer; `avaliar-doadoras` para decidir e gerir; plano de saúde obrigatório na decisão. Três migrations: `add_habilitacao_to_avaliacoes_table` (novos estados e resultados, etapa `habilitacao`, plano de saúde, condição e data-limite), `create_doadoras_table` e `create_eventos_doadora_table`, todas com rollback recusado havendo registros. Models `Doadora` (com factory) e `EventoDoadora`, `Avaliacao::habilitar`, `DoadoraController`, views `doadoras/{index,show}`, formulário na avaliação, menu “Doadoras” e aviso na tela de exames. Contrato em [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026).
@@ -94,7 +110,7 @@ Implementação autorizada pelo usuário, com as decisões de 02/11/2026: `doado
 | Habilitação, avaliação, exames e schema, MariaDB `banco_de_leite_schema_test` | 99 testes, 411 assertions aprovados. |
 | `vendor/bin/pint --dirty --format agent` | Aprovado. |
 
-Não houve teste em navegador nesta etapa. **Aplicado em `banco_de_leite_dev` em 02/11/2026** (lote 12), conforme o [banco de desenvolvimento](#banco-de-desenvolvimento).
+Teste em navegador registrado na [seção seguinte](#teste-das-telas-de-habilitação-em-navegador--02112026). **Aplicado em `banco_de_leite_dev` em 02/11/2026** (lote 12), conforme o [banco de desenvolvimento](#banco-de-desenvolvimento).
 
 ### Anexos dos exames (etapa 2) — 01/11/2026
 

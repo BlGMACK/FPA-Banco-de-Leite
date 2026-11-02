@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-xl bg-white border-bottom" aria-label="Navegação principal">
+<nav class="navbar navbar-expand-xxl bg-white border-bottom" aria-label="Navegação principal">
     <div class="container">
         <a class="navbar-brand fw-semibold" href="{{ route('dashboard') }}">Banco de Leite</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navegacao" aria-controls="navegacao" aria-expanded="false" aria-label="Abrir menu"><span class="navbar-toggler-icon"></span></button>
@@ -28,7 +28,7 @@
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.permissoes.*') ? 'active' : '' }}" href="{{ route('interno.permissoes.index') }}">Permissões</a></li>
                 @endcan
             </ul>
-            <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 ms-xl-3 text-nowrap">
+            <div class="d-flex flex-wrap flex-xxl-nowrap align-items-center gap-2 py-2 ms-xxl-3 text-nowrap">
                 <span class="small text-body-secondary">{{ Auth::user()->name }}</span>
                 <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary btn-sm">Perfil</a>
                 <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-outline-danger btn-sm" type="submit">Sair</button></form>

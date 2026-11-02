@@ -219,6 +219,7 @@ Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequênc
 - *Habilitada temporariamente* exige **data-limite e condição**; ao vencer, o sistema só sinaliza, e a equipe renova, converte em definitiva ou encerra.
 - A decisão e as ações posteriores (suspender, retomar, encerrar, revogar) usam `avaliar-doadoras`.
 - A indicação de **plano de saúde** entra agora e é obrigatória na decisão de habilitação.
+- **Catálogo definido:** o único exame do catálogo é o **exame de sangue**, com validade de **30 dias** contados da coleta. Continuam o documento CNS e a opção *Outro exame*. O catálogo deixa de ser provisório; não há mudança no sistema.
 
 **Pendência criada por essas decisões:** “reagendamento” durante o aguardo exige nova visita no mesmo acompanhamento, que a agenda hoje bloqueia após a visita realizada. Definir antes de implementar: nova visita gera novo relatório e nova avaliação, ou complementa a avaliação existente?
 
@@ -251,7 +252,7 @@ Origem: respostas do usuário nesta data, que detalham D6 sem alterar a sequênc
 - **Depois de habilitada:** a habilitação pode ser **suspensa** (temporária, com retorno possível) ou **encerrada** (definitiva), ambas com motivo e histórico.
 - **Nova tentativa:** quem foi considerada não apta ou não habilitada pode enviar **novo pedido**. A equipe vê o histórico anterior no alerta de correspondência, sem aprovação nem recusa automáticas.
 
-**Pendências.** Lista real de exames e documentos (confirmado até agora: exame de sangue) e prazos por tipo, a obter com o Banco de Leite; o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9; recomendação técnica no [desenho proposto](MODELAGEM.md#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026)); formatos e tamanho máximo de arquivo; retenção dos anexos.
+**Pendências.** ~~Lista real de exames e prazos~~ (definida em 02/11/2026: só o exame de sangue, 30 dias); o que encerra o estado *Em aguardo* (prazo, nova visita ou nova análise); o que define o fim de uma habilitação temporária; criação ou atualização do registro de doadora aprovada (D9; recomendação técnica no [desenho proposto](MODELAGEM.md#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026)); formatos e tamanho máximo de arquivo; retenção dos anexos.
 
 ## Atualização de acesso — 27/10/2026
 

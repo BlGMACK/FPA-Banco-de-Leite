@@ -59,7 +59,8 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 - Integridade: decisão sob trava da avaliação, itens e interessada, com nova conferência das exigências; uma habilitação vigente por interessada; decisões e eventos imutáveis com autor, instante, operação e hash; rollback recusado com registros.
 - CSRF e escape: POSTs recusados sem token (419); nomes escapados na lista e no detalhe.
 - Validação: `HabilitacaoOperationsTest`, `HabilitacaoWebTest` e `AvaliacaoSchemaTest` em SQLite e MariaDB exclusivo. Detalhes em [Status](backend/STATUS.md#decisão-de-habilitação-e-doadoras-etapa-3--02112026).
-- Limites: sem teste em navegador nesta etapa; acesso à justificativa de *Não habilitada* segue a leitura da avaliação (`consultar-avaliacoes`), sem restrição adicional. Revisão por outra pessoa pendente.
+- Navegador automatizado: 33 de 33 cenários, incluindo leitora sem ações, sem login, escape e conflito ([registro](backend/STATUS.md#teste-das-telas-de-habilitação-em-navegador--02112026)).
+- Limites: acesso à justificativa de *Não habilitada* segue a leitura da avaliação (`consultar-avaliacoes`), sem restrição adicional. Revisão por outra pessoa pendente.
 
 ### E-22 — anexos de exames, 01/11/2026
 
