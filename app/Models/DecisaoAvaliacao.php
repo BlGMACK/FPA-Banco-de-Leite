@@ -30,7 +30,7 @@ class DecisaoAvaliacao extends Model
 
     protected function casts(): array
     {
-        return ['versao_analisada' => 'integer', 'decidido_em' => 'immutable_datetime'];
+        return ['versao_analisada' => 'integer', 'decidido_em' => 'immutable_datetime', 'possui_plano_saude' => 'boolean', 'valida_ate' => 'immutable_date'];
     }
 
     public function avaliacao(): BelongsTo

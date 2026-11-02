@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\AvaliacaoController;
+use App\Http\Controllers\DoadoraController;
 use App\Http\Controllers\ExameController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PermissaoController;
@@ -98,6 +99,13 @@ Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/avaliac
     Route::post('/{avaliacao}/analise', [AvaliacaoController::class, 'iniciarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.iniciar');
     Route::post('/{avaliacao}/analise/encerrar', [AvaliacaoController::class, 'encerrarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.encerrar');
     Route::post('/{avaliacao}/decisoes', [AvaliacaoController::class, 'store'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('decisoes.store');
+    Route::post('/{avaliacao}/habilitacao', [AvaliacaoController::class, 'habilitar'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('habilitacao.store');
+});
+
+Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/doadoras')->name('interno.doadoras.')->group(function (): void {
+    Route::get('/', [DoadoraController::class, 'index'])->name('index');
+    Route::get('/{doadora}', [DoadoraController::class, 'show'])->whereNumber('doadora')->name('show');
+    Route::post('/{doadora}/eventos', [DoadoraController::class, 'registrar'])->middleware('can:avaliar-doadoras')->whereNumber('doadora')->name('eventos.store');
 });
 
 Route::middleware(['auth', 'can:consultar-exames'])->prefix('interno/exames')->name('interno.exames.')->group(function (): void {

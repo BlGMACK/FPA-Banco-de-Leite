@@ -741,7 +741,7 @@ Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliaç
 
 **Validade.** Vencido é o item *Recebido* ou *Aceito* com validade anterior a hoje (horário de São Paulo). O vencimento só sinaliza, sem mudar o estado.
 
-**Regra de avanço** (`Avaliacao::exigenciasCumpridas`): ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido; itens não solicitados não bloqueiam. A tela só informa o resultado, porque a decisão de habilitação é da etapa 3.
+**Regra de avanço** (`Avaliacao::exigenciasCumpridas`): ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido; itens não solicitados não bloqueiam. A tela de exames informa o resultado; a decisão de habilitação é registrada na avaliação ([etapa 3](#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026)).
 
 **Garantias.** Operações só com a avaliação em *Liberada para exames* (409 em outro estado). Cada operação trava a avaliação e depois o item, confere a versão do item e grava um evento imutável com autor, instante, estados, motivo, datas, operação e hash. Reenvio idêntico devolve o mesmo evento; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 na seção do item, com a entrada preservada. Conflitos voltam 409 com link para recarregar e mostram o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. As migrations recusam rollback com itens em andamento ou eventos registrados.
 
@@ -766,3 +766,38 @@ Segunda etapa acordada em 01/11/2026: arquivos de exames (fotos e PDFs recebidos
 | GET `/interno/exames/anexos/{anexo}` | `anexos.arquivo` | `consultar-exames`. Entrega o arquivo com o tipo gravado, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` e `inline` (“Abrir”) ou `attachment` com `?baixar=1` (“Baixar”). 404 se o registro ou o arquivo não existir. |
 
 **Pendente:** retenção e descarte dos anexos (sem descarte automático por enquanto), backup do diretório de anexos junto com o banco e varredura antivírus, se a equipe exigir.
+
+
+## Decisão de habilitação e doadoras (etapa 3) — implementada em 02/11/2026
+
+Terceira etapa acordada em 01/11/2026, com as decisões do usuário de 02/11/2026: a tabela `doadoras` **referencia** a interessada, sem copiar dados pessoais; a habilitação temporária tem **data-limite e condição** obrigatórias e, ao vencer, só é sinalizada; a decisão e as ações posteriores usam `avaliar-doadoras`; a indicação de **plano de saúde** é obrigatória na decisão. Fontes: [Avaliacao](../../app/Models/Avaliacao.php) (`habilitar`), [Doadora](../../app/Models/Doadora.php), [EventoDoadora](../../app/Models/EventoDoadora.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php), [DoadoraController](../../app/Http/Controllers/DoadoraController.php), views `avaliacoes/show` e `doadoras` e [migrations de 02/11/2026](../../database/migrations).
+
+**Permissões.** `consultar-avaliacoes` lê a lista e o detalhe das doadoras. `avaliar-doadoras` decide a habilitação e registra as ações posteriores. Admin tem acesso automático. Não há permissão nova.
+
+**Decisão de habilitação.** Formulário na avaliação, visível só para `avaliar-doadoras` com a avaliação em *Liberada para exames* e as exigências cumpridas (`Avaliacao::exigenciasCumpridas`). Resultados:
+- *Habilitada para doar*: cria a doadora definitiva e ativa.
+- *Habilitada temporariamente*: exige condição (até 2.000) e data-limite posterior a hoje; cria a doadora temporária e ativa.
+- *Não habilitada*: exige motivo; não cria doadora.
+
+Todos exigem a indicação de plano de saúde (possui ou não possui), guardada na avaliação e na decisão, e a confirmação de que a decisão é definitiva. A decisão grava `decisoes_avaliacao` com etapa `habilitacao`, muda a avaliação para o resultado e encerra a etapa de exames: itens e anexos ficam só para consulta (409 nas escritas). A avaliação já não volta à análise do relatório, que continua travado.
+
+**Doadora.** Uma por avaliação (índice único), ligada à interessada, à avaliação e à decisão de origem. Uma interessada pode ter várias ao longo do tempo, mas só uma *Ativa* ou *Suspensa*: habilitar outra nesse caso retorna 409. Nome e contatos vêm da interessada.
+
+| Método / caminho | Nome | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/avaliacoes/{avaliacao}/habilitacao` | `interno.avaliacoes.habilitacao.store` | `avaliar-doadoras`. `operacao_id`, `versao`, `resultado`, `possui_plano_saude` (`0`/`1`), `motivo`, `condicao`, `valida_ate` (AAAA-MM-DD) e `confirmacao_definitiva`. |
+| GET `/interno/doadoras` | `interno.doadoras.index` | `consultar-avaliacoes`. Lista com tipo, data-limite, situação e sinal de prazo vencido; filtro por situação; 20 por página. |
+| GET `/interno/doadoras/{doadora}` | `interno.doadoras.show` | `consultar-avaliacoes`. Situação, tipo, condição, decisão de origem, link para a avaliação, formulários (só `avaliar-doadoras` com habilitação vigente) e histórico em páginas de 20. |
+| POST `/interno/doadoras/{doadora}/eventos` | `interno.doadoras.eventos.store` | `avaliar-doadoras`. `operacao_id`, `versao`, `acao`, `motivo` (obrigatório) e, conforme a ação, `condicao`, `valida_ate` ou `confirmacao_definitiva`. |
+
+**Ações sobre a habilitação** (todas com motivo e evento imutável):
+- `suspensao`: *Ativa* → *Suspensa*. `retomada`: *Suspensa* → *Ativa*.
+- `renovacao` (só temporária): nova data-limite posterior a hoje e condição.
+- `conversao_definitiva` (só temporária): passa a definitiva, sem data nem condição.
+- `encerramento` → *Encerrada* e `revogacao` → *Revogada* (revisão dos dados ou outra razão), ambas com confirmação. Depois delas, nenhuma ação é aceita; uma nova habilitação depende de nova avaliação.
+
+**Prazo vencido.** Temporária *Ativa* ou *Suspensa* com data-limite anterior a hoje (São Paulo) recebe o sinal “Prazo vencido” na lista e no detalhe. Não há encerramento automático.
+
+**Garantias.** Mesmas convenções dos recortes anteriores: Gate antes e dentro da transação; a decisão trava a avaliação, os itens e a interessada e confere versão, estado e exigências; as ações travam a doadora e conferem a versão. Reenvio idêntico devolve o mesmo registro; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 com a entrada preservada; conflitos voltam 409 com link para recarregar e o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. Decisões e eventos recusam alteração e exclusão; as migrations recusam rollback com decisões de habilitação, doadoras ou eventos.
+
+**Fora desta etapa:** lista real de exames e prazos por tipo; nova visita durante *Em aguardo*; uso da habilitação por coleta e estoque; retenção dos dados.

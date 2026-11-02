@@ -16,6 +16,7 @@
                 @endcan
                 @can('consultar-avaliacoes')
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.avaliacoes.*') ? 'active' : '' }}" href="{{ route('interno.avaliacoes.index') }}">Avaliações</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.doadoras.*') ? 'active' : '' }}" href="{{ route('interno.doadoras.index') }}">Doadoras</a></li>
                 @endcan
                 @can('consultar-exames')
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.exames.*') ? 'active' : '' }}" href="{{ route('interno.exames.index') }}">Exames</a></li>

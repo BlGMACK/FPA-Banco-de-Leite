@@ -73,6 +73,25 @@ class AvaliacaoController extends Controller
         return redirect()->route('interno.avaliacoes.show', $avaliacao)->with('status', 'Decisão registrada. O histórico foi preservado.');
     }
 
+    public function habilitar(Request $request, int $avaliacao): RedirectResponse|Response
+    {
+        Gate::authorize(Permissao::AVALIAR_DOADORAS);
+        $dados = $request->only(['operacao_id', 'versao', 'resultado', 'possui_plano_saude', 'motivo', 'condicao', 'valida_ate', 'confirmacao_definitiva']);
+        try {
+            Avaliacao::query()->findOrFail($avaliacao)->habilitar($request->user(), $dados);
+        } catch (ValidationException $exception) {
+            return $this->detalhe($avaliacao, $dados, $exception->errors(), 422);
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() !== 409) {
+                throw $exception;
+            }
+
+            return $this->detalhe($avaliacao, $dados, ['conflito' => [$exception->getMessage()]], 409);
+        }
+
+        return redirect()->route('interno.avaliacoes.show', $avaliacao)->with('status', 'Decisão de habilitação registrada. O histórico foi preservado.');
+    }
+
     /** @param array<string, mixed> $entrada
      * @param  array<string, list<string>>  $falhas
      */
@@ -80,7 +99,7 @@ class AvaliacaoController extends Controller
     {
         Gate::authorize(Permissao::CONSULTAR_AVALIACOES);
         $avaliacao = Avaliacao::query()->with(['atendimento.agendamento.solicitacao.interessada', 'atendimento.responsavel',
-            'atendimento.relatorio:id,atendimento_id,estado,numero_versao_vigente', 'analisadaPor:id,name'])->findOrFail($id);
+            'atendimento.relatorio:id,atendimento_id,estado,numero_versao_vigente', 'analisadaPor:id,name', 'itens', 'doadora'])->findOrFail($id);
         $relatorio = $avaliacao->atendimento->relatorio;
         $usuario = request()->user();
         $aberta = Gate::allows(Permissao::AVALIAR_DOADORAS) && ! $avaliacao->concluida() && $relatorio->estado === 'finalizado';
@@ -91,6 +110,9 @@ class AvaliacaoController extends Controller
             'leituraRelatorio' => Gate::allows(Permissao::CONSULTAR_RELATORIOS_VISITA),
             'podeDecidir' => $podeDecidir, 'podeIniciar' => $aberta && ! $podeDecidir && ! $avaliacao->reservadaPorOutro($usuario),
             'reservadaPorOutro' => ! $avaliacao->concluida() && $avaliacao->reservadaPorOutro($usuario),
+            'etapaExames' => $avaliacao->estado === 'liberada_exames', 'exigenciasCumpridas' => Avaliacao::exigenciasCumpridas($avaliacao->itens),
+            'podeHabilitar' => $avaliacao->estado === 'liberada_exames' && Gate::allows(Permissao::AVALIAR_DOADORAS)
+                && Avaliacao::exigenciasCumpridas($avaliacao->itens),
             'entrada' => array_filter($entrada, fn (mixed $valor): bool => is_scalar($valor) || $valor === null), 'falhas' => $falhas,
             'decisoes' => $avaliacao->decisoes()->with(['autor:id,name', 'versaoRelatorio:id,numero'])
                 ->orderByDesc('decidido_em')->orderByDesc('id')->paginate(15)], $status);
