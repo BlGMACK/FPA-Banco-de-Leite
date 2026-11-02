@@ -715,7 +715,7 @@ Primeira parte da [avaliação após a visita](ROADMAP.md#avaliação-após-visi
 
 ## Exames e documentos (etapa 1) — implementada em 01/11/2026
 
-Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): itens de exame e documento com catálogo, estados, validade e prorrogação. **Fora desta etapa:** anexos (etapa 2), decisão de habilitação e tabela `doadoras` (etapa 3) e indicação de plano de saúde. Fontes: [ItemAvaliacao](../../app/Models/ItemAvaliacao.php), [EventoItemAvaliacao](../../app/Models/EventoItemAvaliacao.php), [TipoExame](../../app/Models/TipoExame.php), [TipoExameSeeder](../../database/seeders/TipoExameSeeder.php), [ExameController](../../app/Http/Controllers/ExameController.php) e [views](../../resources/views/exames).
+Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): itens de exame e documento com catálogo, estados, validade e prorrogação. **Fora desta etapa:** anexos (etapa 2, entregue em 01/11/2026, [seção própria](#anexos-dos-exames-etapa-2--implementada-em-01112026)), decisão de habilitação e tabela `doadoras` (etapa 3) e indicação de plano de saúde. Fontes: [ItemAvaliacao](../../app/Models/ItemAvaliacao.php), [EventoItemAvaliacao](../../app/Models/EventoItemAvaliacao.php), [TipoExame](../../app/Models/TipoExame.php), [TipoExameSeeder](../../database/seeders/TipoExameSeeder.php), [ExameController](../../app/Http/Controllers/ExameController.php) e [views](../../resources/views/exames).
 
 **Permissões.** `consultar-exames` lê itens e histórico, sem alterar. `registrar-exames` altera e inclui a consulta. `avaliar-doadoras` inclui a consulta de exames. Admin tem todas. A tela de exames mostra só a identificação da interessada e da visita; o link para a avaliação aparece apenas para quem consulta avaliações.
 
@@ -744,3 +744,25 @@ Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliaç
 **Regra de avanço** (`Avaliacao::exigenciasCumpridas`): ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido; itens não solicitados não bloqueiam. A tela só informa o resultado, porque a decisão de habilitação é da etapa 3.
 
 **Garantias.** Operações só com a avaliação em *Liberada para exames* (409 em outro estado). Cada operação trava a avaliação e depois o item, confere a versão do item e grava um evento imutável com autor, instante, estados, motivo, datas, operação e hash. Reenvio idêntico devolve o mesmo evento; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 na seção do item, com a entrada preservada. Conflitos voltam 409 com link para recarregar e mostram o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. As migrations recusam rollback com itens em andamento ou eventos registrados.
+
+## Anexos dos exames (etapa 2) — implementada em 01/11/2026
+
+Segunda etapa acordada em 01/11/2026: arquivos de exames (fotos e PDFs recebidos pelo WhatsApp) guardados de forma privada. Fontes: [AnexoItemAvaliacao](../../app/Models/AnexoItemAvaliacao.php), `ItemAvaliacao::anexar`, [ExameController](../../app/Http/Controllers/ExameController.php) e o disco `anexos` em [filesystems](../../config/filesystems.php).
+
+**Formatos e limites.** PDF, JPEG e PNG até 10 MB. O tipo é conferido pelo **conteúdo** do arquivo (fileinfo), não pela extensão nem pelo tipo informado pelo navegador; um executável ou HTML renomeado para `.pdf`/`.png` é recusado.
+
+**Armazenamento.** Disco `anexos` em `storage/app/private/anexos`, sem rota de serviço (`serve => false`) e fora do Git. Caminho gerado `{avaliacao}/{uuid}.{extensão do tipo detectado}`; o nome original fica só no registro, sem barras nem caracteres de controle, e nunca compõe o caminho. Cada registro guarda tamanho, SHA-256, autor e instante. Arquivos e registros não são sobrescritos nem apagados pelo sistema: o model recusa alteração e exclusão, e a migration recusa rollback havendo anexos.
+
+**Regras.**
+- Envio com `registrar-exames`, avaliação em *Liberada para exames* e item *Solicitado*, *Recebido* ou *Precisa complementar*. Itens *Não solicitado* ou *Aceito* não recebem arquivos (409).
+- O CNS não aceita anexos (409): é registrado só pelo número, conforme a minimização acordada em 29/10/2026.
+- Um item pode ter vários arquivos (por exemplo, fotos de páginas diferentes), todos listados do mais recente ao mais antigo. Um arquivo novo não esconde nem substitui os anteriores.
+- O envio não muda o estado nem a versão do item e não gera evento de exame; o próprio registro do anexo é a auditoria.
+- Reenvio com a mesma operação e o mesmo arquivo devolve o mesmo anexo, sem gravar de novo; a mesma operação com outro arquivo retorna 409. Se a transação falhar depois da gravação, o arquivo órfão é removido.
+
+| Método / caminho | Nome `interno.exames.*` | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/exames/itens/{item}/anexos` | `itens.anexar` | `registrar-exames`. `multipart/form-data` com `operacao_id` e `arquivo`. 422 na seção do item; 409 em conflito. |
+| GET `/interno/exames/anexos/{anexo}` | `anexos.arquivo` | `consultar-exames`. Entrega o arquivo com o tipo gravado, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` e `inline` (“Abrir”) ou `attachment` com `?baixar=1` (“Baixar”). 404 se o registro ou o arquivo não existir. |
+
+**Pendente:** retenção e descarte dos anexos (sem descarte automático por enquanto), backup do diretório de anexos junto com o banco e varredura antivírus, se a equipe exigir.

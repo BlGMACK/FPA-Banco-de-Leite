@@ -37,6 +37,14 @@
                     @if ($item->valido_ate)Válido até {{ $item->valido_ate->format('d/m/Y') }}.@endif
                     @if ($item->prorrogacoes)Prorrogações: {{ $item->prorrogacoes }} de {{ App\Models\ItemAvaliacao::MAX_PRORROGACOES }}.@endif
                 </p>
+                @if ($item->anexos->isNotEmpty())
+                    <h3 class="h6">Arquivos</h3>
+                    <ul class="list-unstyled mb-3">@foreach ($item->anexos as $anexo)
+                        <li class="mb-1 text-break">{{ $anexo->nome_original }} · {{ $anexo->tamanhoLegivel() }} · {{ $anexo->enviadoPor->name }} · {{ $anexo->enviado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }}
+                            · <a href="{{ route('interno.exames.anexos.arquivo', $anexo->id) }}" target="_blank" rel="noopener">Abrir</a>
+                            · <a href="{{ route('interno.exames.anexos.arquivo', ['anexo' => $anexo->id, 'baixar' => 1]) }}">Baixar</a></li>
+                    @endforeach</ul>
+                @endif
                 @if ($formulario === $form && $falhas)<div class="alert alert-danger" role="alert">@foreach ($falhas as $mensagens)@foreach ($mensagens as $mensagem)<p class="mb-0">{{ $mensagem }}</p>@endforeach @endforeach
                     @if ($conflito)<p class="mb-0"><a href="{{ route('interno.exames.show', $avaliacao) }}#{{ $form }}">Recarregar a situação atual</a></p>@endif</div>
                     @if ($conflito && ($entrada['motivo'] ?? '') !== '')
@@ -97,6 +105,14 @@
                             <form method="POST" action="{{ route('interno.exames.itens.registrar', $item->id) }}">@csrf
                                 <input type="hidden" name="operacao_id" value="{{ $operacao($form, 'novo_pedido') }}"><input type="hidden" name="versao" value="{{ $item->versao }}"><input type="hidden" name="acao" value="novo_pedido">
                                 <button class="btn btn-outline-primary">Pedir novo exame</button>
+                            </form>
+                        @endif
+                        @if ($item->aceitaAnexo())
+                            <form method="POST" action="{{ route('interno.exames.itens.anexar', $item->id) }}" enctype="multipart/form-data">@csrf
+                                <input type="hidden" name="operacao_id" value="{{ $operacao($form, 'anexo') }}">
+                                <label for="arquivo-{{ $item->id }}" class="form-label">Anexar arquivo (PDF, JPEG ou PNG, até 10 MB)</label>
+                                <input class="form-control mb-2" type="file" id="arquivo-{{ $item->id }}" name="arquivo" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                <button class="btn btn-outline-primary">Anexar</button>
                             </form>
                         @endif
                     </div>

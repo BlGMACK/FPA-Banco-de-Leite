@@ -57,6 +57,8 @@ Não importe o schema legado por cima das migrations. Não use `migrate:fresh` e
 
 Depois das migrations, provisione o catálogo de permissões com `php artisan db:seed --class=PermissaoSeeder --no-interaction`. O seeder é idempotente e não concede permissões a ninguém: o admin acessa todos os módulos automaticamente, e funcionários dependem de concessão explícita. Conceda-as entrando como admin, no menu “Permissões”. Provisione também o catálogo de exames com `php artisan db:seed --class=TipoExameSeeder --no-interaction`, igualmente idempotente; ele acrescenta tipos novos, em “não solicitado”, às avaliações já liberadas para exames.
 
+Os anexos de exames ficam em `storage/app/private/anexos` (disco `anexos`, fora do Git e sem rota pública). O PHP precisa da extensão `fileinfo` e de `upload_max_filesize`/`post_max_size` de pelo menos 10 MB (o XAMPP local usa 40 MB). Qualquer backup do banco deve incluir esse diretório.
+
 O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `database/database.sqlite` remanescente da preparação anterior não representa a conexão MySQL. Os testes usam outro banco: SQLite em memória.
 
 ### Dados fictícios opcionais

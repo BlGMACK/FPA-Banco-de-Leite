@@ -105,4 +105,6 @@ Route::middleware(['auth', 'can:consultar-exames'])->prefix('interno/exames')->n
     Route::get('/{avaliacao}', [ExameController::class, 'show'])->whereNumber('avaliacao')->name('show');
     Route::post('/{avaliacao}/itens', [ExameController::class, 'incluir'])->middleware('can:registrar-exames')->whereNumber('avaliacao')->name('itens.incluir');
     Route::post('/itens/{item}/eventos', [ExameController::class, 'registrar'])->middleware('can:registrar-exames')->whereNumber('item')->name('itens.registrar');
+    Route::post('/itens/{item}/anexos', [ExameController::class, 'anexar'])->middleware('can:registrar-exames')->whereNumber('item')->name('itens.anexar');
+    Route::get('/anexos/{anexo}', [ExameController::class, 'arquivo'])->whereNumber('anexo')->name('anexos.arquivo');
 });

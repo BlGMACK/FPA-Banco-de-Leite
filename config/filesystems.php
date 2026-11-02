@@ -38,6 +38,15 @@ return [
             'report' => false,
         ],
 
+        // Anexos de exames: privado, sem rota de serviço; o download passa pelo ExameController com Gate.
+        'anexos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/anexos'),
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
