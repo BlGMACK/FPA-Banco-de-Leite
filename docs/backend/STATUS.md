@@ -2,7 +2,7 @@
 
 ## Estado atual — 29/10/2026
 
-Fonte do estado vigente. Conferido em 29/10/2026 e atualizado em 31/10/2026 (migration de desativação aplicada e mensagens em pt-BR) contra rotas, controllers, models, migrations e banco de desenvolvimento (somente status e contagens). As seções de [histórico](#histórico-de-verificações) registram cada etapa na data em que ocorreu e podem citar pendências já superadas; em caso de divergência, vale esta seção e o código.
+Fonte do estado vigente. Conferido em 29/10/2026 e atualizado até 05/11/2026 (avaliação, exames, anexos e habilitação; [conferência](#conferência-do-repositório--05112026)) contra rotas, controllers, models, migrations e banco de desenvolvimento (somente status e contagens). As seções de [histórico](#histórico-de-verificações) registram cada etapa na data em que ocorreu e podem citar pendências já superadas; em caso de divergência, vale esta seção e o código.
 
 | Área | Situação | Fonte |
 | --- | --- | --- |
@@ -17,6 +17,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado em 31/10/2026 (mig
 | Exames e documentos (etapa 1) | **Implementado e aplicado em 01/11/2026.** Catálogo definido em 02/11/2026 (exame de sangue, 30 dias, e o documento CNS), outro exame de nome livre, estados, validade, prorrogação, novo pedido, regra de avanço e histórico. Telas em `interno/exames`. | [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026) |
 | Anexos dos exames (etapa 2) | **Implementado em 01/11/2026 e aplicado em 02/11/2026.** PDF, JPEG e PNG até 10 MB, conferidos pelo conteúdo, em disco privado com nome gerado; download só com `consultar-exames`. Sem descarte automático. | [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026) |
 | Decisão de habilitação e doadoras (etapa 3) | **Implementado e aplicado em 02/11/2026.** Decisão final (*Habilitada*, *Habilitada temporariamente* com data-limite e condição, *Não habilitada* com motivo), plano de saúde obrigatório, tabela `doadoras` ligada à interessada, suspensão, retomada, renovação, conversão em definitiva, encerramento e revogação, com histórico. Telas em `interno/doadoras`, testadas em navegador automatizado ([registro](#teste-das-telas-de-habilitação-em-navegador--02112026)). | [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026) |
+| Visita complementar durante *Em aguardo* | **Implementado em 05/11/2026, sem migration.** Com a avaliação em aguardo e o relatório de todas as visitas analisado, a agenda aceita nova visita; o relatório dela entra na mesma avaliação. Decisão bloqueada com visita marcada ou relatório não publicado. | [Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
@@ -40,6 +41,8 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 05/11/2026, visita complementar, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **437 testes: 433 aprovados, 4 ignorados; 2.128 assertions** ([registro](#visita-complementar-durante-em-aguardo--05112026)). |
+| 05/11/2026, conferência, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#conferência-do-repositório--05112026)). |
 | 02/11/2026, etapa 3, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#decisão-de-habilitação-e-doadoras-etapa-3--02112026)). |
 | 02/11/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **398 testes: 394 aprovados, 4 ignorados; 1.934 assertions**, antes da ativação dos anexos. |
 | 31/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **342 testes: 338 aprovados, 4 ignorados; 1.653 assertions** ([registro](#análise-do-relatório-avaliação--31102026)). |
@@ -59,7 +62,6 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 - Correção de dados do pedido após o recebimento.
 - Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
-- Nova visita durante *Em aguardo*: a agenda bloqueia novo agendamento após visita realizada; definir se uma nova visita gera nova avaliação ou complementa a existente.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
 - `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
 - Middleware `role` (`EnsureUserHasRole`) está registrado, mas nenhuma rota o utiliza; a autorização efetiva é por Gates. Decidir se permanece.
@@ -75,11 +77,36 @@ Usar dados fictícios e uma conta interna com escrita autorizada (admin possui a
 4. Abrir o mesmo rascunho em duas abas. Salvar na primeira e tentar salvar na segunda. Conferir mensagem de conflito, texto rejeitado disponível para cópia e ausência de sobrescrita. Copiar antes de recarregar.
 5. Repetir a navegação com viewport estreita e teclado: menu, filtros, campos, mensagens, botões e histórico. Registrar problemas de rolagem, leitura, foco ou acionamento.
 
-Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco passos foram executados em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); a equipe ainda deve repeti-los para avaliar a usabilidade. Documentos/exames continuam dependendo de especificação funcional própria.
+Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco passos foram executados em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); a equipe ainda deve repeti-los para avaliar a usabilidade. Avaliação, exames e habilitação também foram exercitados em navegador automatizado (registros de 31/10, 01/11 e 02/11/2026) e aguardam o mesmo julgamento da equipe.
 
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Visita complementar durante *Em aguardo* — 05/11/2026
+
+Implementação autorizada pelo usuário, que escolheu esta etapa e decidiu que a nova visita **complementa a avaliação existente**. Sem migration: as visitas do mesmo pedido compartilham a avaliação aberta na primeira. Contrato em [Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `VisitaComplementarTest`, SQLite `:memory:` | 4 testes: em aguardo aceita visita; decisão bloqueada com visita marcada e com relatório complementar não publicado; publicação não cria avaliação; decisão referencia o relatório mais recente; correção travada após decisão definitiva; visita complementar não analisada impede outra até nova decisão em aguardo; aguardando análise e liberada recusam nova visita; telas da avaliação e da agenda oferecem e explicam a visita complementar. |
+| Agenda, relatórios, avaliação, exames e habilitação, SQLite `:memory:` | 139 testes existentes aprovados sem alteração. |
+| `php artisan test --compact`, SQLite `:memory:` | 437 testes: 433 aprovados, 4 ignorados; 2.128 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+**Não executado:** MariaDB (serviço local desligado), portanto os testes de concorrência continuam ignorados e a nova ordem de travas (pedido antes de relatórios e avaliação) não foi exercitada em banco real; teste em navegador. Nada aplicado em `banco_de_leite_dev`, nem necessário.
+
+### Conferência do repositório — 05/11/2026
+
+A pedido do usuário, sem alterar código, banco ou dependências. Branch `backend` limpa e sincronizada com `origin/backend`; `main` contém até a etapa 2 (PR #9), e a etapa 3 com a correção do menu aguarda PR.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php artisan test --compact`, SQLite `:memory:` | 433 testes: 429 aprovados, 4 ignorados; 2.093 assertions. |
+| `php artisan migrate:status` | Não executado: MariaDB local desligado (conexão recusada). Vale a conferência de 02/11/2026 (31 migrations aplicadas). |
+| `vendor/bin/pint --test` | Acusa só `EnsureUserHasRole.php` e a migration `2026_10_04_000001_add_role_to_users_table.php`, do commit inicial de papéis (finais de linha CRLF e espaçamento); nenhum arquivo das etapas recentes. Não corrigidos, para não alterar migration aplicada. |
+
+Documentação: resumos de situação de Guia, README, Roadmap, Contratos e Modelagem atualizados para refletir as etapas 1 a 3, que ainda apareciam como não implementadas.
 
 ### Teste das telas de habilitação em navegador — 02/11/2026
 

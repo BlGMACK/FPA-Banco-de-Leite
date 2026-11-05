@@ -2,7 +2,7 @@
 
 ## Natureza e estado
 
-Conferido em 29/10/2026. Estão **implementados** os contratos de recebimento e fila, atendimento administrativo, agenda, [relatórios de visita](#interface-blade-implementada-em-29102026) e [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026); o schema correspondente está aplicado no desenvolvimento. Não há autocadastro nem conta de doadora. Documentos/exames, avaliação de saúde, decisão e habilitação não têm contrato nem implementação.
+Conferido em 29/10/2026 e atualizado em 05/11/2026. Estão **implementados** os contratos de recebimento e fila, atendimento administrativo, agenda, [relatórios de visita](#interface-blade-implementada-em-29102026), [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026), [análise do relatório](#análise-do-relatório-avaliação--implementada-em-31102026), [exames e documentos](#exames-e-documentos-etapa-1--implementada-em-01112026), [anexos](#anexos-dos-exames-etapa-2--implementada-em-01112026) e [decisão de habilitação e doadoras](#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026); o schema correspondente está aplicado no desenvolvimento. Não há autocadastro nem conta de doadora. Seções anteriores que tratam documentos/exames e habilitação como futuros registram o planejamento da época.
 
 Este documento acumula especificações feitas antes de cada entrega. Seções marcadas como **proposta** registram o planejamento da época; quando houver seção “implementado” posterior sobre o mesmo assunto, ela delimita o comportamento efetivo. A [superfície atual](#superfície-atual) e as convenções abaixo são **extraídas do código** e não representam aceite formal de produto. Acordos precisam de decisão identificada. A integração usa HTML Blade, formulários e sessão, sem API REST de negócio.
 
@@ -800,4 +800,18 @@ Todos exigem a indicação de plano de saúde (possui ou não possui), guardada 
 
 **Garantias.** Mesmas convenções dos recortes anteriores: Gate antes e dentro da transação; a decisão trava a avaliação, os itens e a interessada e confere versão, estado e exigências; as ações travam a doadora e conferem a versão. Reenvio idêntico devolve o mesmo registro; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 com a entrada preservada; conflitos voltam 409 com link para recarregar e o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. Decisões e eventos recusam alteração e exclusão; as migrations recusam rollback com decisões de habilitação, doadoras ou eventos.
 
-**Fora desta etapa:** nova visita durante *Em aguardo*; uso da habilitação por coleta e estoque; retenção dos dados.
+**Fora desta etapa:** nova visita durante *Em aguardo* (entregue em 05/11/2026, [seção própria](#visita-complementar-durante-em-aguardo--implementada-em-05112026)); uso da habilitação por coleta e estoque; retenção dos dados.
+
+## Visita complementar durante *Em aguardo* — implementada em 05/11/2026
+
+Decisão do usuário em 05/11/2026, que resolve a pendência criada pelas decisões de 31/10/2026: a nova visita **complementa a avaliação existente**, sem abrir outra. Sem migration nem permissão nova. Fontes: [Solicitacao](../../app/Models/Solicitacao.php) (`scopeAceitandoVisita`, `aceitaVisita`), [Avaliacao](../../app/Models/Avaliacao.php) (`daVisita`, `relatorios`), [Agendamento](../../app/Models/Agendamento.php), [Atendimento](../../app/Models/Atendimento.php), [RelatorioVisita](../../app/Models/RelatorioVisita.php), [AgendaController](../../app/Http/Controllers/AgendaController.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php), [RelatorioVisitaController](../../app/Http/Controllers/RelatorioVisitaController.php) e views `agenda/index`, `agenda/show` e `avaliacoes/show`.
+
+**Quando o acompanhamento aceita visita.** Sem visita realizada, como antes; ou com a avaliação em *Em aguardo* e o relatório de **todas** as visitas já analisado por alguma decisão dessa avaliação. Assim, depois de uma visita complementar, outra só pode ser marcada após nova decisão *Em aguardo* sobre o relatório dela. A regra é a mesma na confirmação e no reagendamento da agenda, no registro da realização, na lista “aguardando agendamento” da agenda (marcada como “visita complementar”) e na lista de visitas aguardando registro dos relatórios. Fora dela, a confirmação retorna 409.
+
+**Vínculo.** A avaliação continua ligada à primeira visita (`avaliacoes.atendimento_id`); as visitas do mesmo pedido pertencem a ela. A publicação do relatório complementar não cria avaliação nem muda o estado: *Em aguardo* só termina com nova decisão. A correção de qualquer relatório do acompanhamento segue a trava da avaliação compartilhada.
+
+**Decisão da análise.** Bloqueada (409, e mensagem na tela) enquanto houver visita complementar marcada, relatório em correção ou relatório complementar ainda não publicado. A decisão grava a versão vigente do relatório da **visita mais recente**; o histórico indica a visita de cada decisão quando há mais de uma. A decisão de habilitação também referencia o relatório mais recente.
+
+**Telas.** A avaliação lista todas as visitas com o estado do relatório e, em *Em aguardo*, oferece a quem tem `gerenciar-agenda` o link para agendar a visita complementar. O acompanhamento na agenda mostra “Confirmar visita complementar”.
+
+**Concorrência.** Análise e decisão travam o pedido antes dos relatórios e da avaliação, na mesma ordem da agenda e do registro de visitas, de modo que confirmar visita e decidir não se cruzam.

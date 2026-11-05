@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\AvaliacaoFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,13 +36,59 @@ class Avaliacao extends Model
 
     protected $table = 'avaliacoes';
 
-    /** Cria a avaliação da visita quando o relatório recebe a primeira versão publicada; deve rodar na transação da finalização. */
+    /**
+     * Cria a avaliação do acompanhamento quando o relatório da primeira visita recebe a versão publicada; deve rodar na transação
+     * da finalização. O relatório de uma visita complementar entra na avaliação já existente.
+     */
     public static function abrirParaAtendimento(int $atendimentoId): void
     {
-        if (! static::query()->where('atendimento_id', $atendimentoId)->exists()) {
+        if (! static::daVisita($atendimentoId)->exists()) {
             $avaliacao = new static;
             $avaliacao->forceFill(['atendimento_id' => $atendimentoId, 'estado' => 'aguardando_analise', 'versao' => 1])->save();
         }
+    }
+
+    /** Consulta a avaliação do acompanhamento da visita; visitas complementares compartilham a avaliação aberta na primeira. */
+    public static function daVisita(int $atendimentoId): Builder
+    {
+        return static::query()->whereHas('atendimento.agendamento', fn (Builder $agenda): Builder => $agenda
+            ->where('solicitacao_id', Agendamento::query()->whereHas('atendimento', fn (Builder $visita): Builder => $visita->whereKey($atendimentoId))->value('solicitacao_id')));
+    }
+
+    /** Relatórios de todas as visitas do acompanhamento desta avaliação, da primeira à mais recente. */
+    public function relatorios(): Builder
+    {
+        return RelatorioVisita::query()->whereHas('atendimento.agendamento', fn (Builder $agenda): Builder => $agenda
+            ->where('solicitacao_id', Agendamento::query()->whereHas('atendimento', fn (Builder $visita): Builder => $visita->whereKey($this->atendimento_id))->value('solicitacao_id')))
+            ->orderBy('id');
+    }
+
+    /**
+     * Trava o pedido e os relatórios do acompanhamento, nessa ordem, como a agenda e o registro de visitas.
+     *
+     * @return array{0: Solicitacao, 1: Collection<int, RelatorioVisita>}
+     */
+    private function travarAcompanhamento(): array
+    {
+        $referencia = static::query()->findOrFail($this->getKey());
+        $pedidoId = Agendamento::query()->whereHas('atendimento', fn (Builder $visita): Builder => $visita->whereKey($referencia->atendimento_id))->value('solicitacao_id');
+        $pedido = Solicitacao::query()->lockForUpdate()->findOrFail($pedidoId);
+
+        return [$pedido, $referencia->relatorios()->lockForUpdate()->get()];
+    }
+
+    /**
+     * Uma decisão exige todos os relatórios publicados e sem correção aberta, e nenhuma visita complementar marcada.
+     *
+     * @param  Collection<int, RelatorioVisita>  $relatorios
+     */
+    private static function exigirAcompanhamentoPronto(Solicitacao $pedido, Collection $relatorios): void
+    {
+        abort_if(ReservaAgenda::query()->whereKey($pedido->id)->exists(), 409,
+            'Há visita complementar marcada. Registre a visita e publique o relatório, ou cancele o compromisso, antes de decidir.');
+        abort_if($relatorios->contains('estado', 'em_correcao'), 409, 'O relatório está em correção. Decida depois que a correção for finalizada.');
+        abort_unless($relatorios->every(fn (RelatorioVisita $relatorio): bool => $relatorio->estado === 'finalizado' && $relatorio->numero_versao_vigente > 0),
+            409, 'O relatório da visita complementar ainda não foi publicado. Decida depois que ele for finalizado.');
     }
 
     /** Análise do relatório concluída: liberada para exames, não apta ou já com decisão de habilitação. */
@@ -65,12 +113,11 @@ class Avaliacao extends Model
     {
         Gate::forUser($autor)->authorize(Permissao::AVALIAR_DOADORAS);
         DB::transaction(function () use ($autor): void {
-            $referencia = static::query()->findOrFail($this->getKey());
-            $relatorio = RelatorioVisita::query()->where('atendimento_id', $referencia->atendimento_id)->lockForUpdate()->firstOrFail();
+            [$pedido, $relatorios] = $this->travarAcompanhamento();
             $avaliacao = static::query()->lockForUpdate()->findOrFail($this->getKey());
             Gate::forUser($autor)->authorize(Permissao::AVALIAR_DOADORAS);
             abort_if($avaliacao->concluida(), 409, 'A análise do relatório já foi concluída.');
-            abort_unless($relatorio->estado === 'finalizado', 409, 'O relatório está em correção. Decida depois que a correção for finalizada.');
+            static::exigirAcompanhamentoPronto($pedido, $relatorios);
             abort_if($avaliacao->reservadaPorOutro($autor), 409, $avaliacao->mensagemReserva());
             $agora = now()->utc();
             $avaliacao->forceFill(['analise_por_user_id' => $autor->id, 'analise_iniciada_em' => $agora,
@@ -122,8 +169,7 @@ class Avaliacao extends Model
 
         try {
             return DB::transaction(function () use ($autor, $dados, $hash): DecisaoAvaliacao {
-                $referencia = static::query()->findOrFail($this->getKey());
-                $relatorio = RelatorioVisita::query()->where('atendimento_id', $referencia->atendimento_id)->lockForUpdate()->firstOrFail();
+                [$pedido, $relatorios] = $this->travarAcompanhamento();
                 $avaliacao = static::query()->lockForUpdate()->findOrFail($this->getKey());
                 Gate::forUser($autor)->authorize(Permissao::AVALIAR_DOADORAS);
                 $anterior = DecisaoAvaliacao::query()->where('operacao_id', $dados['operacao_id'])->lockForUpdate()->first();
@@ -134,9 +180,10 @@ class Avaliacao extends Model
                 }
                 abort_unless($avaliacao->versao === $dados['versao'], 409, 'A avaliação mudou. Recarregue antes de continuar.');
                 abort_if($avaliacao->concluida(), 409, 'A análise do relatório já foi concluída.');
-                abort_unless($relatorio->estado === 'finalizado' && $relatorio->numero_versao_vigente > 0, 409,
-                    'O relatório está em correção. Decida depois que a correção for finalizada.');
+                static::exigirAcompanhamentoPronto($pedido, $relatorios);
                 abort_if($avaliacao->reservadaPorOutro($autor), 409, $avaliacao->mensagemReserva());
+                // A decisão se refere ao relatório da visita mais recente; os anteriores já foram analisados.
+                $relatorio = $relatorios->last();
                 $versaoRelatorio = $relatorio->versoes()->where('numero', $relatorio->numero_versao_vigente)->firstOrFail();
                 $decisao = new DecisaoAvaliacao;
                 $decisao->forceFill(['avaliacao_id' => $avaliacao->id, 'etapa' => 'analise_relatorio', 'resultado' => $dados['resultado'],
@@ -218,7 +265,7 @@ class Avaliacao extends Model
                 $habilita = $dados['resultado'] !== 'nao_habilitada';
                 abort_if($habilita && Doadora::query()->where('interessada_id', $interessada->id)->whereIn('estado', Doadora::ESTADOS_VIGENTES)->exists(),
                     409, 'Esta interessada já tem uma habilitação ativa ou suspensa. Encerre-a antes de registrar outra.');
-                $relatorio = RelatorioVisita::query()->where('atendimento_id', $avaliacao->atendimento_id)->firstOrFail();
+                $relatorio = $avaliacao->relatorios()->reorder()->latest('id')->firstOrFail();
                 $versaoRelatorio = $relatorio->versoes()->where('numero', $relatorio->numero_versao_vigente)->firstOrFail();
                 $decisao = new DecisaoAvaliacao;
                 $decisao->forceFill(['avaliacao_id' => $avaliacao->id, 'etapa' => 'habilitacao', 'resultado' => $dados['resultado'],

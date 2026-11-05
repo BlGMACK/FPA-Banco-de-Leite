@@ -14,10 +14,16 @@
         @if (isset($falhas['conflito']))<p><a href="{{ route('interno.avaliacoes.show', $avaliacao) }}">Recarregar a situação atual</a></p>@endif
         <section class="card mb-4"><div class="card-body">
             <h2 class="h4">Situação: {{ App\Models\Avaliacao::ESTADOS[$avaliacao->estado] }}</h2>
-            <p class="mb-1">Relatório de visita: versão vigente {{ $relatorio->numero_versao_vigente }}{{ $relatorio->estado === 'em_correcao' ? ', com correção em elaboração' : '' }}.
-                @if ($leituraRelatorio)<a href="{{ route('interno.relatorios.show', $relatorio->id) }}">Ler o relatório</a>@endif
-            </p>
+            @foreach ($relatorios as $item)
+                <p class="mb-1">{{ $loop->first ? 'Visita' : 'Visita complementar' }} em {{ $item->atendimento->inicio_efetivo_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }} · {{ $item->atendimento->responsavel->name }} —
+                    @if ($item->numero_versao_vigente === 0)relatório ainda não publicado.
+                    @else relatório na versão vigente {{ $item->numero_versao_vigente }}{{ $item->estado === 'em_correcao' ? ', com correção em elaboração' : '' }}.
+                        @if ($leituraRelatorio)<a href="{{ route('interno.relatorios.show', $item->id) }}">Ler o relatório</a>@endif
+                    @endif
+                </p>
+            @endforeach
             @if ($avaliacao->concluida())<p class="mb-0">A análise do relatório foi concluída. O relatório não pode mais ser corrigido.</p>@endif
+            @if ($agendarComplementar)<p class="mb-0 mt-1">Se a análise depende de nova visita, <a href="{{ route('interno.agenda.acompanhamentos.show', $avaliacao->atendimento->agendamento->solicitacao_id) }}">agende uma visita complementar</a>. O relatório dela entra nesta avaliação.</p>@endif
             @if (($etapaExames || $avaliacao->itens->isNotEmpty()) && auth()->user()->can('consultar-exames'))<p class="mb-0 mt-1"><a href="{{ route('interno.exames.show', $avaliacao) }}">Exames e documentos</a></p>@endif
             @if ($avaliacao->possui_plano_saude !== null)<p class="mb-0 mt-1">Plano de saúde: {{ $avaliacao->possui_plano_saude ? 'possui' : 'não possui' }}.</p>@endif
             @if ($avaliacao->doadora)<p class="mb-0 mt-1"><a href="{{ route('interno.doadoras.show', $avaliacao->doadora) }}">Habilitação: {{ App\Models\Doadora::ESTADOS[$avaliacao->doadora->estado] }}</a></p>@endif
@@ -29,7 +35,7 @@
                     @if ($avaliacao->reservadaPara(auth()->user()))
                         <p class="text-body-secondary">Análise reservada para você até {{ $avaliacao->analise_expira_em->setTimezone('America/Sao_Paulo')->format('H:i') }}. Enquanto isso, ninguém mais decide nem abre correção do relatório.</p>
                     @endif
-                    <p>A decisão vale para a versão {{ $relatorio->numero_versao_vigente }} do relatório. “Liberar para exames” e “Não apta” concluem a análise e impedem novas correções do relatório; “Em aguardo” permite decidir de novo depois.</p>
+                    <p>A decisão vale para a versão {{ $relatorio->numero_versao_vigente }} do relatório{{ $relatorios->count() > 1 ? ' da visita mais recente, considerando também as visitas anteriores' : '' }}. “Liberar para exames” e “Não apta” concluem a análise e impedem novas correções do relatório; “Em aguardo” permite decidir de novo depois.</p>
                     <input type="hidden" name="operacao_id" value="{{ $operacao }}">
                     <input type="hidden" name="versao" value="{{ $avaliacao->versao }}">
                     <fieldset class="mb-3"><legend class="form-label fs-6">Resultado</legend>
@@ -56,8 +62,12 @@
                 <p>Ao iniciar, a análise fica reservada para você por {{ App\Models\Avaliacao::MINUTOS_ANALISE }} minutos: ninguém mais decide nem abre correção do relatório até você decidir ou encerrar.</p>
                 <button class="btn btn-primary">Iniciar análise</button>
             </form>
-        @elseif (! $avaliacao->concluida() && $relatorio->estado !== 'finalizado')
+        @elseif (! $avaliacao->concluida() && $visitaMarcada)
+            <p>Há visita complementar marcada. A decisão fica disponível depois que a visita for registrada e o relatório publicado, ou se o compromisso for cancelado.</p>
+        @elseif (! $avaliacao->concluida() && $relatorios->contains('estado', 'em_correcao'))
             <p>O relatório está em correção. A decisão fica disponível depois que a correção for finalizada.</p>
+        @elseif (! $avaliacao->concluida() && ! $publicados)
+            <p>O relatório da visita complementar ainda não foi publicado. A decisão fica disponível depois que ele for finalizado.</p>
         @elseif ($podeHabilitar)
             <section class="card mb-4" id="habilitacao" x-data="{ resultado: @js($entrada['resultado'] ?? '') }"><div class="card-body">
                 <form method="POST" action="{{ route('interno.avaliacoes.habilitacao.store', $avaliacao) }}">@csrf
@@ -99,7 +109,7 @@
         <ul class="list-group mb-3">@forelse ($decisoes as $decisao)
             <li class="list-group-item"><strong>{{ App\Models\Avaliacao::ESTADOS[$decisao->resultado] }}</strong> · {{ $decisao->autor->name }} · {{ $decisao->decidido_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }}
                 @if ($decisao->etapa === 'habilitacao') · decisão de habilitação · plano de saúde: {{ $decisao->possui_plano_saude ? 'possui' : 'não possui' }}@if ($decisao->valida_ate) · até {{ $decisao->valida_ate->format('d/m/Y') }}@endif
-                @else · relatório versão {{ $decisao->versaoRelatorio->numero }}@endif
+                @else · relatório{{ $relatorios->count() > 1 ? ' da visita '.($relatorios->search(fn ($item) => $item->id === $decisao->versaoRelatorio->relatorio_visita_id) + 1) : '' }} versão {{ $decisao->versaoRelatorio->numero }}@endif
                 @if ($decisao->condicao)<div class="text-break" style="white-space: pre-wrap">Condição: {{ $decisao->condicao }}</div>@endif
                 @if ($decisao->motivo)<div class="text-break" style="white-space: pre-wrap">{{ $decisao->motivo }}</div>@endif
             </li>

@@ -148,6 +148,32 @@ class Solicitacao extends Model
         return $resultado;
     }
 
+    /**
+     * Pedidos que aceitam agendar visita: ainda sem visita realizada, ou com a avaliação em aguardo e o relatório de todas
+     * as visitas já analisado, caso em que a nova visita complementa a mesma avaliação. Não considera a reserva da agenda.
+     */
+    public function scopeAceitandoVisita(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $pedido): Builder => $pedido->whereDoesntHave('agendamentos.atendimento')
+            ->orWhereExists(fn (QueryBuilder $avaliacao): QueryBuilder => $avaliacao->selectRaw('1')->from('avaliacoes')
+                ->join('atendimentos as primeira_visita', 'primeira_visita.id', '=', 'avaliacoes.atendimento_id')
+                ->join('agendamentos as primeira_agenda', 'primeira_agenda.id', '=', 'primeira_visita.agendamento_id')
+                ->whereColumn('primeira_agenda.solicitacao_id', 'solicitacoes.id')->where('avaliacoes.estado', 'em_aguardo')
+                ->whereNotExists(fn (QueryBuilder $visita): QueryBuilder => $visita->selectRaw('1')->from('atendimentos as visita')
+                    ->join('agendamentos as agenda_visita', 'agenda_visita.id', '=', 'visita.agendamento_id')
+                    ->whereColumn('agenda_visita.solicitacao_id', 'solicitacoes.id')
+                    ->whereNotExists(fn (QueryBuilder $decisao): QueryBuilder => $decisao->selectRaw('1')->from('decisoes_avaliacao')
+                        ->join('versoes_relatorio_visita', 'versoes_relatorio_visita.id', '=', 'decisoes_avaliacao.versao_relatorio_id')
+                        ->join('relatorios_visita', 'relatorios_visita.id', '=', 'versoes_relatorio_visita.relatorio_visita_id')
+                        ->whereColumn('decisoes_avaliacao.avaliacao_id', 'avaliacoes.id')
+                        ->whereColumn('relatorios_visita.atendimento_id', 'visita.id')))));
+    }
+
+    public function aceitaVisita(): bool
+    {
+        return static::query()->whereKey($this->id)->aceitandoVisita()->exists();
+    }
+
     protected function casts(): array
     {
         return [
