@@ -7,7 +7,7 @@
     <title>Banco de Leite Humano</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-light">
+<body class="blh-interno">
     <a href="#conteudo" class="visually-hidden-focusable position-absolute top-0 start-0 z-3 m-2 p-2 bg-white border rounded">Pular para o conteúdo</a>
     @include('layouts.navigation')
     @isset($header)
