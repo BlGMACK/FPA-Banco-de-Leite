@@ -46,6 +46,7 @@ Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão 
 | `consultar-relatorios-visita`; escritas também `registrar-relatorios-visita` | `interno/relatorios`: lista, detalhe, registro da visita, `rascunho`, `finalizar` e `correcao` | [Interface Blade dos relatórios](#interface-blade-implementada-em-29102026) |
 | `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes`, `revogacoes`, `desativacao` e `reativacao` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
+| `gerenciar-retencao` (somente admin) | `interno/retencao`: tela de retenção e POST `descarte` | [Retenção](#retenção-dos-anexos-e-das-correções--implementada-em-05112026) |
 
 A correção de dados do pedido usa POST `interno/solicitacoes/{solicitacao}/correcao`, com `atender-solicitacoes` ([seção própria](#correção-de-dados-do-pedido--implementada-em-05112026)).
 
@@ -763,9 +764,9 @@ Segunda etapa acordada em 01/11/2026: arquivos de exames (fotos e PDFs recebidos
 | Método / caminho | Nome `interno.exames.*` | Acesso e efeito |
 | --- | --- | --- |
 | POST `/interno/exames/itens/{item}/anexos` | `itens.anexar` | `registrar-exames`. `multipart/form-data` com `operacao_id` e `arquivo`. 422 na seção do item; 409 em conflito. |
-| GET `/interno/exames/anexos/{anexo}` | `anexos.arquivo` | `consultar-exames`. Entrega o arquivo com o tipo gravado, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` e `inline` (“Abrir”) ou `attachment` com `?baixar=1` (“Baixar”). 404 se o registro ou o arquivo não existir. |
+| GET `/interno/exames/anexos/{anexo}` | `anexos.arquivo` | `consultar-exames`. Entrega o arquivo com o tipo gravado, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` e `inline` (“Abrir”) ou `attachment` com `?baixar=1` (“Baixar”). 404 se o registro ou o arquivo não existir; 410 se o arquivo foi descartado pelo prazo de retenção. |
 
-**Pendente:** retenção e descarte dos anexos (sem descarte automático por enquanto), backup do diretório de anexos junto com o banco e varredura antivírus, se a equipe exigir.
+**Pendente:** backup do diretório de anexos junto com o banco e varredura antivírus, se a equipe exigir. Retenção e descarte: [seção própria](#retenção-dos-anexos-e-das-correções--implementada-em-05112026).
 
 
 ## Decisão de habilitação e doadoras (etapa 3) — implementada em 02/11/2026
@@ -831,4 +832,27 @@ Decisões do usuário em 05/11/2026: corrige quem tem `atender-solicitacoes`, se
 
 **Regras.** Mesma normalização e validação do recebimento (CPF com dígitos, telefone com DDD, CEP, UF, WhatsApp num telefone preenchido e confirmação de disponibilidade). Erros voltam na sacola `correcao` com a entrada preservada; envio sem nenhuma alteração é recusado. A versão do pedido é conferida com o registro travado (409 se mudou); a correção do cadastro trava também a interessada e incrementa as versões dela e do pedido, invalidando admissões em andamento que a referenciem. Mudança de telefone ou de número para WhatsApp renova `whatsapp_declarado_em`.
 
-**Histórico.** `dados_originais` não muda. Cada correção grava um evento `correcao` no pedido com autor, motivo e, em `dados_anteriores` e `dados_novos`, o registro alterado (`pedido` ou `cadastro`) e os valores anteriores e novos **somente dos campos alterados**. O histórico do pedido mostra os nomes dos campos corrigidos, sem os valores. Esses valores são dados pessoais e seguem a retenção ainda a definir.
+**Histórico.** `dados_originais` não muda. Cada correção grava um evento `correcao` no pedido com autor, motivo e, em `dados_anteriores` e `dados_novos`, o registro alterado (`pedido` ou `cadastro`) e os valores anteriores e novos **somente dos campos alterados**. O histórico do pedido mostra os nomes dos campos corrigidos, sem os valores. Esses valores são dados pessoais e seguem a [retenção](#retenção-dos-anexos-e-das-correções--implementada-em-05112026): descartados, o histórico continua mostrando os campos e acrescenta a data do descarte.
+
+## Retenção dos anexos e das correções — implementada em 05/11/2026
+
+Decisões do usuário em 05/11/2026: o prazo é **configurável** (`RETENCAO_ANOS`, em anos) e vale para os arquivos dos exames e para os valores das correções de pedidos; o descarte é disparado **somente por um administrador**, numa tela do sistema, sem terminal e sem agendamento. O prazo em si cabe à equipe responsável pelo serviço; esta implementação não define nem atesta prazo legal. Fontes: [RetencaoController](../../app/Http/Controllers/RetencaoController.php), [AnexoItemAvaliacao](../../app/Models/AnexoItemAvaliacao.php) (`vencidos`, `descartar`), [EventoSolicitacao](../../app/Models/EventoSolicitacao.php) (`correcoesVencidas`, `descartarValores`), [config/retencao.php](../../config/retencao.php) e view `retencao/index`.
+
+| Método / caminho | Nome `interno.retencao.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/retencao` | `index` | `gerenciar-retencao` (só administradores). Mostra o prazo, a data-limite, os arquivos e as correções vencidos (20 por página) e o total já descartado. |
+| POST `/interno/retencao/descarte` | `descarte.store` | `gerenciar-retencao`. `limite` (data exibida na tela) e `confirmacao` aceita. Descarta o que venceu até `limite` e redireciona com a contagem. 409 se o prazo não estiver definido ou se `limite` for posterior ao limite atual (prazo aumentado depois de abrir a página). |
+
+**Contagem do prazo.**
+- Anexo: da decisão de habilitação (`decisoes_avaliacao.etapa = habilitacao`) da avaliação. Avaliação ainda na etapa de exames não vence.
+- Correção: da data do evento `correcao`.
+- `RETENCAO_ANOS` vazio, zero ou não numérico significa prazo não definido: a tela informa isso e nada fica disponível para descarte.
+
+**Efeito do descarte.**
+- Anexo: o arquivo é apagado do disco `anexos` e o registro recebe `descartado_em` e `descartado_por_user_id`. Nome original, tipo, tamanho, SHA-256, autor e data do envio continuam. A tela do exame mostra “Arquivo descartado pelo prazo de retenção em …” sem os links; o download responde 410. A marcação é a única alteração permitida no registro e só acontece uma vez.
+- Correção: os valores em `dados_anteriores.campos` e `dados_novos.campos` viram nulos, mantendo registro, nomes dos campos, versão, autor, motivo e data; o evento recebe `valores_descartados_em` e `valores_descartados_por_user_id`. Os dados atuais do pedido e do cadastro não mudam.
+- Cada item é descartado na própria transação, com o registro travado e o prazo conferido de novo; repetir o descarte não altera o que já foi descartado. Se a marcação falhar depois de o arquivo sair do disco, o download responde 404 e o próximo descarte conclui a marcação.
+
+**Rollback.** A migration `2026_11_05_100000_add_descarte_retencao` recusa a reversão havendo descarte registrado.
+
+**Limites.** O nome original do arquivo é mantido e pode conter dado pessoal. Backups antigos continuam com os arquivos e valores descartados até serem substituídos conforme a política de backup, ainda não definida (SEG-15). Testado em SQLite e MariaDB exclusivo; não verificado em navegador.

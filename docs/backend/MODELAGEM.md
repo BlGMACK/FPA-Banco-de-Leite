@@ -374,4 +374,4 @@ Preparação futura deve testar upgrade com registros existentes, restrições/F
 
 ### Pendências antes de implementar
 
-Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; retenção dos anexos; aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).
+Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; prazo de retenção dos anexos (mecanismo implementado em 05/11/2026, [contrato](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026)); aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).

@@ -27,6 +27,9 @@
                 @can('gerenciar-permissoes')
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.permissoes.*') ? 'active' : '' }}" href="{{ route('interno.permissoes.index') }}">Permissões</a></li>
                 @endcan
+                @can('gerenciar-retencao')
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.retencao.*') ? 'active' : '' }}" href="{{ route('interno.retencao.index') }}">Retenção</a></li>
+                @endcan
             </ul>
             <div class="d-flex flex-wrap flex-xxl-nowrap align-items-center gap-2 py-2 ms-xxl-3 text-nowrap">
                 <span class="small text-body-secondary">{{ Auth::user()->name }}</span>

@@ -18,6 +18,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado até 05/11/2026 (a
 | Anexos dos exames (etapa 2) | **Implementado em 01/11/2026 e aplicado em 02/11/2026.** PDF, JPEG e PNG até 10 MB, conferidos pelo conteúdo, em disco privado com nome gerado; download só com `consultar-exames`. Sem descarte automático. | [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026) |
 | Decisão de habilitação e doadoras (etapa 3) | **Implementado e aplicado em 02/11/2026.** Decisão final (*Habilitada*, *Habilitada temporariamente* com data-limite e condição, *Não habilitada* com motivo), plano de saúde obrigatório, tabela `doadoras` ligada à interessada, suspensão, retomada, renovação, conversão em definitiva, encerramento e revogação, com histórico. Telas em `interno/doadoras`, testadas em navegador automatizado ([registro](#teste-das-telas-de-habilitação-em-navegador--02112026)). | [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026) |
 | Visita complementar durante *Em aguardo* | **Implementado em 05/11/2026, sem migration.** Com a avaliação em aguardo e o relatório de todas as visitas analisado, a agenda aceita nova visita; o relatório dela entra na mesma avaliação. Decisão bloqueada com visita marcada ou relatório não publicado. | [Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026) |
+| Retenção dos anexos e das correções | **Implementado e aplicado em 05/11/2026.** Prazo configurável (`RETENCAO_ANOS`, vazio por padrão: nada é descartado). Tela “Retenção”, só para administradores, lista arquivos de exames e valores de correções vencidos e descarta com confirmação, mantendo o registro marcado com data e autor. Sem descarte automático. | [Contratos](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
@@ -41,6 +42,7 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 05/11/2026, retenção, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **452 testes: 448 aprovados, 4 ignorados; 2.238 assertions** ([registro](#retenção-dos-anexos-e-das-correções--05112026)). |
 | 05/11/2026, limpeza técnica, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **446 testes: 442 aprovados, 4 ignorados; 2.178 assertions** ([registro](#limpeza-técnica--05112026)). |
 | 05/11/2026, correção de dados, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **444 testes: 440 aprovados, 4 ignorados; 2.169 assertions** ([registro](#correção-de-dados-do-pedido--05112026)). |
 | 05/11/2026, visita complementar, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **437 testes: 433 aprovados, 4 ignorados; 2.128 assertions** ([registro](#visita-complementar-durante-em-aguardo--05112026)). |
@@ -62,9 +64,10 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
+- Definição do prazo de retenção pela equipe responsável (configurar `RETENCAO_ANOS`) e inclusão do diretório `storage/app/private/anexos` no backup.
+- `AdministrativeSchemaTest::test_rolling_back_and_reapplying_only_administrative_migrations_preserves_existing_users` falha em MariaDB (passa em SQLite): o teste reverte as migrations de 28/10 sem reverter `decisoes_avaliacao` (31/10), cuja chave estrangeira impede apagar `versoes_relatorio_visita`. Anterior à retenção (reproduzido sem ela em 05/11/2026); o teste precisa incluir as migrations dependentes.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
-- Retenção, homologação pelo serviço, responsáveis e prioridades continuam a definir ([Roadmap](ROADMAP.md)).
+- Homologação pelo serviço, responsáveis e prioridades continuam a definir ([Roadmap](ROADMAP.md)).
 
 ### Roteiro pendente para a equipe
 
@@ -81,6 +84,21 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Retenção dos anexos e das correções — 05/11/2026
+
+Implementação autorizada pelo usuário, com as decisões da mesma data: prazo configurável; arquivo apagado e registro mantido com data e autor; mesmo prazo para os valores das correções; descarte disparado por administrador numa tela, sem terminal nem agendamento. Migration `2026_11_05_100000_add_descarte_retencao` (quatro colunas anuláveis e duas chaves estrangeiras; rollback recusado havendo descarte). Contrato em [Contratos](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `RetencaoTest`, SQLite `:memory:` | 6 testes: só administradores acessam (funcionário com todas as permissões recebe 403) e o menu aparece só para eles; prazo vazio, zero ou inválido não lista nem descarta (409); anexo vencido apagado e marcado, recente e sem decisão de habilitação mantidos, download 410 e tela do exame sem links; valores de correção vencida anulados com campos, autor e motivo mantidos, recente intacta, histórico com a data do descarte; confirmação obrigatória, limite posterior ao atual com 409 e repetição sem efeito; marcação definitiva e rollback recusado. |
+| `AnexoExameTest`, `CorrecaoSolicitacaoTest`, `AdministrativeSchemaTest` | Aprovados sem mudança nos testes. |
+| `php artisan test --compact`, SQLite `:memory:` | 452 testes: 448 aprovados, 4 ignorados; 2.238 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+| `phpunit` em MariaDB exclusivo (`banco_de_leite_schema_test`): `RetencaoTest`, `AnexoExameTest`, `CorrecaoSolicitacaoTest`, `VisitaComplementarTest`, `DatabaseSeederTest`, concorrência de agenda e relatório e `AdministrativeSchemaTest` | 54 testes: 53 aprovados; 1 erro anterior à retenção em `AdministrativeSchemaTest` (reproduzido sem a mudança; ver [pendências](#pendências-de-implementação-ou-decisão)). Os quatro testes de concorrência passaram. |
+| `php artisan migrate --pretend` e `php artisan migrate`, `banco_de_leite_dev` | SQL somente aditivo (quatro colunas anuláveis e duas chaves estrangeiras); aplicada. `migrate:status`: 32 aplicadas, nenhuma pendente. Contagem: 0 anexos, 0 correções; `RETENCAO_ANOS` vazio. |
+
+A reversão da migration confere a existência das colunas, porque `AdministrativeSchemaTest` recria as tabelas de origem antes do rollback final. **Não executado:** teste em navegador e descarte com arquivos reais.
 
 ### Limpeza técnica — 05/11/2026
 

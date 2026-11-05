@@ -9,6 +9,7 @@ use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelatorioVisitaController;
+use App\Http\Controllers\RetencaoController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +64,11 @@ Route::middleware(['auth', 'can:gerenciar-permissoes'])->prefix('interno/permiss
     foreach (['desativacao', 'reativacao'] as $acao) {
         Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'situacao'])->whereNumber('funcionario')->name($acao.'.store');
     }
+});
+
+Route::middleware(['auth', 'can:gerenciar-retencao'])->prefix('interno/retencao')->name('interno.retencao.')->group(function (): void {
+    Route::get('/', [RetencaoController::class, 'index'])->name('index');
+    Route::post('/descarte', [RetencaoController::class, 'descartar'])->name('descarte.store');
 });
 
 Route::get('/dashboard', function () {
