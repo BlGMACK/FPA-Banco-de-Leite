@@ -47,7 +47,7 @@ Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão 
 | `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes`, `revogacoes`, `desativacao` e `reativacao` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
 
-Não há rota para corrigir dados de pedidos.
+A correção de dados do pedido usa POST `interno/solicitacoes/{solicitacao}/correcao`, com `atender-solicitacoes` ([seção própria](#correção-de-dados-do-pedido--implementada-em-05112026)).
 
 ## Campos, mensagens e permissões
 
@@ -815,3 +815,20 @@ Decisão do usuário em 05/11/2026, que resolve a pendência criada pelas decis�
 **Telas.** A avaliação lista todas as visitas com o estado do relatório e, em *Em aguardo*, oferece a quem tem `gerenciar-agenda` o link para agendar a visita complementar. O acompanhamento na agenda mostra “Confirmar visita complementar”.
 
 **Concorrência.** Análise e decisão travam o pedido antes dos relatórios e da avaliação, na mesma ordem da agenda e do registro de visitas, de modo que confirmar visita e decidir não se cruzam.
+
+## Correção de dados do pedido — implementada em 05/11/2026
+
+Decisões do usuário em 05/11/2026: corrige quem tem `atender-solicitacoes`, sem permissão nova; **antes da admissão** todos os dados do pedido são corrigíveis; **depois dela**, só contatos e endereço do cadastro, porque visita, avaliação e doadora dependem da identidade conferida. Sem migration: o evento usa o tipo `correcao`, já previsto em `eventos_solicitacao`. Fontes: [Solicitacao](../../app/Models/Solicitacao.php) (`corrigirDados`, `CAMPOS_CONTATO`, `CAMPOS_IDENTIDADE`), [CorrecaoSolicitacaoRequest](../../app/Http/Requests/CorrecaoSolicitacaoRequest.php), [AtendimentoSolicitacaoController](../../app/Http/Controllers/AtendimentoSolicitacaoController.php) e views `solicitacoes/correcao`, `solicitacoes/atendimento` e `solicitacoes/acompanhamento`.
+
+| Método / caminho | Nome | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/solicitacoes/{solicitacao}/correcao` | `interno.solicitacoes.correcao.store` | `atender-solicitacoes`. `versao`, `motivo` (obrigatório, até 2.000) e os campos do formulário de recebimento; após a admissão, `nome_completo`, `cpf` e `outros_detalhes` são descartados. Redireciona ao pedido ou, se admitido, ao acompanhamento. |
+
+**Alcance por situação.**
+- *Enviada* ou *Em análise*: corrige no pedido nome (recalculando o nome normalizado), CPF, telefones, e-mail, endereço, número para WhatsApp e outros detalhes. As correspondências são recalculadas com os dados novos; conferências anteriores deixam de valer para os pares cujos dados mudaram, como já acontecia.
+- *Admitida*: corrige no cadastro (`interessadas`) telefones, e-mail, endereço e número para WhatsApp. O pedido de origem guarda os dados como recebidos.
+- *Arquivada*: 409.
+
+**Regras.** Mesma normalização e validação do recebimento (CPF com dígitos, telefone com DDD, CEP, UF, WhatsApp num telefone preenchido e confirmação de disponibilidade). Erros voltam na sacola `correcao` com a entrada preservada; envio sem nenhuma alteração é recusado. A versão do pedido é conferida com o registro travado (409 se mudou); a correção do cadastro trava também a interessada e incrementa as versões dela e do pedido, invalidando admissões em andamento que a referenciem. Mudança de telefone ou de número para WhatsApp renova `whatsapp_declarado_em`.
+
+**Histórico.** `dados_originais` não muda. Cada correção grava um evento `correcao` no pedido com autor, motivo e, em `dados_anteriores` e `dados_novos`, o registro alterado (`pedido` ou `cadastro`) e os valores anteriores e novos **somente dos campos alterados**. O histórico do pedido mostra os nomes dos campos corrigidos, sem os valores. Esses valores são dados pessoais e seguem a retenção ainda a definir.

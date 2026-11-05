@@ -10,7 +10,7 @@ Fonte do estado vigente. Conferido em 29/10/2026 e atualizado até 05/11/2026 (a
 | Cadastro de funcionários | **Implementado.** Admin ou funcionário com `criar-funcionarios` cria funcionário com senha aleatória e autoria; a primeira senha é definida por recuperação via e-mail. Não concede permissões nem cria admin. | [FuncionarioController](../../app/Http/Controllers/FuncionarioController.php) |
 | Permissões | **Implementado.** Catálogo com nove códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita`, `registrar-relatorios-visita`, `consultar-avaliacoes` `avaliar-doadoras` (desde 31/10/2026), `consultar-exames` e `registrar-exames` (desde 01/11/2026, já no catálogo do desenvolvimento). Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura; avaliar implica consultar avaliações, relatórios publicados e exames; registrar exames implica consultá-los. Tela `interno/permissoes`, somente para admin, concede e revoga com motivo obrigatório e mostra o histórico auditado. | [PermissaoController](../../app/Http/Controllers/PermissaoController.php), [Permissao](../../app/Models/Permissao.php), [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026) |
 | Recebimento e fila | **Implementado.** Formulário público sem conta (`/doar`) e registro interno, confirmação neutra, limite de envios, fila paginada com alerta único de correspondências e detalhe restrito. | [Contratos](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026) |
-| Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
+| Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Correção de dados** desde 05/11/2026: pedido completo antes da admissão, contatos e endereço do cadastro depois, com motivo e histórico ([Contratos](CONTRATOS.md#correção-de-dados-do-pedido--implementada-em-05112026)). | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
 | Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Reserva da análise por 30 minutos e confirmação das decisões definitivas. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
@@ -41,6 +41,7 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 05/11/2026, correção de dados, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **444 testes: 440 aprovados, 4 ignorados; 2.169 assertions** ([registro](#correção-de-dados-do-pedido--05112026)). |
 | 05/11/2026, visita complementar, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **437 testes: 433 aprovados, 4 ignorados; 2.128 assertions** ([registro](#visita-complementar-durante-em-aguardo--05112026)). |
 | 05/11/2026, conferência, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#conferência-do-repositório--05112026)). |
 | 02/11/2026, etapa 3, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#decisão-de-habilitação-e-doadoras-etapa-3--02112026)). |
@@ -60,7 +61,6 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Correção de dados do pedido após o recebimento.
 - Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
 - `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
@@ -82,6 +82,18 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Correção de dados do pedido — 05/11/2026
+
+Implementação autorizada pelo usuário, com as decisões da mesma data: `atender-solicitacoes` corrige; antes da admissão, todos os dados do pedido; depois, só contatos e endereço do cadastro. Sem migration (tipo de evento `correcao` já existente). Contrato em [Contratos](CONTRATOS.md#correção-de-dados-do-pedido--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `CorrecaoSolicitacaoTest`, SQLite `:memory:` | 7 testes: login e permissão antes da busca; pedido em análise corrigido com normalização, nome normalizado, versão, `dados_originais` preservado e evento com valores anteriores e novos; pedido admitido corrige só o cadastro e descarta nome e CPF, sem alterar o pedido; CPF inválido e motivo ausente recusados sem efeito; envio sem alteração recusado; versão antiga e pedido arquivado com 409; motivo escapado no histórico. |
+| `php artisan test --compact`, SQLite `:memory:` | 444 testes: 440 aprovados, 4 ignorados; 2.169 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+`StoreSolicitacaoRequest` passou a validar os dígitos do CPF só quando ele é enviado, sem efeito no recebimento, onde o campo é obrigatório. **Não executado:** MariaDB (serviço desligado) e teste em navegador.
 
 ### Visita complementar durante *Em aguardo* — 05/11/2026
 

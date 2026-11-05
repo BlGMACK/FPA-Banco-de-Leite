@@ -28,6 +28,7 @@ Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/solicit
     Route::get('/{solicitacao}', [SolicitacaoController::class, 'show'])->whereNumber('solicitacao')->name('show');
     Route::post('/{solicitacao}/analise', [AtendimentoSolicitacaoController::class, 'analise'])->whereNumber('solicitacao')->name('analise.store');
     Route::post('/{solicitacao}/contatos', [AtendimentoSolicitacaoController::class, 'contato'])->whereNumber('solicitacao')->name('contatos.store');
+    Route::post('/{solicitacao}/correcao', [AtendimentoSolicitacaoController::class, 'correcao'])->whereNumber('solicitacao')->name('correcao.store');
     foreach (['conferencias', 'resolucoes', 'admissao'] as $acao) {
         Route::post('/{solicitacao}/'.$acao, [AtendimentoSolicitacaoController::class, 'decisao'])->whereNumber('solicitacao')->name($acao.'.store');
     }
