@@ -41,6 +41,7 @@ Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_2000
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 05/11/2026, limpeza técnica, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **446 testes: 442 aprovados, 4 ignorados; 2.178 assertions** ([registro](#limpeza-técnica--05112026)). |
 | 05/11/2026, correção de dados, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **444 testes: 440 aprovados, 4 ignorados; 2.169 assertions** ([registro](#correção-de-dados-do-pedido--05112026)). |
 | 05/11/2026, visita complementar, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **437 testes: 433 aprovados, 4 ignorados; 2.128 assertions** ([registro](#visita-complementar-durante-em-aguardo--05112026)). |
 | 05/11/2026, conferência, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#conferência-do-repositório--05112026)). |
@@ -63,8 +64,6 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 - Retenção e descarte dos anexos, e inclusão do diretório `storage/app/private/anexos` no backup.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
-- `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
-- Middleware `role` (`EnsureUserHasRole`) está registrado, mas nenhuma rota o utiliza; a autorização efetiva é por Gates. Decidir se permanece.
 - Retenção, homologação pelo serviço, responsáveis e prioridades continuam a definir ([Roadmap](ROADMAP.md)).
 
 ### Roteiro pendente para a equipe
@@ -82,6 +81,24 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Limpeza técnica — 05/11/2026
+
+Itens das pendências técnicas, autorizados pelo usuário. Sem migration, sem mudança de dependências e sem execução em `banco_de_leite_dev`.
+
+- **`DatabaseSeeder`:** chama `PermissaoSeeder` e `TipoExameSeeder`; só em ambiente local cria `admin@teste.com` e `funcionario@teste.com`, com senha aleatória exibida uma vez; contas existentes são mantidas. Idempotente. Antes usava `create` com senha fixa.
+- **Middleware `role`:** `EnsureUserHasRole` e o alias em `bootstrap/app.php` removidos; nenhuma rota o usava, e a autorização é por Gates.
+- **Scripts do Composer:** `setup` gera a chave só se `APP_KEY` estiver vazia (expressão sem barra invertida, conferida no `bash` e no `cmd` com `.env` LF e CRLF); `post-create-project-cmd` não cria mais SQLite nem aplica migrations.
+- **Pint:** a migration `2026_10_04_000001_add_role_to_users_table.php` recebeu só formatação (no repositório, apenas a quebra de linha final). `vendor/bin/pint --test` passa no projeto inteiro.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `DatabaseSeederTest`, SQLite `:memory:` | 2 testes: repetição cria catálogos, preserva conta existente, cria a outra sem a senha antiga e não concede permissões; fora do ambiente local, só catálogos. |
+| `php artisan test --compact`, SQLite `:memory:` | 446 testes: 442 aprovados, 4 ignorados; 2.178 assertions. |
+| `vendor/bin/pint --test --format agent` | Aprovado no projeto inteiro. |
+| `composer validate --no-check-publish` | Válido. |
+
+**Não executado:** `composer run setup` completo (instalaria dependências e aplicaria migrations) e o seeder no banco de desenvolvimento.
 
 ### Correção de dados do pedido — 05/11/2026
 

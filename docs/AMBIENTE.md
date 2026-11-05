@@ -63,7 +63,7 @@ O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `data
 
 ### Dados fictícios opcionais
 
-Em um banco local novo, o [seeder](../database/seeders/DatabaseSeeder.php) pode ser executado com `php artisan db:seed --no-interaction`. Ele cria duas contas fictícias internas: admin e funcionário. Não cria contas de doadora. Consulte o arquivo para os dados de demonstração; não os use em produção. O seeder usa `create` e não é idempotente: repeti-lo com esses e-mails existentes pode causar conflito de unicidade. Verifique antes e não apague tabelas para contornar o conflito. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
+O [seeder principal](../database/seeders/DatabaseSeeder.php) (`php artisan db:seed --no-interaction`) executa os dois catálogos acima e, **somente em ambiente local**, cria as contas fictícias `admin@teste.com` e `funcionario@teste.com`, cada uma com senha aleatória exibida uma única vez no terminal. Pode ser repetido: contas já existentes são mantidas sem alteração, inclusive a senha. Não cria contas de doadora nem concede permissões; fora do ambiente local, cria só os catálogos. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
 
 ## Execução
 
@@ -102,6 +102,6 @@ php vendor/bin/phpunit tests/Feature/AgendaConcurrencyTest.php tests/Feature/Rel
 
 Feche o terminal ou remova as variáveis depois. Os testes recriam e revertem as tabelas desse banco; nunca aponte para `banco_de_leite_dev`.
 
-Não execute `composer run setup` indiscriminadamente em ambiente existente: o script gera chave e aplica migrations. O script de criação de projeto ainda menciona SQLite. São pendências de alinhamento; não foram alterados nesta tarefa.
+`composer run setup` instala dependências, copia `.env.example` se não houver `.env`, gera a chave **somente se `APP_KEY` estiver vazia**, aplica as migrations no banco configurado e compila os assets. Em ambiente existente, confira antes qual banco o `.env` aponta, porque as migrations pendentes serão aplicadas. O script de criação de projeto não menciona mais SQLite.
 
 Após receber alterações, reinstale pelos locks quando mudarem, aplique migrations revisadas e compile os assets quando necessário. Não reinstale Breeze sobre as views adaptadas.
