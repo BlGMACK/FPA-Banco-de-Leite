@@ -48,7 +48,7 @@ Não existe papel nem conta de doadora: contas são apenas internas. A interessa
 
 ## Dados e ambiente
 
-A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta admin e uma funcionário, com valores fixos de demonstração; não é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
+A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) chama os catálogos e, só em ambiente local, cria uma conta admin e uma funcionário com senha aleatória; é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
 
 Conexão local, migrations e diferença entre MySQL e SQLite de testes: [Ambiente](../AMBIENTE.md). O levantamento original de 22/10/2026 não inspecionou o legado; a consulta posterior está registrada abaixo e não comprova compatibilidade.
 
