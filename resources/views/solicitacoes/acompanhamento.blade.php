@@ -6,6 +6,9 @@
         <h2 class="h5">{{ $pedido->interessada->nome_completo }}</h2>
         <p>Cadastro #{{ $pedido->interessada_id }}. Admitido em {{ $pedido->admitida_em->format('d/m/Y H:i') }} por {{ $pedido->admitidaPor->name }}.</p>
         <p><a href="{{ route('interno.solicitacoes.show', $pedido) }}">Ver pedido de origem #{{ $pedido->id }}, dados e histórico</a></p>
+        @if (session('status') === 'dados-corrigidos')<div class="alert alert-success" role="status">Dados do cadastro corrigidos. O histórico foi preservado no pedido de origem.</div>@endif
+        @if ($errors->getBag('correcao')->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->getBag('correcao')->all() as $erro)<li>{{ $erro }}</li>@endforeach</ul></div>@endif
+        @include('solicitacoes.correcao')
         @can('gerenciar-agenda')
             <p><a class="btn btn-primary" href="{{ route('interno.agenda.acompanhamentos.show', $pedido) }}">Abrir agenda e contatos da visita</a></p>
         @endcan

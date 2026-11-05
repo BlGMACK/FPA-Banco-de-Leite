@@ -4,3 +4,206 @@
 .blh-auth { max-width: 32rem; }
 .blh-form-width { max-width: 42rem; }
 .blh-stack > * + * { margin-top: 1.5rem; }
+
+/* ==========================================================================
+   Área pública (início, /doar, pedido recebido)
+   Tokens e componentes com prefixo blh- para não colidir com o Bootstrap.
+   Paleta: branco e azul. Os tokens abaixo valem para toda a área pública.
+   ========================================================================== */
+:root {
+    --blh-papel: #ffffff;
+    --blh-tinta: #14283a;
+    --blh-tinta-suave: #475a6e;
+    --blh-azul: #1a56a0;
+    --blh-azul-escuro: #12396b;
+    --blh-azul-medio: #5b9bd5;
+    --blh-azul-claro: #eaf2fb;
+    --blh-azul-borda: #d3e2f4;
+    --blh-fonte-titulo: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --blh-fonte-texto: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.blh-site {
+    margin: 0;
+    background: var(--blh-papel);
+    color: var(--blh-tinta);
+    font-family: var(--blh-fonte-texto);
+    line-height: 1.6;
+}
+.blh-site *, .blh-site *::before, .blh-site *::after { box-sizing: border-box; }
+.blh-site :focus-visible { outline: 3px solid var(--blh-azul); outline-offset: 3px; }
+.blh-site a { color: var(--blh-azul); }
+
+.blh-wrap {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* Cabeçalho e rodapé */
+.blh-topo { background: #fff; border-bottom: 1px solid var(--blh-azul-borda); }
+.blh-topo__linha { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .9rem; }
+.blh-marca { display: inline-flex; align-items: center; gap: .6rem; color: var(--blh-azul-escuro); text-decoration: none; font-family: var(--blh-fonte-titulo); font-size: 1.15rem; font-weight: 700; white-space: nowrap; }
+.blh-marca svg { width: 1.5rem; height: 1.9rem; flex: none; }
+.blh-marca svg path { fill: var(--blh-azul); }
+.blh-topo__acesso { font-size: .9rem; font-weight: 600; text-align: right; text-decoration: none; padding: .45rem .9rem; border: 1px solid var(--blh-azul-borda); border-radius: 2rem; color: var(--blh-azul); }
+.blh-topo__acesso:hover { background: var(--blh-azul-claro); }
+@media (max-width: 26rem) { .blh-marca { font-size: 1rem; } .blh-topo__acesso { font-size: .85rem; padding-inline: .7rem; } }
+.blh-rodape { margin-top: 4rem; background: var(--blh-azul-claro); padding-block: 1.75rem; color: var(--blh-tinta-suave); font-size: .9rem; }
+
+/* Botões (usa as variáveis do .btn do Bootstrap) */
+.btn-blh {
+    --bs-btn-padding-x: 1.6rem;
+    --bs-btn-padding-y: .85rem;
+    --bs-btn-font-weight: 700;
+    --bs-btn-border-radius: .6rem;
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--blh-azul);
+    --bs-btn-border-color: var(--blh-azul);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--blh-azul-escuro);
+    --bs-btn-hover-border-color: var(--blh-azul-escuro);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--blh-azul-escuro);
+    --bs-btn-active-border-color: var(--blh-azul-escuro);
+    --bs-btn-focus-shadow-rgb: 91, 155, 213;
+    box-shadow: 0 .4rem 1rem rgba(26, 86, 160, .22);
+}
+/* .blh-site a (azul) tem mais especificidade que .btn: sem isto o texto do botão fica azul sobre azul. */
+.blh-site a.btn-blh { color: var(--bs-btn-color); text-decoration: none; }
+.blh-site a.btn-blh:hover, .blh-site a.btn-blh:focus-visible, .blh-site a.btn-blh:active { color: var(--bs-btn-hover-color); }
+.blh-site a.btn-blh:focus-visible { outline-color: var(--blh-azul-escuro); }
+
+/* Abertura */
+.blh-hero { background: linear-gradient(180deg, var(--blh-azul-claro) 0%, #fff 100%); overflow: hidden; }
+.blh-hero__grade { display: grid; align-items: center; gap: 2rem; padding-block: clamp(2.5rem, 7vw, 5rem); }
+.blh-hero h1 { margin: 0 0 1.25rem; color: var(--blh-azul-escuro); font-family: var(--blh-fonte-titulo); font-weight: 700; font-size: clamp(2.3rem, 1.2rem + 4.6vw, 4rem); line-height: 1.08; letter-spacing: -.01em; text-wrap: balance; }
+.blh-hero__texto { max-width: 38rem; margin: 0 0 2rem; font-size: 1.15rem; color: var(--blh-tinta-suave); }
+.blh-hero__nota { margin: 1rem 0 0; font-size: .95rem; color: var(--blh-tinta-suave); }
+.blh-hero__arte { display: grid; place-items: center; }
+.blh-gota { display: block; width: min(15rem, 60vw); height: auto; filter: drop-shadow(0 1.2rem 1.5rem rgba(26, 86, 160, .25)); }
+
+@media (min-width: 52rem) {
+    .blh-hero__grade { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+    .blh-gota { width: min(19rem, 100%); }
+}
+
+/* Secções */
+.blh-secao { padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+.blh-secao h2 { margin: 0 0 1.5rem; font-family: var(--blh-fonte-titulo); font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem); line-height: 1.2; color: var(--blh-azul-escuro); }
+
+/* Passos: sequência real, por isso numerada */
+.blh-passos { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; counter-reset: passo; }
+.blh-passos li { position: relative; padding: 1.25rem 1.25rem 1.25rem 4.5rem; counter-increment: passo; background: #fff; border: 1px solid var(--blh-azul-borda); border-radius: .9rem; box-shadow: 0 .25rem .75rem rgba(18, 57, 107, .06); }
+.blh-passos li::before {
+    content: counter(passo);
+    position: absolute; left: 1.25rem; top: 1.25rem;
+    display: grid; place-items: center;
+    width: 2.5rem; height: 2.5rem; border-radius: 50%;
+    background: var(--blh-azul); color: #fff;
+    font-family: var(--blh-fonte-titulo); font-size: 1.2rem; font-weight: 700;
+}
+.blh-passos h3 { margin: 0 0 .25rem; font-size: 1.1rem; font-weight: 700; color: var(--blh-azul-escuro); }
+.blh-passos p { margin: 0; max-width: 32rem; color: var(--blh-tinta-suave); }
+
+@media (min-width: 52rem) {
+    .blh-passos { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
+    .blh-passos li { padding: 4.5rem 1.25rem 1.25rem; }
+}
+
+/* Antes de começar */
+.blh-preparo { display: grid; gap: 1.5rem; }
+.blh-preparo__bloco { padding: 1.5rem; border-radius: .9rem; background: var(--blh-azul-claro); }
+.blh-preparo__bloco--aviso { background: #fff; border: 1px solid var(--blh-azul-borda); border-left: .35rem solid var(--blh-azul); }
+.blh-preparo h3 { margin: 0 0 .75rem; font-size: 1.1rem; font-weight: 700; color: var(--blh-azul-escuro); }
+.blh-preparo ul { margin: 0; padding-left: 1.2rem; }
+.blh-preparo li + li { margin-top: .35rem; }
+.blh-preparo p { margin: 0; }
+.blh-preparo p + p { margin-top: .6rem; }
+.blh-acao { margin-top: 2rem; }
+@media (min-width: 52rem) { .blh-preparo { grid-template-columns: 1fr 1fr; } }
+
+/* Páginas de formulário e confirmação */
+.blh-pagina { width: 100%; max-width: 44rem; margin-inline: auto; padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem) 0; }
+.blh-pagina h1 { font-family: var(--blh-fonte-titulo); font-weight: 700; color: var(--blh-azul); font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.6rem); line-height: 1.15; margin-bottom: 1rem; }
+.blh-site .form-control:focus, .blh-site .form-select:focus { border-color: var(--blh-azul); box-shadow: 0 0 0 .25rem rgba(26, 86, 160, .25); }
+.blh-site .form-check-input:checked { background-color: var(--blh-azul); border-color: var(--blh-azul); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .btn-blh { transition: background-color .15s ease, border-color .15s ease; }
+}
+
+/* ==========================================================================
+   Área interna: moldura com menu lateral à direita e painel
+   Mesmos tokens da área pública (--blh-*). As telas internas continuam
+   com o conteúdo em Bootstrap até serem refeitas uma a uma.
+   ========================================================================== */
+.blh-app {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f5f8fc;
+    color: var(--blh-tinta);
+    font-family: var(--blh-fonte-texto);
+    line-height: 1.6;
+}
+.blh-app *, .blh-app *::before, .blh-app *::after { box-sizing: border-box; }
+.blh-app :focus-visible { outline: 3px solid var(--blh-azul); outline-offset: 3px; }
+
+/* Barra superior (reaproveita .blh-topo da área pública) */
+.blh-topo--interno .blh-wrap { max-width: none; }
+.blh-topo__usuario { display: flex; align-items: center; gap: .6rem; }
+.blh-topo__usuario form { margin: 0; }
+.blh-topo__nome { display: none; font-size: .9rem; color: var(--blh-tinta-suave); }
+button.blh-topo__acesso { background: #fff; font-family: inherit; line-height: inherit; cursor: pointer; }
+.blh-topo__menu { display: inline-block; }
+@media (min-width: 40rem) { .blh-topo__nome { display: inline; } }
+.blh-topo--interno .blh-topo__linha { flex-wrap: wrap; }
+@media (max-width: 39.99rem) {
+    .blh-topo__usuario { gap: .35rem; }
+    .blh-topo--interno .blh-topo__acesso { padding: .35rem .6rem; font-size: .82rem; }
+}
+
+/* Corpo: conteúdo à esquerda, menu empilhado à direita (a partir de 62rem) */
+.blh-interno { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.blh-principal { min-width: 0; }
+.blh-cabecalho { background: #fff; border-bottom: 1px solid var(--blh-azul-borda); padding-block: 1rem; }
+
+.blh-lateral { background: #fff; border-bottom: 1px solid var(--blh-azul-borda); }
+.blh-lateral__interno { padding: 1rem; }
+.blh-lateral__rotulo { margin: 0 0 .5rem .9rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blh-tinta-suave); }
+.blh-lateral ul { display: flex; flex-direction: column; gap: .25rem; margin: 0; padding: 0; list-style: none; }
+.blh-lateral a { display: block; padding: .65rem .9rem; border-radius: .6rem; color: var(--blh-tinta); font-weight: 600; text-decoration: none; }
+.blh-lateral a:hover { background: var(--blh-azul-claro); color: var(--blh-azul-escuro); }
+.blh-lateral a[aria-current="page"] { background: var(--blh-azul); color: #fff; }
+
+@media (min-width: 62rem) {
+    .blh-interno { grid-template-columns: minmax(0, 1fr) 16.5rem; }
+    .blh-principal { grid-column: 1; grid-row: 1; }
+    .blh-lateral { display: block !important; grid-column: 2; grid-row: 1; border-bottom: 0; border-left: 1px solid var(--blh-azul-borda); }
+    .blh-lateral__interno { position: sticky; top: 0; padding: 1.5rem 1rem; }
+    .blh-topo__menu { display: none; }
+}
+
+/* Painel */
+.blh-painel__abertura { padding-block: clamp(1.75rem, 4vw, 3rem) 1rem; background: linear-gradient(180deg, var(--blh-azul-claro) 0%, #f5f8fc 100%); }
+.blh-painel__rotulo { margin: 0 0 .25rem; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blh-azul); }
+.blh-painel h1 { margin: 0 0 .5rem; font-family: var(--blh-fonte-titulo); font-weight: 700; font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.6rem); line-height: 1.15; color: var(--blh-azul-escuro); }
+.blh-painel__texto { max-width: 38rem; margin: 0; color: var(--blh-tinta-suave); }
+.blh-painel__secao { padding-block: 1.5rem 0.5rem; }
+.blh-painel__secao:last-child { padding-bottom: 3rem; }
+.blh-painel__secao h2 { margin: 0 0 1rem; font-family: var(--blh-fonte-titulo); font-size: clamp(1.3rem, 1.1rem + .9vw, 1.6rem); line-height: 1.2; color: var(--blh-azul-escuro); }
+.blh-cartoes { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.blh-cartao { display: block; height: 100%; padding: 1.25rem; background: #fff; border: 1px solid var(--blh-azul-borda); border-top: .3rem solid var(--blh-azul); border-radius: .9rem; box-shadow: 0 .25rem .75rem rgba(18, 57, 107, .06); color: var(--blh-tinta); text-decoration: none; }
+.blh-cartao:hover { border-color: var(--blh-azul-medio); border-top-color: var(--blh-azul); box-shadow: 0 .5rem 1.25rem rgba(18, 57, 107, .12); }
+.blh-cartao h3 { margin: 0 0 .25rem; font-size: 1.1rem; font-weight: 700; color: var(--blh-azul-escuro); }
+.blh-cartao p { margin: 0; font-size: .95rem; color: var(--blh-tinta-suave); }
+.blh-painel__aviso { max-width: 38rem; padding: 1.5rem; background: #fff; border: 1px solid var(--blh-azul-borda); border-left: .35rem solid var(--blh-azul); border-radius: .9rem; }
+.blh-painel__aviso h2 { font-size: 1.2rem; }
+.blh-painel__aviso p { margin: 0; color: var(--blh-tinta-suave); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .blh-cartao, .blh-lateral a { transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
+}

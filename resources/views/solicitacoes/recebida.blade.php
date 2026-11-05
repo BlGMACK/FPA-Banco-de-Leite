@@ -1,11 +1,14 @@
-<x-guest-layout>
-    @if (session('pedido_recebido'))
-        <h1 class="h3">Solicitação recebida</h1>
-        <p role="status">Recebemos suas informações. A equipe verificará o pedido e entrará em contato pelo canal informado.</p>
-        <p>Este recebimento não significa aprovação para doar nem confirmação de agendamento.</p>
-    @else
-        <h1 class="h3">Solicitação de cadastro</h1>
-        <p>Para registrar seu interesse, preencha o formulário. O acompanhamento será feito pelo contato da equipe.</p>
-    @endif
-    <a href="{{ route('solicitacoes.create') }}" class="btn btn-outline-success">Abrir formulário</a>
-</x-guest-layout>
+<x-public-layout>
+    <div class="blh-pagina">
+        @if (session('pedido_recebido'))
+            <h1>Solicitação recebida</h1>
+            <p role="status">Recebemos suas informações. A equipe verificará o pedido e entrará em contato pelo canal informado.</p>
+            <p>Este recebimento não significa aprovação para doar nem confirmação de agendamento.</p>
+            <a href="{{ url('/') }}" class="btn btn-blh">Voltar ao início</a>
+        @else
+            <h1>Solicitação de cadastro</h1>
+            <p>Para registrar seu interesse, preencha o formulário. O acompanhamento será feito pelo contato da equipe.</p>
+            <a href="{{ route('solicitacoes.create') }}" class="btn btn-blh">Abrir formulário</a>
+        @endif
+    </div>
+</x-public-layout>
