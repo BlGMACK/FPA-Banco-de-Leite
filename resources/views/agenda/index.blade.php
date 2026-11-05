@@ -20,7 +20,7 @@
         {{ $agendamentos->links() }}
         <h2 class="h4 mt-4">Aguardando agendamento</h2>
         <p>Cadastros admitidos sem reserva atual e sem visita realizada, incluindo visitas canceladas ou não realizadas. Os filtros acima se aplicam somente aos compromissos.</p>
-        <ul class="list-group mb-3">@forelse ($pendentes as $pedido)<li class="list-group-item"><a href="{{ route('interno.agenda.acompanhamentos.show', $pedido) }}">{{ $pedido->interessada->nome_completo }} — acompanhamento #{{ $pedido->id }}</a></li>@empty<li class="list-group-item">Nenhum acompanhamento aguardando agendamento.</li>@endforelse</ul>
+        <ul class="list-group mb-3">@forelse ($pendentes as $pedido)<li class="list-group-item"><a href="{{ route('interno.agenda.acompanhamentos.show', $pedido) }}">{{ $pedido->interessada->nome_completo }} — acompanhamento #{{ $pedido->id }}</a>@if ($pedido->visita_realizada) · visita complementar (avaliação em aguardo)@endif</li>@empty<li class="list-group-item">Nenhum acompanhamento aguardando agendamento.</li>@endforelse</ul>
         {{ $pendentes->links() }}
     </div>
 </x-app-layout>

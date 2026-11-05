@@ -62,7 +62,7 @@ class Atendimento extends Model
                     && $agenda->status === 'confirmado' && $agenda->versao === $dados['versao']
                     && $agenda->responsavel_user_id === $referencia->responsavel_user_id
                     && $reserva?->agendamento_id === $agenda->id
-                    && ! $pedido->agendamentos()->whereHas('atendimento')->exists(), 409, 'O acompanhamento mudou ou já foi atendido. Recarregue antes de continuar.');
+                    && $pedido->aceitaVisita(), 409, 'O acompanhamento mudou ou já foi atendido. Recarregue antes de continuar.');
                 $responsavel = $usuarios->get($dados['responsavel_user_id']);
                 if ($responsavel === null || (! $responsavel->isAdmin() && ! $responsavel->isFuncionario())) {
                     throw ValidationException::withMessages(['responsavel_user_id' => 'Selecione um responsável com conta interna.']);

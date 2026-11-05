@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class Solicitacao extends Model
 {
@@ -21,6 +23,65 @@ class Solicitacao extends Model
     use HasFactory;
 
     protected $table = 'solicitacoes';
+
+    /** Contatos e endereço: corrigíveis no pedido antes da admissão e no cadastro depois dela. */
+    public const CAMPOS_CONTATO = ['telefone_fixo', 'telefone_celular', 'email_contato', 'municipio', 'bairro', 'uf', 'cep',
+        'logradouro', 'numero', 'complemento', 'whatsapp_telefone', 'whatsapp_disponivel'];
+
+    /** Corrigíveis somente antes da admissão. */
+    public const CAMPOS_IDENTIDADE = ['nome_completo', 'cpf', 'outros_detalhes'];
+
+    /**
+     * Corrige o pedido em atendimento ou, se admitido, os contatos e o endereço do cadastro ligado a ele.
+     * O recebimento continua em dados_originais; o evento "correcao" guarda os valores anteriores e os novos dos campos alterados.
+     *
+     * @param  array<string, mixed>  $dados  entrada já validada e normalizada
+     */
+    public static function corrigirDados(int $pedidoId, User $autor, array $dados): EventoSolicitacao
+    {
+        return DB::transaction(function () use ($pedidoId, $autor, $dados): EventoSolicitacao {
+            $pedido = static::query()->lockForUpdate()->findOrFail($pedidoId);
+            Gate::forUser($autor)->authorize(Permissao::ATENDER_SOLICITACOES);
+            abort_unless($pedido->versao === (int) $dados['versao'], 409, 'O pedido mudou. Recarregue a página e confira os dados antes de corrigir.');
+            abort_if($pedido->status === 'arquivada', 409, 'Pedidos arquivados não podem ser corrigidos.');
+            $admitida = $pedido->status === 'admitida';
+            $alvo = $admitida ? Interessada::query()->lockForUpdate()->findOrFail($pedido->interessada_id) : $pedido;
+            $dados['whatsapp_disponivel'] = true;
+            $anteriores = $novos = [];
+            foreach ($admitida ? self::CAMPOS_CONTATO : [...self::CAMPOS_IDENTIDADE, ...self::CAMPOS_CONTATO] as $campo) {
+                if ((string) $alvo->{$campo} !== (string) ($dados[$campo] ?? '')) {
+                    $anteriores[$campo] = $alvo->{$campo};
+                    $novos[$campo] = $dados[$campo] ?? null;
+                }
+            }
+            if ($novos === []) {
+                throw ValidationException::withMessages(['dados' => 'Nenhum dado foi alterado.'])->errorBag('correcao');
+            }
+            $alvo->forceFill($novos);
+            if (isset($novos['nome_completo'])) {
+                $alvo->nome_normalizado = Str::lower(Str::ascii(Str::squish($novos['nome_completo'])));
+            }
+            if (array_intersect_key($novos, array_flip(['whatsapp_telefone', 'telefone_fixo', 'telefone_celular']))) {
+                $alvo->whatsapp_declarado_em = now();
+            }
+            $alvo->versao++;
+            $alvo->save();
+            if ($admitida) {
+                $pedido->versao++;
+                $pedido->save();
+            }
+            $evento = new EventoSolicitacao;
+            $evento->forceFill([
+                'solicitacao_id' => $pedido->id, 'autor_user_id' => $autor->id, 'tipo' => 'correcao',
+                'estado_anterior' => $pedido->status, 'estado_novo' => $pedido->status,
+                'dados_anteriores' => ['registro' => $admitida ? 'cadastro' : 'pedido', 'campos' => $anteriores],
+                'dados_novos' => ['registro' => $admitida ? 'cadastro' : 'pedido', 'campos' => $novos, 'versao' => $alvo->versao],
+                'motivo' => $dados['motivo'], 'ocorrido_em' => now(),
+            ])->save();
+
+            return $evento;
+        });
+    }
 
     /** @param array<int, array{id: int|string, versao: int|string}> $entradas */
     public static function bloquearPedidos(array $entradas, int $origem): Collection
@@ -146,6 +207,32 @@ class Solicitacao extends Model
         }
 
         return $resultado;
+    }
+
+    /**
+     * Pedidos que aceitam agendar visita: ainda sem visita realizada, ou com a avaliação em aguardo e o relatório de todas
+     * as visitas já analisado, caso em que a nova visita complementa a mesma avaliação. Não considera a reserva da agenda.
+     */
+    public function scopeAceitandoVisita(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $pedido): Builder => $pedido->whereDoesntHave('agendamentos.atendimento')
+            ->orWhereExists(fn (QueryBuilder $avaliacao): QueryBuilder => $avaliacao->selectRaw('1')->from('avaliacoes')
+                ->join('atendimentos as primeira_visita', 'primeira_visita.id', '=', 'avaliacoes.atendimento_id')
+                ->join('agendamentos as primeira_agenda', 'primeira_agenda.id', '=', 'primeira_visita.agendamento_id')
+                ->whereColumn('primeira_agenda.solicitacao_id', 'solicitacoes.id')->where('avaliacoes.estado', 'em_aguardo')
+                ->whereNotExists(fn (QueryBuilder $visita): QueryBuilder => $visita->selectRaw('1')->from('atendimentos as visita')
+                    ->join('agendamentos as agenda_visita', 'agenda_visita.id', '=', 'visita.agendamento_id')
+                    ->whereColumn('agenda_visita.solicitacao_id', 'solicitacoes.id')
+                    ->whereNotExists(fn (QueryBuilder $decisao): QueryBuilder => $decisao->selectRaw('1')->from('decisoes_avaliacao')
+                        ->join('versoes_relatorio_visita', 'versoes_relatorio_visita.id', '=', 'decisoes_avaliacao.versao_relatorio_id')
+                        ->join('relatorios_visita', 'relatorios_visita.id', '=', 'versoes_relatorio_visita.relatorio_visita_id')
+                        ->whereColumn('decisoes_avaliacao.avaliacao_id', 'avaliacoes.id')
+                        ->whereColumn('relatorios_visita.atendimento_id', 'visita.id')))));
+    }
+
+    public function aceitaVisita(): bool
+    {
+        return static::query()->whereKey($this->id)->aceitandoVisita()->exists();
     }
 
     protected function casts(): array

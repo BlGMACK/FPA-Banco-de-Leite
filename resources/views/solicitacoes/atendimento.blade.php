@@ -1,7 +1,7 @@
-@foreach (['analise-iniciada' => 'Análise iniciada.', 'contato-registrado' => 'Contato registrado. Nenhuma mensagem foi enviada pelo sistema.', 'conferencia-registrada' => 'Conferência registrada.'] as $codigo => $mensagem)
+@foreach (['analise-iniciada' => 'Análise iniciada.', 'contato-registrado' => 'Contato registrado. Nenhuma mensagem foi enviada pelo sistema.', 'conferencia-registrada' => 'Conferência registrada.', 'dados-corrigidos' => 'Dados corrigidos. O histórico foi preservado.'] as $codigo => $mensagem)
     @if(session('status') === $codigo)<div class="alert alert-success" role="status">{{ $mensagem }}</div>@endif
 @endforeach
-@foreach (['contato', 'decisao'] as $bag)
+@foreach (['contato', 'decisao', 'correcao'] as $bag)
     @if($errors->getBag($bag)->any())
         <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->getBag($bag)->all() as $erro)<li>{{ $erro }}</li>@endforeach</ul></div>
     @endif
@@ -15,6 +15,7 @@
     </form>
 @endif
 @if(in_array($pedido->status, ['enviada', 'em_analise']))
+    @include('solicitacoes.correcao')
     <details class="card mb-4" @if($errors->getBag('contato')->any()) open @endif><summary class="card-header">Registrar contato</summary><div class="card-body">
         <p>Registre o contato feito pela equipe. O sistema não envia mensagens. Marque somente os pedidos realmente abordados.</p>
         <form method="POST" action="{{ route('interno.solicitacoes.contatos.store', $pedido) }}" class="row g-3">
@@ -88,7 +89,8 @@
 @empty<p>Nenhum contato registrado.</p>@endforelse
 <h2 class="h5">Histórico administrativo</h2>
 @foreach($pedido->eventos as $evento)
-    <p class="text-break">{{ $evento->ocorrido_em->format('d/m/Y H:i') }} — {{ $evento->tipo }} — {{ $evento->autor?->name ?? 'Recebimento público' }}. {{ $evento->motivo }}</p>
+    <p class="text-break">{{ $evento->ocorrido_em->format('d/m/Y H:i') }} — {{ $evento->tipo }} — {{ $evento->autor?->name ?? 'Recebimento público' }}. {{ $evento->motivo }}
+        @if($evento->tipo === 'correcao')<br>Campos corrigidos no {{ $evento->dados_novos['registro'] }}: {{ implode(', ', array_keys($evento->dados_novos['campos'])) }}.@endif</p>
 @endforeach
 @foreach($pedido->resolucoes as $resolucao)
     <div class="border rounded p-3 mb-3 text-break">

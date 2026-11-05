@@ -17,8 +17,11 @@
         </p>
         @if (session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
         @if ($falhas && ($formulario === null || ($formulario === 'outro' && ! $escrita)))<div class="alert alert-danger" role="alert">@foreach ($falhas as $mensagens)@foreach ($mensagens as $mensagem)<p class="mb-0">{{ $mensagem }}</p>@endforeach @endforeach</div>@endif
-        @if (App\Models\Avaliacao::exigenciasCumpridas($itens))
-            <div class="alert alert-success">Exigências cumpridas: todos os itens solicitados foram aceitos e nenhum está vencido. A decisão de habilitação ainda não está disponível no sistema.</div>
+        @if ($avaliacao->estado !== 'liberada_exames')
+            <div class="alert alert-secondary">A decisão de habilitação foi registrada ({{ App\Models\Avaliacao::ESTADOS[$avaliacao->estado] }}). Os exames ficam disponíveis só para consulta.</div>
+        @elseif (App\Models\Avaliacao::exigenciasCumpridas($itens))
+            <div class="alert alert-success">Exigências cumpridas: todos os itens solicitados foram aceitos e nenhum está vencido.
+                A decisão de habilitação é registrada na avaliação. @if ($leituraAvaliacao)<a href="{{ route('interno.avaliacoes.show', $avaliacao) }}#habilitacao">Abrir a avaliação</a>@endif</div>
         @else
             <div class="alert alert-info">Exigências pendentes: é preciso ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido. Itens não solicitados não bloqueiam.</div>
         @endif
