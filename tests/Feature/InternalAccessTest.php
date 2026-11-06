@@ -77,6 +77,18 @@ class InternalAccessTest extends TestCase
         }
     }
 
+    public function test_side_menu_shows_account_with_profile_and_logout(): void
+    {
+        $funcionaria = User::factory()->funcionario()->create(['name' => 'Ana <b>Paula</b> Siqueira', 'email' => 'ana@exemplo.com']);
+
+        $this->actingAs($funcionaria)->get('/dashboard')->assertOk()
+            ->assertSeeInOrder(['class="blh-conta"', 'Ana &lt;b&gt;Paula&lt;/b&gt; Siqueira', 'ana@exemplo.com', 'Equipe',
+                route('profile.edit'), 'action="'.route('logout').'"', 'Navegação principal'], false)
+            ->assertSee('<span class="blh-conta__avatar" aria-hidden="true">AS</span>', false)
+            ->assertDontSee('blh-topo__usuario', false);
+        $this->actingAs(User::factory()->admin()->create())->get('/dashboard')->assertSee('Administração');
+    }
+
     public function test_demo_routes_are_not_available(): void
     {
         $this->actingAs(User::factory()->admin()->create());
