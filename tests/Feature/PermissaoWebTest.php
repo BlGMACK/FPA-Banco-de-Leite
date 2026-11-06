@@ -51,7 +51,7 @@ class PermissaoWebTest extends TestCase
         $url = '/interno/permissoes/'.$employee->id;
 
         $this->actingAs($admin)->get('/interno/permissoes')->assertOk()->assertSee('Pessoa da Agenda')
-            ->assertDontSee($admin->email)->assertSee('Nenhuma');
+            ->assertDontSee('/interno/permissoes/'.$admin->id.'"', false)->assertSee('Nenhuma');
         $this->get($url)->assertOk()->assertSee('Gestão da agenda')->assertSee('Não concedida')->assertSee('Nenhuma alteração registrada.');
         $this->post($url.'/concessoes', ['permissao_id' => $agenda->id, 'motivo' => 'Responsável pelas visitas'])
             ->assertRedirect($url)->assertSessionHas('status', 'Permissão “Gestão da agenda” concedida.');

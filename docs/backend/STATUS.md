@@ -85,6 +85,16 @@ Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
 
+### Dados de demonstração — 06/11/2026
+
+A pedido do usuário, para a apresentação do projeto: `DemonstracaoSeeder` cria 13 pessoas fictícias em todas as etapas do primeiro fluxo e três contas de equipe em `@demo.bancodeleite.local`, passando pelas operações de domínio (`ResolucaoSolicitacao::executar`, `ContatoSolicitacao::registrarAcompanhamento`, `Agendamento::confirmar`, `Atendimento::registrar`, `RelatorioVisita::salvarRascunho/finalizar`, `Avaliacao::decidir/habilitar`, `ItemAvaliacao::registrar`) com o relógio avançado entre as etapas. Recebimento, início da análise e contato da análise reproduzem o registro feito pelos controllers. Só em ambiente local (e nos testes); recusa nova execução. Uso em [Ambiente](../AMBIENTE.md#dados-de-demonstração). Sem migration nem mudança de regra; `banco_de_leite_dev` não foi alterado.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `DemonstracaoSeederTest`, SQLite `:memory:` | 5 testes: distribuição por etapa (3 enviados, 1 em análise, 10 admitidos; avaliações aguardando, liberadas, habilitadas e temporária; 3 doadoras ativas; 2 visitas futuras), evento de recebimento em todos os pedidos, correspondência do pedido repetido, relógio restaurado, telas internas listando os registros, recusa de segunda execução e fora do ambiente local, datas relativas ao dia da execução. |
+| `migrate:fresh` e seeder em `banco_de_leite_schema_test` (MariaDB) | Executado sem erro; cada pessoa parou na etapa prevista; números de CNS válidos; validade dos exames aceitos calculada a partir da data de realização. |
+| Suíte completa, SQLite | 457 testes: 453 aprovados, 4 ignorados. |
+
 ### Retenção dos anexos e das correções — 05/11/2026
 
 Implementação autorizada pelo usuário, com as decisões da mesma data: prazo configurável; arquivo apagado e registro mantido com data e autor; mesmo prazo para os valores das correções; descarte disparado por administrador numa tela, sem terminal nem agendamento. Migration `2026_11_05_100000_add_descarte_retencao` (quatro colunas anuláveis e duas chaves estrangeiras; rollback recusado havendo descarte). Contrato em [Contratos](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026).

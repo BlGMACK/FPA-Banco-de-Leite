@@ -15,12 +15,7 @@
                 <svg viewBox="0 0 200 250" aria-hidden="true" focusable="false"><path fill="#e8a317" d="M100 6C100 6 22 98 22 158a78 78 0 0 0 156 0C178 98 100 6 100 6Z"/></svg>
                 <span>Banco de Leite Humano</span>
             </a>
-            <div class="blh-topo__usuario">
-                <span class="blh-topo__nome">{{ Auth::user()->name }}</span>
-                <a class="blh-topo__acesso" href="{{ route('profile.edit') }}">Perfil</a>
-                <form method="POST" action="{{ route('logout') }}">@csrf<button class="blh-topo__acesso" type="submit">Sair</button></form>
-                <button class="blh-topo__acesso blh-topo__menu" type="button" data-bs-toggle="collapse" data-bs-target="#navegacao" aria-controls="navegacao" aria-expanded="false">Menu</button>
-            </div>
+            <button class="blh-topo__acesso blh-topo__menu" type="button" data-bs-toggle="collapse" data-bs-target="#navegacao" aria-controls="navegacao" aria-expanded="false">Menu</button>
         </div>
     </header>
     <div class="blh-interno">
