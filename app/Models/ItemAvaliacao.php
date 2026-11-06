@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ItemAvaliacao extends Model
@@ -30,6 +33,9 @@ class ItemAvaliacao extends Model
     public const MAX_PRORROGACOES = 2;
 
     private const ACOES_COM_MOTIVO = ['cancelamento_solicitacao', 'complementacao', 'prorrogacao'];
+
+    /** Estados em que o item aceita novos arquivos; aceito ou não solicitado não recebem anexos. */
+    public const ESTADOS_COM_ANEXO = ['solicitado', 'recebido', 'precisa_complementar'];
 
     protected $table = 'itens_avaliacao';
 
@@ -78,6 +84,78 @@ class ItemAvaliacao extends Model
     public function exigeNumero(): bool
     {
         return (bool) $this->tipo?->exige_numero;
+    }
+
+    /** O CNS é registrado só pelo número, sem imagem (minimização acordada em 29/10/2026). */
+    public function aceitaAnexo(): bool
+    {
+        return ! $this->exigeNumero() && in_array($this->estado, self::ESTADOS_COM_ANEXO, true);
+    }
+
+    /**
+     * Guarda o arquivo no disco privado "anexos" com nome gerado e registra o anexo; nada é sobrescrito nem apagado.
+     *
+     * @param  array<string, mixed>  $entrada
+     */
+    public function anexar(User $autor, array $entrada): AnexoItemAvaliacao
+    {
+        Gate::forUser($autor)->authorize(Permissao::REGISTRAR_EXAMES);
+        $dados = Validator::make($entrada, [
+            'operacao_id' => ['required', 'uuid'],
+            'arquivo' => ['required', 'file', 'max:'.AnexoItemAvaliacao::TAMANHO_MAXIMO_KB, 'mimetypes:'.implode(',', array_keys(AnexoItemAvaliacao::TIPOS))],
+        ], ['arquivo.required' => 'Escolha um arquivo.', 'arquivo.file' => 'O envio do arquivo falhou. Tente novamente.',
+            'arquivo.max' => 'O arquivo deve ter no máximo 10 MB.', 'arquivo.mimetypes' => 'Envie um arquivo PDF, JPEG ou PNG.'])->validate();
+        /** @var UploadedFile $arquivo */
+        $arquivo = $dados['arquivo'];
+        $tipo = (string) $arquivo->getMimeType();
+        $extensao = AnexoItemAvaliacao::TIPOS[$tipo] ?? throw ValidationException::withMessages(['arquivo' => 'Envie um arquivo PDF, JPEG ou PNG.']);
+        $nome = trim((string) preg_replace('/[\x00-\x1F\x7F]/u', '', basename(str_replace('\\', '/', $arquivo->getClientOriginalName()))));
+        $nome = mb_substr($nome === '' ? 'arquivo.'.$extensao : $nome, 0, 255);
+        $sha256 = (string) hash_file('sha256', $arquivo->getRealPath());
+        $hash = hash('sha256', json_encode(['anexo', $this->getKey(), $autor->id, $dados['operacao_id'], $sha256], JSON_THROW_ON_ERROR));
+        $gravado = null;
+
+        try {
+            return DB::transaction(function () use ($autor, $dados, $arquivo, $tipo, $extensao, $nome, $sha256, $hash, &$gravado): AnexoItemAvaliacao {
+                $referencia = static::query()->findOrFail($this->getKey());
+                $avaliacao = Avaliacao::query()->lockForUpdate()->findOrFail($referencia->avaliacao_id);
+                $item = static::query()->with('tipo')->lockForUpdate()->findOrFail($this->getKey());
+                Gate::forUser($autor)->authorize(Permissao::REGISTRAR_EXAMES);
+                $anterior = AnexoItemAvaliacao::query()->where('operacao_id', $dados['operacao_id'])->lockForUpdate()->first();
+                if ($anterior) {
+                    abort_unless(hash_equals($anterior->conteudo_hash, $hash), 409, 'Operação já utilizada com outros dados.');
+
+                    return $anterior;
+                }
+                abort_unless($avaliacao->estado === 'liberada_exames', 409, 'A etapa de exames desta avaliação não está aberta.');
+                abort_if($item->exigeNumero(), 409, 'O CNS é registrado só pelo número, sem imagem.');
+                abort_unless($item->aceitaAnexo(), 409, 'Anexe arquivos a itens solicitados, recebidos ou que precisam complementar.');
+                $gravado = Storage::disk('anexos')->putFileAs((string) $avaliacao->id, $arquivo, Str::uuid().'.'.$extensao);
+                $anexo = new AnexoItemAvaliacao;
+                $anexo->forceFill(['item_avaliacao_id' => $item->id, 'caminho' => $gravado, 'nome_original' => $nome, 'tipo_conteudo' => $tipo,
+                    'tamanho' => $arquivo->getSize(), 'sha256' => $sha256, 'enviado_por_user_id' => $autor->id, 'enviado_em' => now()->utc(),
+                    'operacao_id' => $dados['operacao_id'], 'conteudo_hash' => $hash])->save();
+
+                return $anexo;
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            static::descartarArquivoOrfao($gravado);
+            if (! AnexoItemAvaliacao::query()->where('operacao_id', $dados['operacao_id'])->exists()) {
+                throw $exception;
+            }
+            abort(409, 'Operação já utilizada. Recarregue a página.');
+        } catch (\Throwable $exception) {
+            static::descartarArquivoOrfao($gravado);
+            throw $exception;
+        }
+    }
+
+    /** Remove apenas o arquivo gravado por uma transação que não chegou a registrá-lo. */
+    private static function descartarArquivoOrfao(?string $caminho): void
+    {
+        if ($caminho !== null && ! AnexoItemAvaliacao::query()->where('caminho', $caminho)->exists()) {
+            Storage::disk('anexos')->delete($caminho);
+        }
     }
 
     /** @param array<string, mixed> $entrada */
@@ -257,5 +335,10 @@ class ItemAvaliacao extends Model
     public function eventos(): HasMany
     {
         return $this->hasMany(EventoItemAvaliacao::class, 'item_avaliacao_id');
+    }
+
+    public function anexos(): HasMany
+    {
+        return $this->hasMany(AnexoItemAvaliacao::class, 'item_avaliacao_id');
     }
 }

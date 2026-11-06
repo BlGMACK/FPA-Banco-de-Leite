@@ -1,37 +1,33 @@
-<nav class="navbar navbar-expand-xl blh-nav" aria-label="Navegação principal">
-    <div class="container blh-nav__container">
-        <a class="navbar-brand blh-nav__marca" href="{{ route('dashboard') }}">Banco de Leite</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navegacao" aria-controls="navegacao" aria-expanded="false" aria-label="Abrir menu"><span class="navbar-toggler-icon"></span></button>
-        <div class="collapse navbar-collapse" id="navegacao">
-            <ul class="navbar-nav me-auto text-nowrap">
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Painel</a></li>
-                @can('atender-solicitacoes')
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.solicitacoes.*') ? 'active' : '' }}" href="{{ route('interno.solicitacoes.index') }}">Solicitações</a></li>
-                @endcan
-                @can('gerenciar-agenda')
-                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.agenda.index') }}">Agenda</a></li>
-                @endcan
-                @can('consultar-relatorios-visita')
-                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.relatorios.index') }}">Relatórios de visita</a></li>
-                @endcan
-                @can('consultar-avaliacoes')
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.avaliacoes.*') ? 'active' : '' }}" href="{{ route('interno.avaliacoes.index') }}">Avaliações</a></li>
-                @endcan
-                @can('consultar-exames')
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.exames.*') ? 'active' : '' }}" href="{{ route('interno.exames.index') }}">Exames</a></li>
-                @endcan
-                @can('criar-funcionarios')
-                    <li class="nav-item"><a class="nav-link" href="{{ route('interno.funcionarios.create') }}">Cadastrar funcionário</a></li>
-                @endcan
-                @can('gerenciar-permissoes')
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('interno.permissoes.*') ? 'active' : '' }}" href="{{ route('interno.permissoes.index') }}">Permissões</a></li>
-                @endcan
-            </ul>
-            <div class="d-flex flex-wrap flex-xl-nowrap align-items-center gap-2 py-2 ms-xl-3 text-nowrap">
-                <span class="small blh-nav__usuario">{{ Auth::user()->name }}</span>
-                <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary btn-sm">Perfil</a>
-                <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-outline-danger btn-sm" type="submit">Sair</button></form>
-            </div>
-        </div>
+<nav id="navegacao" class="collapse blh-lateral" aria-label="Navegação principal">
+    <div class="blh-lateral__interno">
+        <p class="blh-lateral__rotulo">Menu</p>
+        <ul>
+            <li><a href="{{ route('dashboard') }}" @if (request()->routeIs('dashboard')) aria-current="page" @endif>Painel</a></li>
+            @can('atender-solicitacoes')
+                <li><a href="{{ route('interno.solicitacoes.index') }}" @if (request()->routeIs('interno.solicitacoes.*')) aria-current="page" @endif>Solicitações</a></li>
+            @endcan
+            @can('gerenciar-agenda')
+                <li><a href="{{ route('interno.agenda.index') }}" @if (request()->routeIs('interno.agenda.*')) aria-current="page" @endif>Agenda</a></li>
+            @endcan
+            @can('consultar-relatorios-visita')
+                <li><a href="{{ route('interno.relatorios.index') }}" @if (request()->routeIs('interno.relatorios.*')) aria-current="page" @endif>Relatórios de visita</a></li>
+            @endcan
+            @can('consultar-avaliacoes')
+                <li><a href="{{ route('interno.avaliacoes.index') }}" @if (request()->routeIs('interno.avaliacoes.*')) aria-current="page" @endif>Avaliações</a></li>
+                <li><a href="{{ route('interno.doadoras.index') }}" @if (request()->routeIs('interno.doadoras.*')) aria-current="page" @endif>Doadoras</a></li>
+            @endcan
+            @can('consultar-exames')
+                <li><a href="{{ route('interno.exames.index') }}" @if (request()->routeIs('interno.exames.*')) aria-current="page" @endif>Exames</a></li>
+            @endcan
+            @can('criar-funcionarios')
+                <li><a href="{{ route('interno.funcionarios.create') }}" @if (request()->routeIs('interno.funcionarios.*')) aria-current="page" @endif>Cadastrar funcionário</a></li>
+            @endcan
+            @can('gerenciar-permissoes')
+                <li><a href="{{ route('interno.permissoes.index') }}" @if (request()->routeIs('interno.permissoes.*')) aria-current="page" @endif>Permissões</a></li>
+            @endcan
+            @can('gerenciar-retencao')
+                <li><a href="{{ route('interno.retencao.index') }}" @if (request()->routeIs('interno.retencao.*')) aria-current="page" @endif>Retenção</a></li>
+            @endcan
+        </ul>
     </div>
 </nav>

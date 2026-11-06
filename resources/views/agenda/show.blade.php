@@ -17,10 +17,11 @@
                 <button class="btn btn-primary">Registrar contato</button>
             </form>
         </div></section>
-        @if ($visitaRealizada)
+        @if (! $aceitaVisita)
             <p class="alert alert-info">Visita realizada. O acompanhamento não está aguardando novo agendamento.</p>
         @else
-        <section class="card mb-4"><div class="card-body"><h2 class="h4">{{ $atual ? 'Compromisso confirmado' : 'Confirmar visita' }}</h2>
+        <section class="card mb-4"><div class="card-body"><h2 class="h4">{{ $atual ? 'Compromisso confirmado' : ($visitaRealizada ? 'Confirmar visita complementar' : 'Confirmar visita') }}</h2>
+            @if ($visitaRealizada)<p>A avaliação está em aguardo. A nova visita complementa a mesma avaliação: o relatório dela será analisado junto com os anteriores.</p>@endif
             @if ($atual)<p>{{ $atual->inicio_previsto_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }} até {{ $atual->fim_previsto_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }} — {{ $atual->local_atendimento }}</p>@endif
             @php($formularioAgenda = $atual ? 'reagendamento' : 'confirmacao')
             <form method="POST" action="{{ $atual ? route('interno.agenda.reagendamentos.store', $atual) : route('interno.agenda.store', $pedido) }}">@csrf

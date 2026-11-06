@@ -7,12 +7,30 @@
     <title>Banco de Leite Humano</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="blh-interno">
+<body class="blh-app">
     <a href="#conteudo" class="visually-hidden-focusable position-absolute top-0 start-0 z-3 m-2 p-2 bg-white border rounded">Pular para o conteúdo</a>
-    @include('layouts.navigation')
-    @isset($header)
-        <header class="bg-white border-bottom py-3"><div class="container">{{ $header }}</div></header>
-    @endisset
-    <main id="conteudo" tabindex="-1">{{ $slot }}</main>
+    <header class="blh-topo blh-topo--interno">
+        <div class="blh-wrap blh-topo__linha">
+            <a class="blh-marca" href="{{ route('dashboard') }}">
+                <svg viewBox="0 0 200 250" aria-hidden="true" focusable="false"><path fill="#e8a317" d="M100 6C100 6 22 98 22 158a78 78 0 0 0 156 0C178 98 100 6 100 6Z"/></svg>
+                <span>Banco de Leite Humano</span>
+            </a>
+            <div class="blh-topo__usuario">
+                <span class="blh-topo__nome">{{ Auth::user()->name }}</span>
+                <a class="blh-topo__acesso" href="{{ route('profile.edit') }}">Perfil</a>
+                <form method="POST" action="{{ route('logout') }}">@csrf<button class="blh-topo__acesso" type="submit">Sair</button></form>
+                <button class="blh-topo__acesso blh-topo__menu" type="button" data-bs-toggle="collapse" data-bs-target="#navegacao" aria-controls="navegacao" aria-expanded="false">Menu</button>
+            </div>
+        </div>
+    </header>
+    <div class="blh-interno">
+        @include('layouts.navigation')
+        <div class="blh-principal">
+            @isset($header)
+                <header class="blh-cabecalho"><div class="container">{{ $header }}</div></header>
+            @endisset
+            <main id="conteudo" tabindex="-1">{{ $slot }}</main>
+        </div>
+    </div>
 </body>
 </html>

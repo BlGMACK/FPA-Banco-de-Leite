@@ -7,6 +7,7 @@ use App\Models\ContatoSolicitacao;
 use App\Models\Solicitacao;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -40,7 +41,7 @@ class AgendaController extends Controller
         return view('agenda.index', [
             'agendamentos' => $query->orderBy('inicio_previsto_em')->orderBy('id')->paginate(25)->appends($filtros),
             'pendentes' => Solicitacao::query()->where('status', 'admitida')->whereNotNull('interessada_id')
-                ->whereDoesntHave('reservaAgenda')->whereDoesntHave('agendamentos.atendimento')->with('interessada')->orderBy('admitida_em')->orderBy('id')
+                ->whereDoesntHave('reservaAgenda')->aceitandoVisita()->withExists(['agendamentos as visita_realizada' => fn (Builder $agenda): Builder => $agenda->whereHas('atendimento')])->with('interessada')->orderBy('admitida_em')->orderBy('id')
                 ->paginate(25, ['*'], 'pendentes_page')->appends($filtros),
             'responsaveis' => User::query()->whereIn('role', ['admin', 'funcionario'])->orderBy('name')->get(['id', 'name']),
             'filtros' => $filtros,
@@ -55,7 +56,7 @@ class AgendaController extends Controller
             ->orderByDesc('ocorrido_em')->orderByDesc('contatos_solicitacao.id')->paginate(15, ['contatos_solicitacao.*'], 'contatos_page');
 
         return view('agenda.show', [
-            'visitaRealizada' => $pedido->agendamentos()->whereHas('atendimento')->exists(),
+            'visitaRealizada' => $pedido->agendamentos()->whereHas('atendimento')->exists(), 'aceitaVisita' => $pedido->aceitaVisita(),
             'pedido' => $pedido, 'contatos' => $contatos, 'atual' => $pedido->reservaAgenda?->agendamento,
             'confirmacoes' => $pedido->contatos()->where('contexto', 'acompanhamento')->where('resultado', 'realizado')
                 ->orderByDesc('ocorrido_em')->get(['contatos_solicitacao.id', 'ocorrido_em', 'finalidade']),

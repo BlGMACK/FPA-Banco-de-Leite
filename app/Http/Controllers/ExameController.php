@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnexoItemAvaliacao;
 use App\Models\Avaliacao;
 use App\Models\EventoItemAvaliacao;
 use App\Models\ItemAvaliacao;
@@ -11,7 +12,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ExameController extends Controller
@@ -35,7 +38,7 @@ class ExameController extends Controller
         $dados = $request->only(['operacao_id', 'nome_outro', 'detalhes_outro']);
 
         return $this->executar($avaliacao, 'outro', $dados,
-            fn () => ItemAvaliacao::incluirOutro($this->comExames(Avaliacao::query())->findOrFail($avaliacao), $request->user(), $dados));
+            fn (): string => $this->mensagem(ItemAvaliacao::incluirOutro($this->comExames(Avaliacao::query())->findOrFail($avaliacao), $request->user(), $dados)));
     }
 
     public function registrar(Request $request, int $item): RedirectResponse|Response
@@ -44,14 +47,46 @@ class ExameController extends Controller
         $registro = ItemAvaliacao::query()->findOrFail($item);
         $dados = $request->only(['operacao_id', 'versao', 'acao', 'motivo', 'realizado_em', 'numero_documento']);
 
-        return $this->executar($registro->avaliacao_id, 'item-'.$registro->id, $dados, fn () => $registro->registrar($request->user(), $dados));
+        return $this->executar($registro->avaliacao_id, 'item-'.$registro->id, $dados, fn (): string => $this->mensagem($registro->registrar($request->user(), $dados)));
+    }
+
+    public function anexar(Request $request, int $item): RedirectResponse|Response
+    {
+        Gate::authorize(Permissao::REGISTRAR_EXAMES);
+        $registro = ItemAvaliacao::query()->findOrFail($item);
+        $operacao = $request->input('operacao_id');
+
+        return $this->executar($registro->avaliacao_id, 'item-'.$registro->id, ['operacao_id' => $operacao, 'acao' => 'anexo'],
+            function () use ($registro, $request, $operacao): string {
+                $anexo = $registro->anexar($request->user(), ['operacao_id' => $operacao, 'arquivo' => $request->file('arquivo')]);
+
+                return 'Arquivo “'.$anexo->nome_original.'” anexado a “'.$registro->nome().'”.';
+            });
+    }
+
+    /** Entrega o arquivo só a quem consulta exames; nunca há URL pública para o disco de anexos. */
+    public function arquivo(Request $request, int $anexo): StreamedResponse
+    {
+        Gate::authorize(Permissao::CONSULTAR_EXAMES);
+        $registro = AnexoItemAvaliacao::query()->findOrFail($anexo);
+        abort_if($registro->descartado_em !== null, 410, 'O arquivo foi descartado pelo prazo de retenção.');
+        abort_unless(Storage::disk('anexos')->exists($registro->caminho), 404, 'Arquivo não encontrado no armazenamento.');
+
+        return Storage::disk('anexos')->response($registro->caminho, $registro->nome_original, [
+            'Content-Type' => $registro->tipo_conteudo, 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store',
+        ], $request->boolean('baixar') ? 'attachment' : 'inline');
+    }
+
+    private function mensagem(EventoItemAvaliacao $evento): string
+    {
+        return 'Registrado: '.mb_strtolower(EventoItemAvaliacao::ACOES[$evento->acao]).' de “'.$evento->item->nome().'”. O histórico foi preservado.';
     }
 
     /** @param array<string, mixed> $dados */
     private function executar(int $avaliacao, string $formulario, array $dados, callable $operacao): RedirectResponse|Response
     {
         try {
-            $evento = $operacao();
+            $status = $operacao();
         } catch (ValidationException $exception) {
             return $this->detalhe($avaliacao, $formulario, $dados, $exception->errors(), 422);
         } catch (HttpException $exception) {
@@ -62,8 +97,7 @@ class ExameController extends Controller
             return $this->detalhe($avaliacao, $formulario, $dados, ['conflito' => [$exception->getMessage()]], 409);
         }
 
-        return redirect()->route('interno.exames.show', $avaliacao)
-            ->with('status', 'Registrado: '.mb_strtolower(EventoItemAvaliacao::ACOES[$evento->acao]).' de “'.$evento->item->nome().'”. O histórico foi preservado.');
+        return redirect()->route('interno.exames.show', $avaliacao)->with('status', $status);
     }
 
     /** @param array<string, mixed> $entrada
@@ -73,7 +107,7 @@ class ExameController extends Controller
     {
         Gate::authorize(Permissao::CONSULTAR_EXAMES);
         $avaliacao = $this->comExames(Avaliacao::query())->with(['atendimento.agendamento.solicitacao.interessada', 'atendimento.responsavel'])->findOrFail($id);
-        $itens = $avaliacao->itens()->with('tipo')->withExists(['eventos as ja_recebido' => fn (Builder $q): Builder => $q->where('acao', 'recebimento')])
+        $itens = $avaliacao->itens()->with(['tipo', 'anexos' => fn ($q) => $q->with('enviadoPor:id,name')->orderByDesc('enviado_em')->orderByDesc('id')])->withExists(['eventos as ja_recebido' => fn (Builder $q): Builder => $q->where('acao', 'recebimento')])
             ->leftJoin('tipos_exame', 'tipos_exame.id', '=', 'itens_avaliacao.tipo_exame_id')->select('itens_avaliacao.*')
             ->orderByRaw('itens_avaliacao.tipo_exame_id is null')->orderBy('tipos_exame.ordem')->orderBy('itens_avaliacao.id')->get();
 

@@ -36,7 +36,7 @@ class RelatorioVisitaController extends Controller
             $query->whereHas('atendimento', fn (Builder $q): Builder => $q->where('responsavel_user_id', $filtros['responsavel']));
         }
         $pendentes = $escrita ? Agendamento::query()->where('status', 'confirmado')->whereHas('reserva')
-            ->whereHas('solicitacao', fn (Builder $q): Builder => $q->where('status', 'admitida')->whereNotNull('interessada_id')->whereDoesntHave('agendamentos.atendimento'))
+            ->whereHas('solicitacao', fn (Builder $q): Builder => $q->where('status', 'admitida')->whereNotNull('interessada_id')->aceitandoVisita())
             ->with(['solicitacao.interessada', 'responsavel'])->orderBy('inicio_previsto_em')->orderBy('id')
             ->paginate(15, ['*'], 'visitas_page')->appends($filtros) : null;
 
@@ -107,7 +107,7 @@ class RelatorioVisitaController extends Controller
         $agenda = Agendamento::query()->with(['solicitacao.interessada', 'responsavel'])->findOrFail($id);
         abort_unless($agenda->status === 'confirmado' && $agenda->reserva()->exists()
             && $agenda->solicitacao->status === 'admitida' && $agenda->solicitacao->interessada_id !== null
-            && ! $agenda->solicitacao->agendamentos()->whereHas('atendimento')->exists(), 409, 'O compromisso não está disponível para realização.');
+            && $agenda->solicitacao->aceitaVisita(), 409, 'O compromisso não está disponível para realização.');
 
         return $this->pagina('relatorios.visita', ['agenda' => $agenda, 'entrada' => $this->escalares($entrada),
             'falhas' => $falhas, 'responsaveis' => $this->responsaveis($agenda->responsavel_user_id)], $status);
@@ -132,7 +132,7 @@ class RelatorioVisitaController extends Controller
 
         return $this->pagina('relatorios.show', ['relatorio' => $relatorio, 'versao' => $versao, 'rascunho' => $rascunho,
             'escrita' => $escrita, 'formulario' => $formulario,
-            'analiseConcluida' => (bool) Avaliacao::query()->where('atendimento_id', $relatorio->atendimento_id)->first()?->concluida(), 'entrada' => $this->escalares($entrada), 'falhas' => $falhas,
+            'analiseConcluida' => (bool) Avaliacao::daVisita($relatorio->atendimento_id)->first()?->concluida(), 'entrada' => $this->escalares($entrada), 'falhas' => $falhas,
             'finalizador' => $versao ? User::query()->findOrFail($versao['finalizado_por_user_id'])->name : null,
             'versoes' => $relatorio->versoes()->select(['id', 'relatorio_visita_id', 'numero', 'finalizado_por_user_id', 'finalizado_em'])
                 ->with('finalizadoPor')->orderByDesc('numero')->paginate(15)->appends(['versao' => $numero])], $status);

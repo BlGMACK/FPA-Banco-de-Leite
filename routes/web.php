@@ -3,11 +3,13 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AtendimentoSolicitacaoController;
 use App\Http\Controllers\AvaliacaoController;
+use App\Http\Controllers\DoadoraController;
 use App\Http\Controllers\ExameController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PermissaoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelatorioVisitaController;
+use App\Http\Controllers\RetencaoController;
 use App\Http\Controllers\SolicitacaoController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +29,7 @@ Route::middleware(['auth', 'can:atender-solicitacoes'])->prefix('interno/solicit
     Route::get('/{solicitacao}', [SolicitacaoController::class, 'show'])->whereNumber('solicitacao')->name('show');
     Route::post('/{solicitacao}/analise', [AtendimentoSolicitacaoController::class, 'analise'])->whereNumber('solicitacao')->name('analise.store');
     Route::post('/{solicitacao}/contatos', [AtendimentoSolicitacaoController::class, 'contato'])->whereNumber('solicitacao')->name('contatos.store');
+    Route::post('/{solicitacao}/correcao', [AtendimentoSolicitacaoController::class, 'correcao'])->whereNumber('solicitacao')->name('correcao.store');
     foreach (['conferencias', 'resolucoes', 'admissao'] as $acao) {
         Route::post('/{solicitacao}/'.$acao, [AtendimentoSolicitacaoController::class, 'decisao'])->whereNumber('solicitacao')->name($acao.'.store');
     }
@@ -61,6 +64,11 @@ Route::middleware(['auth', 'can:gerenciar-permissoes'])->prefix('interno/permiss
     foreach (['desativacao', 'reativacao'] as $acao) {
         Route::post('/{funcionario}/'.$acao, [PermissaoController::class, 'situacao'])->whereNumber('funcionario')->name($acao.'.store');
     }
+});
+
+Route::middleware(['auth', 'can:gerenciar-retencao'])->prefix('interno/retencao')->name('interno.retencao.')->group(function (): void {
+    Route::get('/', [RetencaoController::class, 'index'])->name('index');
+    Route::post('/descarte', [RetencaoController::class, 'descartar'])->name('descarte.store');
 });
 
 Route::get('/dashboard', function () {
@@ -98,6 +106,13 @@ Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/avaliac
     Route::post('/{avaliacao}/analise', [AvaliacaoController::class, 'iniciarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.iniciar');
     Route::post('/{avaliacao}/analise/encerrar', [AvaliacaoController::class, 'encerrarAnalise'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('analise.encerrar');
     Route::post('/{avaliacao}/decisoes', [AvaliacaoController::class, 'store'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('decisoes.store');
+    Route::post('/{avaliacao}/habilitacao', [AvaliacaoController::class, 'habilitar'])->middleware('can:avaliar-doadoras')->whereNumber('avaliacao')->name('habilitacao.store');
+});
+
+Route::middleware(['auth', 'can:consultar-avaliacoes'])->prefix('interno/doadoras')->name('interno.doadoras.')->group(function (): void {
+    Route::get('/', [DoadoraController::class, 'index'])->name('index');
+    Route::get('/{doadora}', [DoadoraController::class, 'show'])->whereNumber('doadora')->name('show');
+    Route::post('/{doadora}/eventos', [DoadoraController::class, 'registrar'])->middleware('can:avaliar-doadoras')->whereNumber('doadora')->name('eventos.store');
 });
 
 Route::middleware(['auth', 'can:consultar-exames'])->prefix('interno/exames')->name('interno.exames.')->group(function (): void {
@@ -105,4 +120,6 @@ Route::middleware(['auth', 'can:consultar-exames'])->prefix('interno/exames')->n
     Route::get('/{avaliacao}', [ExameController::class, 'show'])->whereNumber('avaliacao')->name('show');
     Route::post('/{avaliacao}/itens', [ExameController::class, 'incluir'])->middleware('can:registrar-exames')->whereNumber('avaliacao')->name('itens.incluir');
     Route::post('/itens/{item}/eventos', [ExameController::class, 'registrar'])->middleware('can:registrar-exames')->whereNumber('item')->name('itens.registrar');
+    Route::post('/itens/{item}/anexos', [ExameController::class, 'anexar'])->middleware('can:registrar-exames')->whereNumber('item')->name('itens.anexar');
+    Route::get('/anexos/{anexo}', [ExameController::class, 'arquivo'])->whereNumber('anexo')->name('anexos.arquivo');
 });

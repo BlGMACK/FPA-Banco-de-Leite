@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AtendimentoSolicitacaoRequest;
+use App\Http\Requests\CorrecaoSolicitacaoRequest;
 use App\Models\ContatoSolicitacao;
 use App\Models\ResolucaoSolicitacao;
 use App\Models\Solicitacao;
@@ -81,6 +82,14 @@ class AtendimentoSolicitacaoController extends Controller
         }
 
         return redirect()->route('interno.solicitacoes.show', $solicitacao)->with('status', 'conferencia-registrada');
+    }
+
+    public function correcao(CorrecaoSolicitacaoRequest $request, int $solicitacao): RedirectResponse
+    {
+        $evento = Solicitacao::corrigirDados($solicitacao, $request->user(), $request->validated());
+
+        return redirect()->route($evento->estado_novo === 'admitida' ? 'interno.acompanhamentos.show' : 'interno.solicitacoes.show', $solicitacao)
+            ->with('status', 'dados-corrigidos');
     }
 
     public function index(): View

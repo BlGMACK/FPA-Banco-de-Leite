@@ -57,11 +57,15 @@ Não importe o schema legado por cima das migrations. Não use `migrate:fresh` e
 
 Depois das migrations, provisione o catálogo de permissões com `php artisan db:seed --class=PermissaoSeeder --no-interaction`. O seeder é idempotente e não concede permissões a ninguém: o admin acessa todos os módulos automaticamente, e funcionários dependem de concessão explícita. Conceda-as entrando como admin, no menu “Permissões”. Provisione também o catálogo de exames com `php artisan db:seed --class=TipoExameSeeder --no-interaction`, igualmente idempotente; ele acrescenta tipos novos, em “não solicitado”, às avaliações já liberadas para exames.
 
+Os anexos de exames ficam em `storage/app/private/anexos` (disco `anexos`, fora do Git e sem rota pública). O PHP precisa da extensão `fileinfo` e de `upload_max_filesize`/`post_max_size` de pelo menos 10 MB (o XAMPP local usa 40 MB). Qualquer backup do banco deve incluir esse diretório.
+
+O prazo de retenção dos anexos e dos valores corrigidos de pedidos fica em `RETENCAO_ANOS` (anos). Vazio, como no [.env.example](../.env.example), significa prazo não definido: nada fica disponível para descarte. Configure-o só depois de a equipe responsável definir o prazo e rode `php artisan config:clear` se a configuração estiver em cache. O descarte é feito por um administrador no menu “Retenção”; não há comando nem agendamento.
+
 O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `database/database.sqlite` remanescente da preparação anterior não representa a conexão MySQL. Os testes usam outro banco: SQLite em memória.
 
 ### Dados fictícios opcionais
 
-Em um banco local novo, o [seeder](../database/seeders/DatabaseSeeder.php) pode ser executado com `php artisan db:seed --no-interaction`. Ele cria duas contas fictícias internas: admin e funcionário. Não cria contas de doadora. Consulte o arquivo para os dados de demonstração; não os use em produção. O seeder usa `create` e não é idempotente: repeti-lo com esses e-mails existentes pode causar conflito de unicidade. Verifique antes e não apague tabelas para contornar o conflito. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
+O [seeder principal](../database/seeders/DatabaseSeeder.php) (`php artisan db:seed --no-interaction`) executa os dois catálogos acima e, **somente em ambiente local**, cria as contas fictícias `admin@teste.com` e `funcionario@teste.com`, cada uma com senha aleatória exibida uma única vez no terminal. Pode ser repetido: contas já existentes são mantidas sem alteração, inclusive a senha. Não cria contas de doadora nem concede permissões; fora do ambiente local, cria só os catálogos. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
 
 ## Execução
 
@@ -100,6 +104,6 @@ php vendor/bin/phpunit tests/Feature/AgendaConcurrencyTest.php tests/Feature/Rel
 
 Feche o terminal ou remova as variáveis depois. Os testes recriam e revertem as tabelas desse banco; nunca aponte para `banco_de_leite_dev`.
 
-Não execute `composer run setup` indiscriminadamente em ambiente existente: o script gera chave e aplica migrations. O script de criação de projeto ainda menciona SQLite. São pendências de alinhamento; não foram alterados nesta tarefa.
+`composer run setup` instala dependências, copia `.env.example` se não houver `.env`, gera a chave **somente se `APP_KEY` estiver vazia**, aplica as migrations no banco configurado e compila os assets. Em ambiente existente, confira antes qual banco o `.env` aponta, porque as migrations pendentes serão aplicadas. O script de criação de projeto não menciona mais SQLite.
 
 Após receber alterações, reinstale pelos locks quando mudarem, aplique migrations revisadas e compile os assets quando necessário. Não reinstale Breeze sobre as views adaptadas.
