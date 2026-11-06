@@ -69,6 +69,7 @@ class ExameController extends Controller
     {
         Gate::authorize(Permissao::CONSULTAR_EXAMES);
         $registro = AnexoItemAvaliacao::query()->findOrFail($anexo);
+        abort_if($registro->descartado_em !== null, 410, 'O arquivo foi descartado pelo prazo de retenção.');
         abort_unless(Storage::disk('anexos')->exists($registro->caminho), 404, 'Arquivo não encontrado no armazenamento.');
 
         return Storage::disk('anexos')->response($registro->caminho, $registro->nome_original, [

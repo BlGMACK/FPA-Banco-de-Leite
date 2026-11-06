@@ -59,6 +59,8 @@ Depois das migrations, provisione o catálogo de permissões com `php artisan db
 
 Os anexos de exames ficam em `storage/app/private/anexos` (disco `anexos`, fora do Git e sem rota pública). O PHP precisa da extensão `fileinfo` e de `upload_max_filesize`/`post_max_size` de pelo menos 10 MB (o XAMPP local usa 40 MB). Qualquer backup do banco deve incluir esse diretório.
 
+O prazo de retenção dos anexos e dos valores corrigidos de pedidos fica em `RETENCAO_ANOS` (anos). Vazio, como no [.env.example](../.env.example), significa prazo não definido: nada fica disponível para descarte. Configure-o só depois de a equipe responsável definir o prazo e rode `php artisan config:clear` se a configuração estiver em cache. O descarte é feito por um administrador no menu “Retenção”; não há comando nem agendamento.
+
 O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `database/database.sqlite` remanescente da preparação anterior não representa a conexão MySQL. Os testes usam outro banco: SQLite em memória.
 
 ### Dados fictícios opcionais
