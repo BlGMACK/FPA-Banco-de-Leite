@@ -67,6 +67,19 @@ O phpMyAdmin mostra o banco MySQL/MariaDB, não arquivos SQLite. O arquivo `data
 
 O [seeder principal](../database/seeders/DatabaseSeeder.php) (`php artisan db:seed --no-interaction`) executa os dois catálogos acima e, **somente em ambiente local**, cria as contas fictícias `admin@teste.com` e `funcionario@teste.com`, cada uma com senha aleatória exibida uma única vez no terminal. Pode ser repetido: contas já existentes são mantidas sem alteração, inclusive a senha. Não cria contas de doadora nem concede permissões; fora do ambiente local, cria só os catálogos. Contas criadas pela interface interna definem a senha pela recuperação por e-mail; configurar a entrega antes de uso real.
 
+### Dados de demonstração
+
+Para apresentar o sistema com telas preenchidas, o [seeder de demonstração](../database/seeders/DemonstracaoSeeder.php) cria 13 pessoas fictícias espalhadas por todas as etapas do primeiro fluxo, no município de Marília: pedidos novos (um deles enviado duas vezes, para mostrar a possível correspondência), pedido em análise, admitida sem visita, visitas marcadas para os próximos dias, visita com relatório em rascunho, avaliação aguardando análise, exames solicitados, exames aceitos aguardando habilitação e três doadoras habilitadas (uma temporária). Cria também três contas de equipe em `@demo.bancodeleite.local`: a coordenação (admin, criada só se ainda não houver nenhum admin), Ana Paula Siqueira (atendimento, agenda, relatórios, avaliação e exames) e Carla Mendonça (atendimento, agenda e exames). A senha de cada conta é aleatória e aparece uma única vez no terminal.
+
+Cada etapa passa pelas mesmas operações das telas, com o relógio avançado entre elas, então histórico e datas ficam coerentes e relativos ao dia em que o seeder roda. Ele recusa rodar fora do ambiente local e recusa rodar de novo se as contas de demonstração já existirem. Use um banco próprio para a demonstração, nunca um banco com dados a preservar:
+
+```powershell
+php artisan migrate:fresh --no-interaction
+php artisan db:seed --class=DemonstracaoSeeder --no-interaction
+```
+
+Rode-o perto da data da apresentação: os exames aceitos valem 30 dias, e a avaliação que aguarda habilitação passa a mostrar exames vencidos depois desse prazo.
+
 ## Execução
 
 ```powershell
