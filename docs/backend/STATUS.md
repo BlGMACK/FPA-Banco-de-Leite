@@ -2,18 +2,23 @@
 
 ## Estado atual — 29/10/2026
 
-Fonte do estado vigente. Conferido em 29/10/2026 contra rotas, controllers, models, migrations e banco de desenvolvimento (somente status e contagens). As seções de [histórico](#histórico-de-verificações) registram cada etapa na data em que ocorreu e podem citar pendências já superadas; em caso de divergência, vale esta seção e o código.
+Fonte do estado vigente. Conferido em 29/10/2026 e atualizado até 05/11/2026 (avaliação, exames, anexos e habilitação; [conferência](#conferência-do-repositório--05112026)) contra rotas, controllers, models, migrations e banco de desenvolvimento (somente status e contagens). As seções de [histórico](#histórico-de-verificações) registram cada etapa na data em que ocorreu e podem citar pendências já superadas; em caso de divergência, vale esta seção e o código.
 
 | Área | Situação | Fonte |
 | --- | --- | --- |
-| Contas e sessão | **Implementado e aplicado.** Somente `admin` e `funcionario`; sem autocadastro nem conta de doadora. Login com limite de tentativas, recuperação de senha, perfil e exclusão com proteção de autoria. `EnsureInternalAccount` encerra sessões sem conta interna válida ou de conta desativada. **Desativação e reativação de funcionários** pelo admin, com motivo, permissões suspensas e bloqueio enquanto houver visitas futuras (migration ainda não aplicada no desenvolvimento, ver abaixo). Verificação de e-mail não é obrigatória (`User` não implementa `MustVerifyEmail`). | [rotas](../../routes/auth.php), [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [Contratos](CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
+| Contas e sessão | **Implementado e aplicado.** Somente `admin` e `funcionario`; sem autocadastro nem conta de doadora. Login com limite de tentativas, recuperação de senha, perfil e exclusão com proteção de autoria. `EnsureInternalAccount` encerra sessões sem conta interna válida ou de conta desativada. **Desativação e reativação de funcionários** pelo admin, com motivo, permissões suspensas e bloqueio enquanto houver visitas futuras. Verificação de e-mail não é obrigatória (`User` não implementa `MustVerifyEmail`). | [rotas](../../routes/auth.php), [middleware](../../app/Http/Middleware/EnsureInternalAccount.php), [Contratos](CONTRATOS.md#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | Cadastro de funcionários | **Implementado.** Admin ou funcionário com `criar-funcionarios` cria funcionário com senha aleatória e autoria; a primeira senha é definida por recuperação via e-mail. Não concede permissões nem cria admin. | [FuncionarioController](../../app/Http/Controllers/FuncionarioController.php) |
-| Permissões | **Implementado.** Catálogo com cinco códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita` e `registrar-relatorios-visita`. Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura. Tela `interno/permissoes`, somente para admin, concede e revoga com motivo obrigatório e mostra o histórico auditado. | [PermissaoController](../../app/Http/Controllers/PermissaoController.php), [Permissao](../../app/Models/Permissao.php), [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026) |
+| Permissões | **Implementado.** Catálogo com nove códigos: `atender-solicitacoes`, `gerenciar-agenda`, `criar-funcionarios`, `consultar-relatorios-visita`, `registrar-relatorios-visita`, `consultar-avaliacoes` `avaliar-doadoras` (desde 31/10/2026), `consultar-exames` e `registrar-exames` (desde 01/11/2026, já no catálogo do desenvolvimento). Admin tem acesso automático, declarado por capacidade; funcionário depende de concessão. Escrita de relatório implica leitura; avaliar implica consultar avaliações, relatórios publicados e exames; registrar exames implica consultá-los. Tela `interno/permissoes`, somente para admin, concede e revoga com motivo obrigatório e mostra o histórico auditado. | [PermissaoController](../../app/Http/Controllers/PermissaoController.php), [Permissao](../../app/Models/Permissao.php), [Contratos](CONTRATOS.md#gestão-de-permissões-implementada-em-29102026) |
 | Recebimento e fila | **Implementado.** Formulário público sem conta (`/doar`) e registro interno, confirmação neutra, limite de envios, fila paginada com alerta único de correspondências e detalhe restrito. | [Contratos](CONTRATOS.md#recebimento-e-fila-implementados-em-24102026) |
-| Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Não implementado:** correção dos dados do pedido. | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
+| Atendimento administrativo | **Implementado.** Início de análise, contatos, conferências, arquivamento de repetidos, admissão e área de acompanhamento, com versões, transação, autoria e histórico. **Correção de dados** desde 05/11/2026: pedido completo antes da admissão, contatos e endereço do cadastro depois, com motivo e histórico ([Contratos](CONTRATOS.md#correção-de-dados-do-pedido--implementada-em-05112026)). | [Contratos](CONTRATOS.md#atendimento-administrativo-implementado-em-26102026) |
 | Agenda | **Implementado e aplicado.** Contatos de acompanhamento, confirmação, reagendamento, cancelamento, não realização e histórico; bloqueio de sobreposição por responsável; reconhece visita realizada e impede novo agendamento no mesmo acompanhamento. | [Contratos](CONTRATOS.md#fluxo-web-da-agenda-implementado-em-27102026) |
 | Relatórios de visita | **Implementado e aplicado.** Registro da realização, rascunho, finalização, correções versionadas e histórico, com telas Blade próprias em `interno/relatorios`. Leitura vê somente versões publicadas; escrita independe da agenda. Roteiro executado em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); avaliação de usabilidade pela equipe pendente. | [Contratos](CONTRATOS.md#interface-blade-implementada-em-29102026) |
-| Documentos/exames, avaliação de saúde, decisão e habilitação | **Não implementado.** Estrutura acordada em 29/10/2026; faltam a lista real de exames, os prazos por tipo e a decisão D9. | [Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026) |
+| Análise do relatório (avaliação) | **Implementado e aplicado em 31/10/2026.** Avaliação criada na primeira publicação do relatório; decisões *Liberar para exames*, *Em aguardo* e *Não apta*, imutáveis e com histórico; decisão definitiva trava correções do relatório. Reserva da análise por 30 minutos e confirmação das decisões definitivas. Telas em `interno/avaliacoes`. | [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026) |
+| Exames e documentos (etapa 1) | **Implementado e aplicado em 01/11/2026.** Catálogo definido em 02/11/2026 (exame de sangue, 30 dias, e o documento CNS), outro exame de nome livre, estados, validade, prorrogação, novo pedido, regra de avanço e histórico. Telas em `interno/exames`. | [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026) |
+| Anexos dos exames (etapa 2) | **Implementado em 01/11/2026 e aplicado em 02/11/2026.** PDF, JPEG e PNG até 10 MB, conferidos pelo conteúdo, em disco privado com nome gerado; download só com `consultar-exames`. Sem descarte automático. | [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026) |
+| Decisão de habilitação e doadoras (etapa 3) | **Implementado e aplicado em 02/11/2026.** Decisão final (*Habilitada*, *Habilitada temporariamente* com data-limite e condição, *Não habilitada* com motivo), plano de saúde obrigatório, tabela `doadoras` ligada à interessada, suspensão, retomada, renovação, conversão em definitiva, encerramento e revogação, com histórico. Telas em `interno/doadoras`, testadas em navegador automatizado ([registro](#teste-das-telas-de-habilitação-em-navegador--02112026)). | [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026) |
+| Visita complementar durante *Em aguardo* | **Implementado em 05/11/2026, sem migration.** Com a avaliação em aguardo e o relatório de todas as visitas analisado, a agenda aceita nova visita; o relatório dela entra na mesma avaliação. Decisão bloqueada com visita marcada ou relatório não publicado. | [Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026) |
+| Retenção dos anexos e das correções | **Implementado e aplicado em 05/11/2026.** Prazo configurável (`RETENCAO_ANOS`, vazio por padrão: nada é descartado). Tela “Retenção”, só para administradores, lista arquivos de exames e valores de correções vencidos e descarta com confirmação, mantendo o registro marcado com data e autor. Sem descarte automático. | [Contratos](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026) |
 | Coleta, recebimento de leite, processamento, estoque e distribuição | **Não implementado.** Fora do primeiro fluxo. | [Roadmap](ROADMAP.md) |
 | API REST de negócio | **Inexistente por decisão de arquitetura.** Integração por Blade, formulários e sessão. | [Arquitetura](../ARQUITETURA.md) |
 
@@ -21,12 +26,30 @@ Fonte do estado vigente. Conferido em 29/10/2026 contra rotas, controllers, mode
 
 Conferência somente leitura em 29/10/2026 (`php artisan migrate:status` e contagens, sem exibir dados pessoais): 20 migrations aplicadas (lotes 1 a 6). Catálogo com cinco permissões e zero concessões; duas contas internas (uma admin); uma solicitação; tabelas de agenda, atendimento e relatório vazias.
 
-**Pendente de ativação:** a migration `2026_10_29_200000_add_desativacao_to_users_table` (21ª) foi testada em SQLite e no MariaDB de testes, mas **não foi aplicada** em `banco_de_leite_dev`. Até ser aplicada com `php artisan migrate`, o login local falha, porque o código já consulta `users.desativado_em`. A migration só acrescenta colunas e uma tabela, sem alterar dados existentes.
+Em 31/10/2026, com autorização do usuário, a 21ª migration (`2026_10_29_200000_add_desativacao_to_users_table`) foi aplicada no lote 7, após conferência do SQL com `--pretend`: **21 migrations aplicadas, nenhuma pendente**. Duas contas internas preservadas, nenhuma desativada ([registro](#ativação-da-desativação-e-mensagens-em-pt-br--31102026)).
+
+**Ativação da avaliação (31/10/2026):** com autorização do usuário, após conferência do SQL com `--pretend`, as migrations `2026_10_31_062119_create_avaliacoes_table` e `2026_10_31_062120_create_decisoes_avaliacao_table` foram aplicadas no lote 8 e o `PermissaoSeeder` foi executado: **23 migrations aplicadas, nenhuma pendente**; catálogo com sete permissões e zero concessões; duas contas preservadas. Não havia relatório publicado, então nenhuma avaliação foi preenchida.
+
+**Ativação da reserva da análise (01/11/2026):** com autorização do usuário, após conferência do SQL com `--pretend` (somente três colunas anuláveis e a chave estrangeira), a migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` foi aplicada no lote 9: **24 migrations aplicadas, nenhuma pendente**; duas contas e zero avaliações preservadas.
+
+**Ativação dos exames e documentos (01/11/2026):** com autorização do usuário, após conferência do SQL com `--pretend` (somente criação de `tipos_exame`, `itens_avaliacao` e `eventos_item_avaliacao`), as três migrations foram aplicadas no lote 10 e foram executados `PermissaoSeeder` e `TipoExameSeeder`: **27 migrations aplicadas, nenhuma pendente**; catálogo com nove permissões e zero concessões; tipos `exame_sangue` e `cns`; duas contas preservadas; nenhuma avaliação, portanto nenhum item criado.
+
+**Ativação dos anexos (02/11/2026):** com autorização do usuário, após a suíte completa (398 testes: 394 aprovados, 4 ignorados) e conferência do SQL com `--pretend` (somente criação de `anexos_item_avaliacao`, chaves estrangeiras e índices), a migration `2026_11_01_200000_create_anexos_item_avaliacao_table` foi aplicada no lote 11: **28 migrations aplicadas, nenhuma pendente**; duas contas preservadas; zero anexos.
+
+**Ativação da habilitação e doadoras (02/11/2026):** com autorização do usuário, após conferência do SQL com `--pretend` (ampliação dos enums de `avaliacoes` e `decisoes_avaliacao` mantendo os valores existentes, colunas anuláveis e criação de `doadoras` e `eventos_doadora`), as três migrations foram aplicadas no lote 12: **31 migrations aplicadas, nenhuma pendente**; duas contas preservadas; nenhuma avaliação, portanto nenhuma doadora.
 
 ### Verificação automatizada
 
 | Data e ambiente | Comando | Resultado |
 | --- | --- | --- |
+| 05/11/2026, retenção, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **452 testes: 448 aprovados, 4 ignorados; 2.238 assertions** ([registro](#retenção-dos-anexos-e-das-correções--05112026)). |
+| 05/11/2026, limpeza técnica, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **446 testes: 442 aprovados, 4 ignorados; 2.178 assertions** ([registro](#limpeza-técnica--05112026)). |
+| 05/11/2026, correção de dados, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **444 testes: 440 aprovados, 4 ignorados; 2.169 assertions** ([registro](#correção-de-dados-do-pedido--05112026)). |
+| 05/11/2026, visita complementar, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **437 testes: 433 aprovados, 4 ignorados; 2.128 assertions** ([registro](#visita-complementar-durante-em-aguardo--05112026)). |
+| 05/11/2026, conferência, SQLite `:memory:` (`phpunit.xml`) | `php artisan test --compact` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#conferência-do-repositório--05112026)). |
+| 02/11/2026, etapa 3, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **433 testes: 429 aprovados, 4 ignorados; 2.093 assertions** ([registro](#decisão-de-habilitação-e-doadoras-etapa-3--02112026)). |
+| 02/11/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **398 testes: 394 aprovados, 4 ignorados; 1.934 assertions**, antes da ativação dos anexos. |
+| 31/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **342 testes: 338 aprovados, 4 ignorados; 1.653 assertions** ([registro](#análise-do-relatório-avaliação--31102026)). |
 | 29/10/2026, PHP 8.5.10, Laravel 13.34.0, SQLite `:memory:` (`phpunit.xml`) | `php artisan test` | **312 testes: 308 aprovados, 4 ignorados; 1.539 assertions.** Os quatro ignorados são os testes de concorrência de agenda e relatório, que exigem MariaDB; os de agenda passaram no MariaDB exclusivo na mesma data ([desativação](#desativação-de-funcionários--29102026)). |
 | 29/10/2026 | `npm.cmd run build` | Aprovado (registrado na [preparação da revisão manual](#preparação-da-revisão-manual--29102026)). |
 
@@ -41,14 +64,10 @@ A suíte completa não foi repetida em MariaDB nesta conferência. As execuçõe
 
 ### Pendências de implementação ou decisão
 
-- Aplicar a migration de desativação no banco de desenvolvimento (ver acima).
-- Idioma: `APP_LOCALE=en` e sem arquivos de tradução; mensagens padrão do framework (por exemplo, login recusado: “These credentials do not match our records.”) aparecem em inglês. Encontrado no teste em navegador de 29/10/2026; decidir a configuração pt-BR.
-- Correção de dados do pedido após o recebimento.
-- Documentos/exames e anexos, avaliação de saúde, decisão registrada e habilitação para doar. Estrutura acordada em 29/10/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)); faltam a lista real de exames, os prazos e os desfechos da decisão.
+- Definição do prazo de retenção pela equipe responsável (configurar `RETENCAO_ANOS`) e inclusão do diretório `storage/app/private/anexos` no backup.
+- `AdministrativeSchemaTest::test_rolling_back_and_reapplying_only_administrative_migrations_preserves_existing_users` falha em MariaDB (passa em SQLite): o teste reverte as migrations de 28/10 sem reverter `decisoes_avaliacao` (31/10), cuja chave estrangeira impede apagar `versoes_relatorio_visita`. Anterior à retenção (reproduzido sem ela em 05/11/2026); o teste precisa incluir as migrations dependentes.
 - Política de verificação de e-mail ([SEG-08](../SEGURANCA.md#controles-existentes-e-verificações-pendentes)).
-- `DatabaseSeeder` usa `create` com e-mails e senha fixos de demonstração e não é idempotente; scripts `setup` e `post-create-project-cmd` do Composer geram chave e mencionam SQLite.
-- Middleware `role` (`EnsureUserHasRole`) está registrado, mas nenhuma rota o utiliza; a autorização efetiva é por Gates. Decidir se permanece.
-- Retenção, homologação pelo serviço, responsáveis e prioridades continuam a definir ([Roadmap](ROADMAP.md)).
+- Homologação pelo serviço, responsáveis e prioridades continuam a definir ([Roadmap](ROADMAP.md)).
 
 ### Roteiro pendente para a equipe
 
@@ -60,11 +79,201 @@ Usar dados fictícios e uma conta interna com escrita autorizada (admin possui a
 4. Abrir o mesmo rascunho em duas abas. Salvar na primeira e tentar salvar na segunda. Conferir mensagem de conflito, texto rejeitado disponível para cópia e ausência de sobrescrita. Copiar antes de recarregar.
 5. Repetir a navegação com viewport estreita e teclado: menu, filtros, campos, mensagens, botões e histórico. Registrar problemas de rolagem, leitura, foco ou acionamento.
 
-Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco passos foram executados em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); a equipe ainda deve repeti-los para avaliar a usabilidade. Documentos/exames continuam dependendo de especificação funcional própria.
+Leitura isolada, revogação e CSRF já têm evidências automatizadas. Os cinco passos foram executados em navegador automatizado em 29/10/2026 ([registro](#teste-das-telas-em-navegador--29102026)); a equipe ainda deve repeti-los para avaliar a usabilidade. Avaliação, exames e habilitação também foram exercitados em navegador automatizado (registros de 31/10, 01/11 e 02/11/2026) e aguardam o mesmo julgamento da equipe.
 
 ## Histórico de verificações
 
 Registros em ordem cronológica inversa. Cada um descreve o estado **na data indicada**: referências a etapas “pendentes” ou “próximas” foram superadas conforme o [estado atual](#estado-atual--29102026).
+
+### Retenção dos anexos e das correções — 05/11/2026
+
+Implementação autorizada pelo usuário, com as decisões da mesma data: prazo configurável; arquivo apagado e registro mantido com data e autor; mesmo prazo para os valores das correções; descarte disparado por administrador numa tela, sem terminal nem agendamento. Migration `2026_11_05_100000_add_descarte_retencao` (quatro colunas anuláveis e duas chaves estrangeiras; rollback recusado havendo descarte). Contrato em [Contratos](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `RetencaoTest`, SQLite `:memory:` | 6 testes: só administradores acessam (funcionário com todas as permissões recebe 403) e o menu aparece só para eles; prazo vazio, zero ou inválido não lista nem descarta (409); anexo vencido apagado e marcado, recente e sem decisão de habilitação mantidos, download 410 e tela do exame sem links; valores de correção vencida anulados com campos, autor e motivo mantidos, recente intacta, histórico com a data do descarte; confirmação obrigatória, limite posterior ao atual com 409 e repetição sem efeito; marcação definitiva e rollback recusado. |
+| `AnexoExameTest`, `CorrecaoSolicitacaoTest`, `AdministrativeSchemaTest` | Aprovados sem mudança nos testes. |
+| `php artisan test --compact`, SQLite `:memory:` | 452 testes: 448 aprovados, 4 ignorados; 2.238 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+| `phpunit` em MariaDB exclusivo (`banco_de_leite_schema_test`): `RetencaoTest`, `AnexoExameTest`, `CorrecaoSolicitacaoTest`, `VisitaComplementarTest`, `DatabaseSeederTest`, concorrência de agenda e relatório e `AdministrativeSchemaTest` | 54 testes: 53 aprovados; 1 erro anterior à retenção em `AdministrativeSchemaTest` (reproduzido sem a mudança; ver [pendências](#pendências-de-implementação-ou-decisão)). Os quatro testes de concorrência passaram. |
+| `php artisan migrate --pretend` e `php artisan migrate`, `banco_de_leite_dev` | SQL somente aditivo (quatro colunas anuláveis e duas chaves estrangeiras); aplicada. `migrate:status`: 32 aplicadas, nenhuma pendente. Contagem: 0 anexos, 0 correções; `RETENCAO_ANOS` vazio. |
+
+A reversão da migration confere a existência das colunas, porque `AdministrativeSchemaTest` recria as tabelas de origem antes do rollback final. **Não executado:** teste em navegador e descarte com arquivos reais.
+
+### Limpeza técnica — 05/11/2026
+
+Itens das pendências técnicas, autorizados pelo usuário. Sem migration, sem mudança de dependências e sem execução em `banco_de_leite_dev`.
+
+- **`DatabaseSeeder`:** chama `PermissaoSeeder` e `TipoExameSeeder`; só em ambiente local cria `admin@teste.com` e `funcionario@teste.com`, com senha aleatória exibida uma vez; contas existentes são mantidas. Idempotente. Antes usava `create` com senha fixa.
+- **Middleware `role`:** `EnsureUserHasRole` e o alias em `bootstrap/app.php` removidos; nenhuma rota o usava, e a autorização é por Gates.
+- **Scripts do Composer:** `setup` gera a chave só se `APP_KEY` estiver vazia (expressão sem barra invertida, conferida no `bash` e no `cmd` com `.env` LF e CRLF); `post-create-project-cmd` não cria mais SQLite nem aplica migrations.
+- **Pint:** a migration `2026_10_04_000001_add_role_to_users_table.php` recebeu só formatação (no repositório, apenas a quebra de linha final). `vendor/bin/pint --test` passa no projeto inteiro.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `DatabaseSeederTest`, SQLite `:memory:` | 2 testes: repetição cria catálogos, preserva conta existente, cria a outra sem a senha antiga e não concede permissões; fora do ambiente local, só catálogos. |
+| `php artisan test --compact`, SQLite `:memory:` | 446 testes: 442 aprovados, 4 ignorados; 2.178 assertions. |
+| `vendor/bin/pint --test --format agent` | Aprovado no projeto inteiro. |
+| `composer validate --no-check-publish` | Válido. |
+
+**Não executado:** `composer run setup` completo (instalaria dependências e aplicaria migrations) e o seeder no banco de desenvolvimento.
+
+### Correção de dados do pedido — 05/11/2026
+
+Implementação autorizada pelo usuário, com as decisões da mesma data: `atender-solicitacoes` corrige; antes da admissão, todos os dados do pedido; depois, só contatos e endereço do cadastro. Sem migration (tipo de evento `correcao` já existente). Contrato em [Contratos](CONTRATOS.md#correção-de-dados-do-pedido--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `CorrecaoSolicitacaoTest`, SQLite `:memory:` | 7 testes: login e permissão antes da busca; pedido em análise corrigido com normalização, nome normalizado, versão, `dados_originais` preservado e evento com valores anteriores e novos; pedido admitido corrige só o cadastro e descarta nome e CPF, sem alterar o pedido; CPF inválido e motivo ausente recusados sem efeito; envio sem alteração recusado; versão antiga e pedido arquivado com 409; motivo escapado no histórico. |
+| `php artisan test --compact`, SQLite `:memory:` | 444 testes: 440 aprovados, 4 ignorados; 2.169 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+`StoreSolicitacaoRequest` passou a validar os dígitos do CPF só quando ele é enviado, sem efeito no recebimento, onde o campo é obrigatório. **Não executado:** MariaDB (serviço desligado) e teste em navegador.
+
+### Visita complementar durante *Em aguardo* — 05/11/2026
+
+Implementação autorizada pelo usuário, que escolheu esta etapa e decidiu que a nova visita **complementa a avaliação existente**. Sem migration: as visitas do mesmo pedido compartilham a avaliação aberta na primeira. Contrato em [Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `VisitaComplementarTest`, SQLite `:memory:` | 4 testes: em aguardo aceita visita; decisão bloqueada com visita marcada e com relatório complementar não publicado; publicação não cria avaliação; decisão referencia o relatório mais recente; correção travada após decisão definitiva; visita complementar não analisada impede outra até nova decisão em aguardo; aguardando análise e liberada recusam nova visita; telas da avaliação e da agenda oferecem e explicam a visita complementar. |
+| Agenda, relatórios, avaliação, exames e habilitação, SQLite `:memory:` | 139 testes existentes aprovados sem alteração. |
+| `php artisan test --compact`, SQLite `:memory:` | 437 testes: 433 aprovados, 4 ignorados; 2.128 assertions. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+**Não executado:** MariaDB (serviço local desligado), portanto os testes de concorrência continuam ignorados e a nova ordem de travas (pedido antes de relatórios e avaliação) não foi exercitada em banco real; teste em navegador. Nada aplicado em `banco_de_leite_dev`, nem necessário.
+
+### Conferência do repositório — 05/11/2026
+
+A pedido do usuário, sem alterar código, banco ou dependências. Branch `backend` limpa e sincronizada com `origin/backend`; `main` contém até a etapa 2 (PR #9), e a etapa 3 com a correção do menu aguarda PR.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php artisan test --compact`, SQLite `:memory:` | 433 testes: 429 aprovados, 4 ignorados; 2.093 assertions. |
+| `php artisan migrate:status` | Não executado: MariaDB local desligado (conexão recusada). Vale a conferência de 02/11/2026 (31 migrations aplicadas). |
+| `vendor/bin/pint --test` | Acusa só `EnsureUserHasRole.php` e a migration `2026_10_04_000001_add_role_to_users_table.php`, do commit inicial de papéis (finais de linha CRLF e espaçamento); nenhum arquivo das etapas recentes. Não corrigidos, para não alterar migration aplicada. |
+
+Documentação: resumos de situação de Guia, README, Roadmap, Contratos e Modelagem atualizados para refletir as etapas 1 a 3, que ainda apareciam como não implementadas.
+
+### Teste das telas de habilitação em navegador — 02/11/2026
+
+A pedido do usuário, mesmo método das etapas anteriores: Playwright (`playwright-core` 1.56.1) em pasta temporária fora do projeto, Microsoft Edge headless, servidor `php -S` com `DB_DATABASE=banco_de_leite_schema_test`, sem tocar em `banco_de_leite_dev` (conferido depois: duas contas, nenhuma avaliação) nem no `.env`. O banco de teste foi recriado com `migrate:fresh`, `PermissaoSeeder` e `TipoExameSeeder`; dados fictícios: admin, uma funcionária com `avaliar-doadoras`, outra só com `consultar-avaliacoes`, três avaliações com exame de sangue aceito, uma com item só solicitado e uma doadora temporária com prazo vencido.
+
+| Cenário | Resultado |
+| --- | --- |
+| Exigências pendentes | Aviso de quando a decisão fica disponível, sem formulário. |
+| *Habilitada temporariamente* | Condição e data-limite só aparecem ao escolher a opção; o navegador impede o envio sem elas e sem a confirmação. Decisão registrada com plano de saúde, condição e data no histórico; link “Habilitação: Ativa”; exames passam a só consulta. |
+| *Não habilitada* sem motivo, depois com `<script>` no motivo | 422 com mensagem e opções mantidas; em seguida registrada, sem doadora, com o texto exibido escapado. |
+| *Habilitada para doar* e ações | Doadora definitiva sem opções de prazo; suspensão e retomada no histórico; o navegador impede encerrar sem confirmação; encerrada fica sem ações. |
+| Prazo vencido e conflito entre abas | Sinal “Prazo vencido” na lista e no detalhe; aba desatualizada recebe 409 com link para recarregar e o motivo não registrado; renovação remove o sinal; conversão em definitiva remove as opções de prazo. |
+| Lista e filtro | Menu “Doadoras” ativo; filtro por situação correto; valor inválido sem erro de servidor. |
+| Leitora e sem login | Leitora vê a doadora sem ações e a avaliação sem formulário; sem login redireciona. |
+| Largura | Sem rolagem horizontal a 390 px na lista, no detalhe e no formulário de decisão. |
+
+Resultado: 33 de 33 cenários; console só com o 422 e o 409 provocados. **Defeito encontrado e corrigido:** com o item “Doadoras”, o menu do admin passava da largura da tela a 1200 e 1280 px, cortando “Perfil” e “Sair” (as verificações por linha não detectaram; o screenshot mostrou). O menu passou a recolher abaixo de 1400 px (`navbar-expand-xxl`); medido de novo: cabe de 1200 a 1920 px, recolhido abaixo de 1400 px, e o botão abre o menu com “Doadoras” a 1280 px, sem rolagem. Suíte repetida depois da correção: 433 testes, 429 aprovados, 4 ignorados. Avaliação de usabilidade pela equipe continua pendente.
+
+### Decisão de habilitação e doadoras (etapa 3) — 02/11/2026
+
+Implementação autorizada pelo usuário, com as decisões de 02/11/2026: `doadoras` referencia a interessada sem copiar dados; temporária com data-limite e condição, só sinalizada ao vencer; `avaliar-doadoras` para decidir e gerir; plano de saúde obrigatório na decisão. Três migrations: `add_habilitacao_to_avaliacoes_table` (novos estados e resultados, etapa `habilitacao`, plano de saúde, condição e data-limite), `create_doadoras_table` e `create_eventos_doadora_table`, todas com rollback recusado havendo registros. Models `Doadora` (com factory) e `EventoDoadora`, `Avaliacao::habilitar`, `DoadoraController`, views `doadoras/{index,show}`, formulário na avaliação, menu “Doadoras” e aviso na tela de exames. Contrato em [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `HabilitacaoOperationsTest` e `HabilitacaoWebTest`, SQLite `:memory:` | 33 testes: habilitada, temporária e não habilitada; validações sem efeito (condição, data, motivo, plano, confirmação); exigências não cumpridas e etapa fechada (409); habilitação vigente da mesma interessada; reenvio e versão antiga; autorização; suspensão, retomada, renovação, conversão, encerramento e revogação; prazo vencido; imutabilidade; rotas, formulários, 422, 409, leitora sem ações, escape, menu e CSRF. |
+| `AvaliacaoSchemaTest`, SQLite `:memory:` | Recria também as três tabelas novas; uma doadora por avaliação; rollback recusado com doadora e decisão de habilitação. |
+| `php artisan test`, SQLite `:memory:` | 433 testes: 429 aprovados, 4 ignorados; 2.093 assertions. |
+| Habilitação, avaliação, exames e schema, MariaDB `banco_de_leite_schema_test` | 99 testes, 411 assertions aprovados. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Teste em navegador registrado na [seção seguinte](#teste-das-telas-de-habilitação-em-navegador--02112026). **Aplicado em `banco_de_leite_dev` em 02/11/2026** (lote 12), conforme o [banco de desenvolvimento](#banco-de-desenvolvimento).
+
+### Anexos dos exames (etapa 2) — 01/11/2026
+
+Implementação autorizada pelo usuário, sem descarte automático porque a retenção ainda não foi definida. Migration `anexos_item_avaliacao` (rollback recusado havendo anexos), disco privado `anexos` em `config/filesystems.php`, model `AnexoItemAvaliacao`, `ItemAvaliacao::anexar`, duas rotas, lista de arquivos e formulário de envio em cada item. Contrato em [Contratos](CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `AnexoExameTest`, SQLite `:memory:` com `Storage::fake` | 11 testes: PDF e PNG gravados com nome gerado, reenvio idempotente e operação reutilizada com outro arquivo (409), executável e HTML renomeados recusados, limite de 10 MB, arquivo ausente, nome com caminho manipulado, estados e CNS recusados sem deixar arquivo, leitora e permissão revogada sem envio, imutabilidade, rollback recusado, tela, escape do nome, 422, download com permissão e cabeçalhos, 403, 404 e CSRF. |
+| `php artisan test`, SQLite `:memory:` | 398 testes: 394 aprovados, 4 ignorados; 1.934 assertions. `AvaliacaoSchemaTest` recria também a tabela de anexos. |
+| Anexos, exames, avaliação e schema, MariaDB `banco_de_leite_schema_test` | 75 testes, 315 assertions aprovados. |
+| Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 9 de 9 com upload real: formulário só no item solicitado e não no CNS; HTML disfarçado de PDF recusado (422); PDF e PNG listados com autor; “Abrir” inline com `nosniff` e `no-store`; “Baixar” com o nome original; leitora vê e abre sem formulário; sem login redireciona. Acesso direto a `/storage/...` com o caminho dos arquivos respondeu 403. Os dois arquivos gravados pelo teste em `storage/app/private/anexos` foram apagados ao final. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+**Aplicado em `banco_de_leite_dev` em 02/11/2026** (lote 11), conforme o [banco de desenvolvimento](#banco-de-desenvolvimento).
+
+### Exames e documentos (etapa 1) — 01/11/2026
+
+Implementação autorizada pelo usuário após as decisões de 01/11/2026. Três migrations (`tipos_exame`, `itens_avaliacao` e `eventos_item_avaliacao`, com rollback recusado havendo itens em andamento ou eventos), `TipoExameSeeder` com o catálogo provisório, models `TipoExame`, `ItemAvaliacao` e `EventoItemAvaliacao` com factories, permissões `consultar-exames` e `registrar-exames` (Gates, seeder, tela de permissões), criação dos itens ao liberar para exames, `ExameController`, views `exames/{index,show}`, menu “Exames” e link na avaliação. O menu passou a recolher abaixo de 1200 px (`navbar-expand-xl`), porque com nove itens quebrava linha em 1280 px. Contrato em [Contratos](CONTRATOS.md#exames-e-documentos-etapa-1--implementada-em-01112026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `ExameOperationsTest` e `ExameWebTest`, SQLite `:memory:` | 38 testes: catálogo idempotente, criação na liberação (e não em aguardo/não apta), seeder em avaliações já liberadas, ciclo completo com complementação, transições inválidas, cancelamento só antes de recebimento, data obrigatória e não futura, CNS válido/inválido e sem validade, prorrogação até 2 vezes e novo pedido, vencimento no dia, outro exame, reenvio e versão, etapa fechada, matriz de permissões, revogação, imutabilidade, índice único, rollback recusado, rotas/403/404, escape, 422, 409 com motivo preservado, menu, link na avaliação e CSRF. |
+| `php artisan test`, SQLite `:memory:` | 387 testes: 383 aprovados, 4 ignorados; 1.871 assertions. `EmployeeAuthorizationTest` passou a esperar nove permissões; `AvaliacaoSchemaTest` recria também as tabelas novas. |
+| Testes de exames, avaliação, relatórios (operações e concorrência) e `EmployeeAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 109 testes, 502 assertions aprovados. |
+| Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 16 de 16: liberação cria itens e link; solicitar, receber e aceitar exame de sangue; exigências cumpridas; CNS inválido 422 na própria seção e válido recebido; outro exame com detalhes escapados; histórico; lista com pendências; leitora sem formulários; sem rolagem horizontal em 390 px. Menu sem quebra de 1200 a 1920 px. Console sem erros além do 422 esperado. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Aplicado em `banco_de_leite_dev` no mesmo dia ([Banco de desenvolvimento](#banco-de-desenvolvimento)).
+
+### Reserva da análise e confirmação das decisões definitivas — 31/10/2026
+
+A pedido do usuário, a partir das observações do teste em navegador abaixo. Migration `2026_10_31_200000_add_reserva_analise_to_avaliacoes_table` (três colunas anuláveis em `avaliacoes`; rollback só remove as colunas), métodos `iniciarAnalise`/`encerrarAnalise` em `Avaliacao`, bloqueio da decisão e da abertura de correção do relatório durante reserva alheia, duas rotas novas, botão “Iniciar análise”, aviso na lista e no detalhe, caixa de confirmação para *Liberar para exames* e *Não apta* e exibição do motivo não registrado em conflito. Contrato em [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php artisan test`, SQLite `:memory:` | 351 testes: 347 aprovados, 4 ignorados; 1.709 assertions. Novos casos: confirmação obrigatória só nas definitivas, reserva bloqueando outro profissional (início, decisão e correção), liberação pela decisão, encerramento só pelo dono, vencimento, recusa com correção aberta ou análise concluída, telas, 403 para leitora e CSRF nas rotas novas. |
+| Testes de avaliação, relatórios (operações, web, concorrência) e `EmployeeAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 85 testes, 490 assertions aprovados. |
+| Playwright/Edge headless, servidor temporário em `banco_de_leite_schema_test` | 10 de 10: só “Iniciar análise” antes da reserva; formulário e aviso após; confirmação oculta sem resultado e em *Em aguardo*, visível em *Liberar para exames*; navegador impede envio sem marcar; outra avaliadora vê a reserva sem botões; lista mostra “Em análise por”; decisão definitiva registrada; encerrar libera. Sem erros de console. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Migration aplicada em `banco_de_leite_dev` em 01/11/2026 ([Banco de desenvolvimento](#banco-de-desenvolvimento)).
+
+### Teste das telas de avaliação em navegador — 31/10/2026
+
+A pedido do usuário, mesmo método de [29/10/2026](#teste-das-telas-em-navegador--29102026): Playwright (`playwright-core` 1.56.1) em pasta temporária fora do projeto, Microsoft Edge headless, servidor `php -S` com `DB_DATABASE=banco_de_leite_schema_test`, sem tocar em `banco_de_leite_dev` nem no `.env`. Dados fictícios só nesse banco: `PermissaoSeeder`, uma conta admin, uma funcionária com `avaliar-doadoras`, outra só com `consultar-avaliacoes`, uma visita confirmada já ocorrida e três avaliações de fábrica (uma em aguardo, com `<script>` no motivo).
+
+| Cenário | Resultado |
+| --- | --- |
+| Registro da visita, rascunho e finalização do relatório | A avaliação nasce na finalização e aparece na lista como *Aguardando análise*; menu “Avaliações” ativo. |
+| *Em aguardo* sem motivo, depois com motivo | 422 com mensagem em português e opção mantida; em seguida decisão registrada no histórico, formulário ainda disponível. |
+| Correção do relatório durante *Em aguardo* | Avaliação informa a correção em elaboração e oculta o formulário; após finalizar a correção, a decisão passa a valer para a versão 2. |
+| *Liberar para exames* e conflito entre abas | Análise concluída; a aba desatualizada recebe 409 com mensagem e link “Recarregar a situação atual”; após recarregar, situação atual sem formulário. O relatório deixa de oferecer correção. |
+| Filtro por situação | Retorna somente a situação escolhida; valor inválido volta com validação, sem erro de servidor. |
+| Avaliadora | Registra *Não apta*; lê o relatório publicado sem formulários de escrita; menu Painel, Relatórios de visita e Avaliações; agenda responde 403. |
+| Leitora | Sem formulário de decisão nem link para o relatório; menu Painel e Avaliações; `<script>` do motivo exibido como texto, sem diálogo. |
+| Celular (390 px) e teclado | Sem rolagem horizontal na lista, no detalhe concluído e no formulário; ordem de Tab lógica (pular para o conteúdo → menu → voltar → ler relatório → resultado → motivo → registrar), com foco visível. |
+
+Console sem erros JavaScript; apenas os 422, 409 e 403 esperados. Limites iguais aos de 29/10/2026: não substitui avaliação humana, leitor de tela, outros navegadores ou dispositivo real.
+
+Observações para decisão da equipe, sem defeito funcional (ambas tratadas no mesmo dia, ver registro acima):
+
+- Quando o conflito ocorre porque a outra aba já concluiu a análise, o formulário some e o motivo digitado não é exibido. Na prática não há nova decisão possível, mas quem digitou perde o texto sem aviso.
+- *Liberar para exames* e *Não apta* são definitivas e travam a correção do relatório, mas são registradas com um clique, sem etapa de confirmação.
+
+### Análise do relatório (avaliação) — 31/10/2026
+
+Implementação autorizada pelo usuário após as decisões de 31/10/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). Migrations `avaliacoes` e `decisoes_avaliacao` (com preenchimento das avaliações de relatórios já publicados e rollback recusado havendo decisões), models `Avaliacao` e `DecisaoAvaliacao` com factories, permissões `consultar-avaliacoes` e `avaliar-doadoras` (Gates, seeder, tela de permissões), criação da avaliação na primeira finalização do relatório, trava de correção após decisão definitiva, `AvaliacaoController`, views `avaliacoes/{index,show}`, menu “Avaliações” e aviso na tela do relatório. Contrato em [Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026).
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `AvaliacaoOperationsTest`, `AvaliacaoSchemaTest`, `AvaliacaoWebTest`, SQLite `:memory:` | 29 testes aprovados: matriz de permissões, criação única, transições, motivo obrigatório, replay/versão, revogação, imutabilidade, trava de correção, espera durante correção, preenchimento da migration, unicidade, rollback recusado, rotas/403/404, escape, 422, 409, CSRF e menu. |
+| `php artisan test`, SQLite `:memory:` | 342 testes: 338 aprovados, 4 ignorados; 1.653 assertions. `EmployeeAuthorizationTest` passou a esperar sete permissões no catálogo. |
+| Testes de avaliação, operações/web/concorrência de relatórios e `EmployeeAuthorizationTest`, MariaDB `banco_de_leite_schema_test` | 76 testes, 434 assertions aprovados. |
+| `vendor/bin/pint --dirty --format agent` | Aprovado. |
+
+Ativação no desenvolvimento registrada em [Banco de desenvolvimento](#banco-de-desenvolvimento). Limites: telas revisadas em navegador automatizado no mesmo dia ([registro](#teste-das-telas-de-avaliação-em-navegador--31102026)); não há teste de concorrência específico entre decisão e abertura de correção (a ordem de travas é a mesma da correção, verificada por leitura do código).
+
+### Ativação da desativação e mensagens em pt-BR — 31/10/2026
+
+Autorizado pelo usuário nesta data. A migration de desativação foi aplicada em `banco_de_leite_dev`, encerrando a pendência de 29/10/2026 (login local falhando por falta de `users.desativado_em`). O idioma passou a pt-BR: `config/app.php` usa `pt_BR` como padrão, `.env.example` define `APP_LOCALE=pt_BR` (o fallback continua `en`) e foram criados `lang/pt_BR/{auth,passwords,pagination,validation}.php` e `lang/pt_BR.json`, a partir dos arquivos em inglês do Laravel 13.34.0. A tradução cobre login recusado e limite de tentativas, recuperação de senha, validação genérica (com nomes legíveis dos campos usados nos formulários), paginação, e-mails de recuperação e verificação e páginas de erro do framework. As `messages()`/`attributes()` dos form requests continuam prevalecendo. Quem já tem `.env` local deve ajustar `APP_LOCALE=pt_BR`.
+
+| Verificação executada | Resultado |
+| --- | --- |
+| `php artisan migrate --pretend` e `php artisan migrate`, `banco_de_leite_dev` | SQL somente aditivo; aplicada no lote 7. `migrate:status`: 21 aplicadas, nenhuma pendente. Contagem: 2 contas, 0 desativadas. |
+| `AuthenticationTest` | Novo teste de mensagens de validação em português e asserção da mensagem de login recusado (“E-mail ou senha incorretos.”). |
+| `php artisan test`, SQLite `:memory:` | 313 testes: 309 aprovados, 4 ignorados; 1.544 assertions. |
+| `vendor/bin/pint --dirty --test` | Aprovado. |
+
+Limites: o texto dos e-mails não foi conferido em entrega real; a mensagem `passwords.user` mantém o comportamento do framework (informa quando o e-mail não existe), apenas traduzida. As telas não foram revisadas em navegador nesta etapa.
 
 ### Desativação de funcionários — 29/10/2026
 

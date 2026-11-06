@@ -75,7 +75,7 @@ class StoreSolicitacaoRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if (! $validator->errors()->has('cpf') && ! $this->cpfValido($this->input('cpf'))) {
+            if (! $validator->errors()->has('cpf') && $this->filled('cpf') && ! $this->cpfValido($this->input('cpf'))) {
                 $validator->errors()->add('cpf', 'Informe um CPF válido.');
             }
             $selecao = $this->input('whatsapp_telefone');

@@ -2,7 +2,7 @@
 
 Documento principal para localizar controles, reforços e testes de segurança. Criado em **24/10/2026**, a pedido do usuário, a partir da revisão estática dos fluxos existentes e das evidências de banco registradas em [Status](backend/STATUS.md). Não representa auditoria completa, certificação ou homologação para dados reais.
 
-Situação em 29/10/2026: os controles de acesso, CSRF, escape, transação e auditoria estão implementados e testados nos módulos de recebimento, atendimento, agenda e relatórios (evidências E-01 a E-19). Continuam sem verificação: comportamento em navegador real, ambiente de publicação (SEG-13), auditoria de dependências (SEG-14) e proteção operacional dos dados (SEG-15). Anexos clínicos (SEG-12) não existem no sistema.
+Situação em 29/10/2026: os controles de acesso, CSRF, escape, transação e auditoria estão implementados e testados nos módulos de recebimento, atendimento, agenda e relatórios (evidências E-01 a E-19). Continuam sem verificação: comportamento em navegador real, ambiente de publicação (SEG-13), auditoria de dependências (SEG-14) e proteção operacional dos dados (SEG-15). Anexos de exames (SEG-12) foram implementados em 01/11/2026 (E-22). O mecanismo de retenção foi implementado em 05/11/2026 (E-24), com prazo ainda a definir pela equipe; backup continua pendente.
 
 ## Como trabalhar neste documento
 
@@ -44,13 +44,40 @@ Prioridades abaixo são **propostas técnicas**, ainda sem atribuição de respo
 | --- | --- | --- | --- |
 | SEG-10 / P1 | **Implementado no recorte:** recebimento transacional com token de sessão; decisões transacionais com UUID, conteúdo, autoria, versões e travas nos pedidos selecionados. Contato abrangente e esclarecido exigido para concluir. | Replay, conflito de conteúdo, versões antigas, rollback por falha de auditoria, preservação do cadastro existente e correspondências pendentes cobertos. Ainda verificar concorrência real, inserções simultâneas e volume. | E-05 e E-07; testes de versões antigas não comprovam concorrência real entre conexões. |
 | SEG-11 / P1 | **Implementado no recorte:** confirmação pública neutra sem identificadores; correspondências restritas ao atendimento. | Testada ausência de dados na confirmação, negativa de consulta interna e aceitação de novo pedido repetido sem exposição pública. Novas telas/exportações devem manter o escopo administrativo. | E-05; sem consulta pública por CPF/telefone/protocolo. |
-| SEG-12 / P2 | **Relatório narrativo implementado** com leitura e escrita separadas (E-17, E-19). **Anexos clínicos: proposto**, sem upload no sistema. | Quando implementados: armazenamento privado; acesso/download autorizado por registro; validar tamanho e conteúdo; nomes gerados; rejeitar formatos executáveis e caminhos manipulados. Testar upload e download negados, substituições e preservação da evidência anterior. | Fora do recorte atual; [Modelagem](backend/MODELAGEM.md). |
+| SEG-12 / P2 | **Relatório narrativo implementado** com leitura e escrita separadas (E-17, E-19). **Anexos de exames implementados** (E-22): disco privado sem rota de serviço, nomes gerados, tipo conferido pelo conteúdo (PDF, JPEG, PNG), 10 MB, download só com `consultar-exames`, `nosniff` e `no-store`, registros imutáveis. | Upload e download negados, executável/HTML renomeados, caminho manipulado e preservação dos anteriores testados. Descarte por retenção implementado (E-24). Pendentes: prazo de retenção, backup do diretório, varredura antivírus se exigida e verificação no servidor de publicação de que `storage/` não é servido. | E-22, E-24; [Contratos](backend/CONTRATOS.md#anexos-dos-exames-etapa-2--implementada-em-01112026). |
 | SEG-13 / P2 | **Não verificado:** configuração do ambiente de publicação. [Sessão](../config/session.php) permite configurar cookies seguros; não comprova valor efetivo no servidor. | Antes de publicar: verificar HTTPS, debug desligado, cookies Secure/HttpOnly/SameSite, diretório público correto e ausência de exposição de `.env`, logs e backups. Conferir privilégios mínimos do banco e cabeçalhos adequados à interface. Registrar ambiente sem copiar segredos. | Pendente; não foi inspecionado ambiente de produção. |
 | SEG-14 / P2 | **Não verificado:** vulnerabilidades conhecidas e atualização de dependências. | Auditar Composer e npm, registrar data/versões, resultado e aplicabilidade dos avisos. Após correção autorizada, repetir auditoria e testes afetados. Não executar atualizações automáticas indiscriminadas. | Auditorias não executadas nesta revisão; não há declaração de ausência de vulnerabilidades. |
-| SEG-15 / P2 | **A definir:** proteção operacional dos dados, retenção, backups, logs e resposta a incidentes. | Definir acesso e retenção com a equipe responsável; evitar senhas/tokens/documentos em logs. Testar restauração em ambiente isolado e registrar quem pode consultar/exportar dados. Definir procedimento para incidente e revisão de acessos. | Pendente. Este documento não atesta conformidade legal. |
+| SEG-15 / P2 | **A definir:** proteção operacional dos dados, prazo de retenção (mecanismo de descarte em E-24), backups, logs e resposta a incidentes. | Definir acesso e retenção com a equipe responsável; evitar senhas/tokens/documentos em logs. Testar restauração em ambiente isolado e registrar quem pode consultar/exportar dados. Definir procedimento para incidente e revisão de acessos. | Pendente. Este documento não atesta conformidade legal. |
 | SEG-16 / P1 | **Implementado:** guarda do teste de schema e helper em [TestCase](../tests/TestCase.php), chamado pelos testes que preparam banco nos módulos administrativo, agenda e relatórios. | Aceitam somente SQLite em memória ou `banco_de_leite_schema_test` local, em testing, sem URL/configuração em cache. Não presumir que classes antigas chamem o helper; conferir a seleção antes de execução destrutiva. | E-01, E-03, E-04 e E-05; sem teste negativo dedicado da guarda. |
 
 ## Evidências registradas
+
+### E-24 — retenção dos anexos e das correções, 05/11/2026
+
+- SEG-02: tela e descarte exigem `gerenciar-retencao`, restrito a administradores (Gate na rota e dentro de cada transação); funcionário com todas as permissões recebe 403; sem login redireciona.
+- Minimização: vencido o prazo configurado (`RETENCAO_ANOS`), o arquivo do exame é apagado do disco privado e os valores anteriores e novos das correções de pedidos viram nulos. Sem prazo definido, nada é descartado.
+- Integridade: descarte só com confirmação e com a data-limite exibida, recusado (409) se o prazo aumentou; cada item travado e reconferido; registros mantidos com data e autor do descarte; marcação única; download de arquivo descartado responde 410; migration recusa rollback havendo descarte.
+- Validação: `RetencaoTest` (6 testes) em SQLite e MariaDB exclusivo. Detalhes em [Status](backend/STATUS.md#retenção-dos-anexos-e-das-correções--05112026).
+- Limites: o prazo não foi definido pela equipe e esta implementação não atesta conformidade legal; o nome original do arquivo é mantido; backups antigos continuam com os dados até serem substituídos (SEG-15). Não verificado em navegador. Revisão por outra pessoa pendente.
+
+### E-23 — decisão de habilitação e doadoras, 02/11/2026
+
+- SEG-02: decisão e ações exigem `avaliar-doadoras` (Gate na rota, antes e dentro da transação); leitura exige `consultar-avaliacoes`; sem login redireciona e sem permissão retorna 403 antes de consultar IDs.
+- Minimização: `doadoras` guarda só vínculo, tipo, vigência e estado; nome e contatos continuam na interessada. O plano de saúde é só a indicação possui/não possui.
+- Integridade: decisão sob trava da avaliação, itens e interessada, com nova conferência das exigências; uma habilitação vigente por interessada; decisões e eventos imutáveis com autor, instante, operação e hash; rollback recusado com registros.
+- CSRF e escape: POSTs recusados sem token (419); nomes escapados na lista e no detalhe.
+- Validação: `HabilitacaoOperationsTest`, `HabilitacaoWebTest` e `AvaliacaoSchemaTest` em SQLite e MariaDB exclusivo. Detalhes em [Status](backend/STATUS.md#decisão-de-habilitação-e-doadoras-etapa-3--02112026).
+- Navegador automatizado: 33 de 33 cenários, incluindo leitora sem ações, sem login, escape e conflito ([registro](backend/STATUS.md#teste-das-telas-de-habilitação-em-navegador--02112026)).
+- Limites: acesso à justificativa de *Não habilitada* segue a leitura da avaliação (`consultar-avaliacoes`), sem restrição adicional. Revisão por outra pessoa pendente.
+
+### E-22 — anexos de exames, 01/11/2026
+
+- SEG-02 e SEG-12: envio exige `registrar-exames` (Gate antes e dentro da transação); download exige `consultar-exames`; sem login redireciona e sem permissão retorna 403.
+- Conteúdo: tipo detectado pelo conteúdo; executável (`application/x-dosexec`) e HTML com extensão `.pdf`/`.png` recusados; limite de 10 MB. Nome original sem barras e caracteres de controle, nunca usado no caminho (`{avaliacao}/{uuid}.{ext}`).
+- Armazenamento: disco `anexos` com `serve => false`; acesso direto a `/storage/...` respondeu 403 no servidor local. Respostas com `nosniff`, `no-store` e `Content-Disposition` controlado.
+- Integridade: SHA-256, autor e instante gravados; model recusa alteração/exclusão; migration recusa rollback; arquivo órfão removido se a transação falhar; reenvio idempotente.
+- Validação: `AnexoExameTest` (11 testes) em SQLite e MariaDB exclusivo; navegador automatizado com upload real (9 de 9). Detalhes em [Status](backend/STATUS.md#anexos-dos-exames-etapa-2--01112026).
+- Limites: sem antivírus; backup dos arquivos não definido; descarte por retenção acrescentado em E-24; servidor de publicação não verificado (SEG-13). Revisão por outra pessoa pendente.
 
 ### E-20 — gestão de permissões, 29/10/2026
 

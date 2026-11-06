@@ -90,7 +90,7 @@
 <h2 class="h5">Histórico administrativo</h2>
 @foreach($pedido->eventos as $evento)
     <p class="text-break">{{ $evento->ocorrido_em->format('d/m/Y H:i') }} — {{ $evento->tipo }} — {{ $evento->autor?->name ?? 'Recebimento público' }}. {{ $evento->motivo }}
-        @if($evento->tipo === 'correcao')<br>Campos corrigidos no {{ $evento->dados_novos['registro'] }}: {{ implode(', ', array_keys($evento->dados_novos['campos'])) }}.@endif</p>
+        @if($evento->tipo === 'correcao')<br>Campos corrigidos no {{ $evento->dados_novos['registro'] }}: {{ implode(', ', $evento->camposCorrigidos()) }}.@if($evento->valores_descartados_em) Valores descartados pelo prazo de retenção em {{ $evento->valores_descartados_em->format('d/m/Y') }}.@endif @endif</p>
 @endforeach
 @foreach($pedido->resolucoes as $resolucao)
     <div class="border rounded p-3 mb-3 text-break">

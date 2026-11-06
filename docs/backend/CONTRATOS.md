@@ -2,7 +2,7 @@
 
 ## Natureza e estado
 
-Conferido em 29/10/2026. Estão **implementados** os contratos de recebimento e fila, atendimento administrativo, agenda, [relatórios de visita](#interface-blade-implementada-em-29102026) e [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026); o schema correspondente está aplicado no desenvolvimento. Não há autocadastro nem conta de doadora. Documentos/exames, avaliação de saúde, decisão e habilitação não têm contrato nem implementação.
+Conferido em 29/10/2026 e atualizado em 05/11/2026. Estão **implementados** os contratos de recebimento e fila, atendimento administrativo, agenda, [relatórios de visita](#interface-blade-implementada-em-29102026), [contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026), [análise do relatório](#análise-do-relatório-avaliação--implementada-em-31102026), [exames e documentos](#exames-e-documentos-etapa-1--implementada-em-01112026), [anexos](#anexos-dos-exames-etapa-2--implementada-em-01112026) e [decisão de habilitação e doadoras](#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026); o schema correspondente está aplicado no desenvolvimento. Não há autocadastro nem conta de doadora. Seções anteriores que tratam documentos/exames e habilitação como futuros registram o planejamento da época.
 
 Este documento acumula especificações feitas antes de cada entrega. Seções marcadas como **proposta** registram o planejamento da época; quando houver seção “implementado” posterior sobre o mesmo assunto, ela delimita o comportamento efetivo. A [superfície atual](#superfície-atual) e as convenções abaixo são **extraídas do código** e não representam aceite formal de produto. Acordos precisam de decisão identificada. A integração usa HTML Blade, formulários e sessão, sem API REST de negócio.
 
@@ -46,8 +46,9 @@ Rotas de domínio, agrupadas por área. Todos os grupos internos exigem sessão 
 | `consultar-relatorios-visita`; escritas também `registrar-relatorios-visita` | `interno/relatorios`: lista, detalhe, registro da visita, `rascunho`, `finalizar` e `correcao` | [Interface Blade dos relatórios](#interface-blade-implementada-em-29102026) |
 | `criar-funcionarios` | `interno/funcionarios/novo` e POST `interno/funcionarios` | [Contas exclusivamente internas](#contas-exclusivamente-internas--decisão-e-implementação-de-27102026) |
 | `gerenciar-permissoes` (somente admin) | `interno/permissoes`: lista, detalhe do funcionário e POST de `concessoes`, `revogacoes`, `desativacao` e `reativacao` | [Gestão de permissões](#gestão-de-permissões-implementada-em-29102026) |
+| `gerenciar-retencao` (somente admin) | `interno/retencao`: tela de retenção e POST `descarte` | [Retenção](#retenção-dos-anexos-e-das-correções--implementada-em-05112026) |
 
-Não há rota para corrigir dados de pedidos.
+A correção de dados do pedido usa POST `interno/solicitacoes/{solicitacao}/correcao`, com `atender-solicitacoes` ([seção própria](#correção-de-dados-do-pedido--implementada-em-05112026)).
 
 ## Campos, mensagens e permissões
 
@@ -684,3 +685,174 @@ Atendimento administrativo e agenda, isoladamente, continuam sem acesso ao texto
 6. HTML escapado, CSRF, atribuição em massa e URL direta protegidos; datas/fuso, histórico e separação de conteúdo comprovados em testes. Migrations e concorrência em banco exclusivo; revisão visual posterior em navegador.
 
 O desenho físico proposto está em [Modelagem](MODELAGEM.md#persistência-proposta-para-atendimento-e-relatório--28102026). R1–R3 foram respondidas explicitamente pelo usuário em 28/10/2026; isso fecha as decisões funcionais de acesso, sem converter os detalhes técnicos propostos em implementação ou homologação.
+
+## Análise do relatório (avaliação) — implementada em 31/10/2026
+
+Primeira parte da [avaliação após a visita](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026), conforme as decisões do usuário de 31/10/2026. Exames, documentos, anexos e habilitação ainda não existem. Fontes: [Avaliacao](../../app/Models/Avaliacao.php), [DecisaoAvaliacao](../../app/Models/DecisaoAvaliacao.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php) e [views](../../resources/views/avaliacoes).
+
+**Permissões.** `consultar-avaliacoes` lê a situação e o histórico de decisões, sem decidir e sem acesso ao texto do relatório (o link “Ler o relatório” só aparece para quem consulta relatórios). `avaliar-doadoras` decide e inclui a consulta de avaliações e de relatórios **publicados**; não permite escrever relatórios. Admin tem ambas.
+
+**Criação.** A primeira finalização de um relatório cria, na mesma transação, uma avaliação em `aguardando_analise` para aquela visita (única por atendimento). Correções posteriores não criam outra. A migration preenche avaliações para relatórios já publicados.
+
+| Método / caminho | Nome `interno.avaliacoes.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/avaliacoes` | `index` | `consultar-avaliacoes`. Lista com interessada, visita, responsável e situação; filtro fechado de situação; 20 por página. |
+| GET `/interno/avaliacoes/{avaliacao}` | `show` | `consultar-avaliacoes`. Situação, versão vigente do relatório, reserva de análise vigente, botão “Iniciar análise” ou formulário de decisão (só para `avaliar-doadoras`, com análise aberta, relatório sem correção em andamento e, para o formulário, reserva própria) e histórico de decisões em páginas de 15, com autor, data, versão analisada e motivo. |
+| POST `/interno/avaliacoes/{avaliacao}/analise` | `analise.iniciar` | `avaliar-doadoras`. Reserva a análise para quem pediu por 30 minutos (repetir renova). 409 se concluída, com relatório em correção ou reservada por outro profissional. |
+| POST `/interno/avaliacoes/{avaliacao}/analise/encerrar` | `analise.encerrar` | `avaliar-doadoras`. Libera a reserva do próprio usuário, sem decisão; sem efeito sobre reserva alheia. |
+| POST `/interno/avaliacoes/{avaliacao}/decisoes` | `decisoes.store` | `avaliar-doadoras`. Entradas `operacao_id` (UUID), `versao`, `resultado` (`liberada_exames`, `em_aguardo`, `nao_apta`), `motivo` (até 2.000 caracteres; obrigatório para `em_aguardo` e `nao_apta`) e `confirmacao_definitiva` (`1`, obrigatória para `liberada_exames` e `nao_apta`; fora do hash da operação). Redireciona ao detalhe com status. |
+
+**Regras.**
+- Decisão permitida com avaliação em `aguardando_analise` ou `em_aguardo` e relatório `finalizado`. Com correção do relatório em andamento, a decisão espera a finalização da correção (409); a decisão registra a versão vigente analisada.
+- `em_aguardo` não conclui a análise: a avaliação permanece aberta até um profissional registrar nova decisão (inclusive outro aguardo). Não há prazo nem mudança automática.
+- `liberada_exames` e `nao_apta` **concluem a análise**: novas decisões são recusadas e o relatório deixa de aceitar correções (`iniciarCorrecao` retorna 409 e a tela do relatório troca o formulário pelo aviso “O relatório não pode mais ser corrigido.”). Correções continuam possíveis enquanto a avaliação estiver aguardando análise ou em aguardo.
+- Decisões são imutáveis (o model recusa alteração e exclusão) e registram autor, instante, operação e hash; reenvio idêntico devolve a mesma decisão, reenvio alterado e versão desatualizada retornam 409. Relatório e avaliação são travados nessa ordem, a mesma da abertura de correção.
+- **Reserva da análise (31/10/2026, a pedido do usuário).** Quem inicia a análise a reserva por `Avaliacao::MINUTOS_ANALISE` (30 minutos), em `avaliacoes.analise_por_user_id`, `analise_iniciada_em` e `analise_expira_em`. Enquanto vigente, outros profissionais não iniciam análise, não decidem e não abrem correção do relatório (409 com nome e horário de término); a tela e a lista mostram “em análise por”. A decisão e o encerramento limpam a reserva; vencida, ela não bloqueia ninguém, e um envio do próprio autor com reserva vencida e livre ainda é aceito. A reserva não altera a versão da avaliação nem gera evento de auditoria; o histórico continua nas decisões. Admin não tem quebra manual de reserva: aguarda o vencimento.
+- **Confirmação das decisões definitivas.** Ao escolher *Liberar para exames* ou *Não apta*, a tela exibe a caixa “Confirmo que esta decisão é definitiva…”, obrigatória no navegador e validada no servidor (422 sem ela).
+- Num conflito em que o formulário não pode mais ser exibido, o motivo enviado aparece somente leitura em “Motivo enviado e não registrado”.
+- Erros de validação voltam **422** na própria tela, com resultado e motivo preservados só na resposta; conflitos voltam **409** com a mensagem do motivo e link para recarregar. Respostas com `Cache-Control: private, no-store`; motivos exibidos com escape.
+
+**Fora desta entrega:** itens de exames e documentos (entregues em 01/11/2026, [seção própria](#exames-e-documentos-etapa-1--implementada-em-01112026)), anexos, decisão de habilitação, revogação de habilitação, nova visita durante o aguardo (a agenda continua impedindo novo agendamento após visita realizada) e efeitos de “não apta” na fila ou no alerta de correspondência. Evidências em [Status](STATUS.md#análise-do-relatório-avaliação--31102026).
+
+## Exames e documentos (etapa 1) — implementada em 01/11/2026
+
+Primeira das três etapas acordadas em 01/11/2026 ([Roadmap](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)): itens de exame e documento com catálogo, estados, validade e prorrogação. **Fora desta etapa:** anexos (etapa 2, entregue em 01/11/2026, [seção própria](#anexos-dos-exames-etapa-2--implementada-em-01112026)), decisão de habilitação e tabela `doadoras` (etapa 3) e indicação de plano de saúde. Fontes: [ItemAvaliacao](../../app/Models/ItemAvaliacao.php), [EventoItemAvaliacao](../../app/Models/EventoItemAvaliacao.php), [TipoExame](../../app/Models/TipoExame.php), [TipoExameSeeder](../../database/seeders/TipoExameSeeder.php), [ExameController](../../app/Http/Controllers/ExameController.php) e [views](../../resources/views/exames).
+
+**Permissões.** `consultar-exames` lê itens e histórico, sem alterar. `registrar-exames` altera e inclui a consulta. `avaliar-doadoras` inclui a consulta de exames. Admin tem todas. A tela de exames mostra só a identificação da interessada e da visita; o link para a avaliação aparece apenas para quem consulta avaliações.
+
+**Catálogo** (seeder idempotente, sem tela de edição; **definido pelo usuário em 02/11/2026**: o único exame do catálogo é o de sangue, com 30 dias, mantidos o CNS e *Outro exame*): *Exame de sangue* (exame, validade de 30 dias) e *Cartão Nacional de Saúde (CNS)* (documento, exige número, sem validade). O CNS entra pela regra acordada em 29/10/2026 para documentos de identificação. *Outro exame* não está no catálogo: é incluído por avaliação com nome e detalhes livres, já como solicitado, e vale 30 dias. Tipos usados não são apagados; desativá-los só afeta avaliações liberadas depois. O seeder também acrescenta, em *não solicitado*, tipos novos às avaliações já liberadas.
+
+**Criação.** Na mesma transação de *Liberar para exames*, a avaliação recebe um item por tipo ativo, em *Não solicitado*. Um tipo do catálogo aparece uma vez por avaliação (índice único); *Outro exame* pode repetir.
+
+| Método / caminho | Nome `interno.exames.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/exames` | `index` | `consultar-exames`. Avaliações liberadas ou com itens, com contagem de solicitados, aceitos e vencidos e situação das exigências; 20 por página. |
+| GET `/interno/exames/{avaliacao}` | `show` | `consultar-exames`. Itens com estado, datas, número e prorrogações; formulários da ação cabível (só `registrar-exames` com avaliação liberada); inclusão de outro exame; histórico em páginas de 20. 404 para avaliação sem etapa de exames. |
+| POST `/interno/exames/{avaliacao}/itens` | `itens.incluir` | `registrar-exames`. `operacao_id`, `nome_outro` (até 150) e `detalhes_outro` (até 2.000, opcional). |
+| POST `/interno/exames/itens/{item}/eventos` | `itens.registrar` | `registrar-exames`. `operacao_id`, `versao`, `acao` e, conforme a ação, `motivo`, `realizado_em` (AAAA-MM-DD) ou `numero_documento`. |
+
+**Ações e transições.**
+- `solicitacao`: *Não solicitado* ou *Precisa complementar* → *Solicitado*.
+- `cancelamento_solicitacao`: *Solicitado* → *Não solicitado*, com motivo, só se o item nunca foi recebido.
+- `recebimento`: *Solicitado* → *Recebido*. Exames exigem a data de realização ou coleta (não futura) e calculam `valido_ate` = data + validade do tipo. O CNS exige número válido (15 dígitos, início 1, 2, 7, 8 ou 9 e soma ponderada múltipla de 11), guardado só com dígitos e sem imagem.
+- `aceite`: *Recebido* → *Aceito*. Autor e instante ficam no evento, o que registra quem conferiu e quando.
+- `complementacao`: *Recebido* → *Precisa complementar*, com motivo.
+- `prorrogacao`: item vencido; soma 30 dias à validade, com motivo, no máximo 2 vezes.
+- `novo_pedido`: item vencido → *Solicitado*, limpando data, validade e prorrogações. O histórico preserva os valores anteriores.
+
+**Validade.** Vencido é o item *Recebido* ou *Aceito* com validade anterior a hoje (horário de São Paulo). O vencimento só sinaliza, sem mudar o estado.
+
+**Regra de avanço** (`Avaliacao::exigenciasCumpridas`): ao menos um item solicitado, todos os solicitados aceitos e nenhum vencido; itens não solicitados não bloqueiam. A tela de exames informa o resultado; a decisão de habilitação é registrada na avaliação ([etapa 3](#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026)).
+
+**Garantias.** Operações só com a avaliação em *Liberada para exames* (409 em outro estado). Cada operação trava a avaliação e depois o item, confere a versão do item e grava um evento imutável com autor, instante, estados, motivo, datas, operação e hash. Reenvio idêntico devolve o mesmo evento; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 na seção do item, com a entrada preservada. Conflitos voltam 409 com link para recarregar e mostram o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. As migrations recusam rollback com itens em andamento ou eventos registrados.
+
+## Anexos dos exames (etapa 2) — implementada em 01/11/2026
+
+Segunda etapa acordada em 01/11/2026: arquivos de exames (fotos e PDFs recebidos pelo WhatsApp) guardados de forma privada. Fontes: [AnexoItemAvaliacao](../../app/Models/AnexoItemAvaliacao.php), `ItemAvaliacao::anexar`, [ExameController](../../app/Http/Controllers/ExameController.php) e o disco `anexos` em [filesystems](../../config/filesystems.php).
+
+**Formatos e limites.** PDF, JPEG e PNG até 10 MB. O tipo é conferido pelo **conteúdo** do arquivo (fileinfo), não pela extensão nem pelo tipo informado pelo navegador; um executável ou HTML renomeado para `.pdf`/`.png` é recusado.
+
+**Armazenamento.** Disco `anexos` em `storage/app/private/anexos`, sem rota de serviço (`serve => false`) e fora do Git. Caminho gerado `{avaliacao}/{uuid}.{extensão do tipo detectado}`; o nome original fica só no registro, sem barras nem caracteres de controle, e nunca compõe o caminho. Cada registro guarda tamanho, SHA-256, autor e instante. Arquivos e registros não são sobrescritos nem apagados pelo sistema: o model recusa alteração e exclusão, e a migration recusa rollback havendo anexos.
+
+**Regras.**
+- Envio com `registrar-exames`, avaliação em *Liberada para exames* e item *Solicitado*, *Recebido* ou *Precisa complementar*. Itens *Não solicitado* ou *Aceito* não recebem arquivos (409).
+- O CNS não aceita anexos (409): é registrado só pelo número, conforme a minimização acordada em 29/10/2026.
+- Um item pode ter vários arquivos (por exemplo, fotos de páginas diferentes), todos listados do mais recente ao mais antigo. Um arquivo novo não esconde nem substitui os anteriores.
+- O envio não muda o estado nem a versão do item e não gera evento de exame; o próprio registro do anexo é a auditoria.
+- Reenvio com a mesma operação e o mesmo arquivo devolve o mesmo anexo, sem gravar de novo; a mesma operação com outro arquivo retorna 409. Se a transação falhar depois da gravação, o arquivo órfão é removido.
+
+| Método / caminho | Nome `interno.exames.*` | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/exames/itens/{item}/anexos` | `itens.anexar` | `registrar-exames`. `multipart/form-data` com `operacao_id` e `arquivo`. 422 na seção do item; 409 em conflito. |
+| GET `/interno/exames/anexos/{anexo}` | `anexos.arquivo` | `consultar-exames`. Entrega o arquivo com o tipo gravado, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` e `inline` (“Abrir”) ou `attachment` com `?baixar=1` (“Baixar”). 404 se o registro ou o arquivo não existir; 410 se o arquivo foi descartado pelo prazo de retenção. |
+
+**Pendente:** backup do diretório de anexos junto com o banco e varredura antivírus, se a equipe exigir. Retenção e descarte: [seção própria](#retenção-dos-anexos-e-das-correções--implementada-em-05112026).
+
+
+## Decisão de habilitação e doadoras (etapa 3) — implementada em 02/11/2026
+
+Terceira etapa acordada em 01/11/2026, com as decisões do usuário de 02/11/2026: a tabela `doadoras` **referencia** a interessada, sem copiar dados pessoais; a habilitação temporária tem **data-limite e condição** obrigatórias e, ao vencer, só é sinalizada; a decisão e as ações posteriores usam `avaliar-doadoras`; a indicação de **plano de saúde** é obrigatória na decisão. Fontes: [Avaliacao](../../app/Models/Avaliacao.php) (`habilitar`), [Doadora](../../app/Models/Doadora.php), [EventoDoadora](../../app/Models/EventoDoadora.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php), [DoadoraController](../../app/Http/Controllers/DoadoraController.php), views `avaliacoes/show` e `doadoras` e [migrations de 02/11/2026](../../database/migrations).
+
+**Permissões.** `consultar-avaliacoes` lê a lista e o detalhe das doadoras. `avaliar-doadoras` decide a habilitação e registra as ações posteriores. Admin tem acesso automático. Não há permissão nova.
+
+**Decisão de habilitação.** Formulário na avaliação, visível só para `avaliar-doadoras` com a avaliação em *Liberada para exames* e as exigências cumpridas (`Avaliacao::exigenciasCumpridas`). Resultados:
+- *Habilitada para doar*: cria a doadora definitiva e ativa.
+- *Habilitada temporariamente*: exige condição (até 2.000) e data-limite posterior a hoje; cria a doadora temporária e ativa.
+- *Não habilitada*: exige motivo; não cria doadora.
+
+Todos exigem a indicação de plano de saúde (possui ou não possui), guardada na avaliação e na decisão, e a confirmação de que a decisão é definitiva. A decisão grava `decisoes_avaliacao` com etapa `habilitacao`, muda a avaliação para o resultado e encerra a etapa de exames: itens e anexos ficam só para consulta (409 nas escritas). A avaliação já não volta à análise do relatório, que continua travado.
+
+**Doadora.** Uma por avaliação (índice único), ligada à interessada, à avaliação e à decisão de origem. Uma interessada pode ter várias ao longo do tempo, mas só uma *Ativa* ou *Suspensa*: habilitar outra nesse caso retorna 409. Nome e contatos vêm da interessada.
+
+| Método / caminho | Nome | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/avaliacoes/{avaliacao}/habilitacao` | `interno.avaliacoes.habilitacao.store` | `avaliar-doadoras`. `operacao_id`, `versao`, `resultado`, `possui_plano_saude` (`0`/`1`), `motivo`, `condicao`, `valida_ate` (AAAA-MM-DD) e `confirmacao_definitiva`. |
+| GET `/interno/doadoras` | `interno.doadoras.index` | `consultar-avaliacoes`. Lista com tipo, data-limite, situação e sinal de prazo vencido; filtro por situação; 20 por página. |
+| GET `/interno/doadoras/{doadora}` | `interno.doadoras.show` | `consultar-avaliacoes`. Situação, tipo, condição, decisão de origem, link para a avaliação, formulários (só `avaliar-doadoras` com habilitação vigente) e histórico em páginas de 20. |
+| POST `/interno/doadoras/{doadora}/eventos` | `interno.doadoras.eventos.store` | `avaliar-doadoras`. `operacao_id`, `versao`, `acao`, `motivo` (obrigatório) e, conforme a ação, `condicao`, `valida_ate` ou `confirmacao_definitiva`. |
+
+**Ações sobre a habilitação** (todas com motivo e evento imutável):
+- `suspensao`: *Ativa* → *Suspensa*. `retomada`: *Suspensa* → *Ativa*.
+- `renovacao` (só temporária): nova data-limite posterior a hoje e condição.
+- `conversao_definitiva` (só temporária): passa a definitiva, sem data nem condição.
+- `encerramento` → *Encerrada* e `revogacao` → *Revogada* (revisão dos dados ou outra razão), ambas com confirmação. Depois delas, nenhuma ação é aceita; uma nova habilitação depende de nova avaliação.
+
+**Prazo vencido.** Temporária *Ativa* ou *Suspensa* com data-limite anterior a hoje (São Paulo) recebe o sinal “Prazo vencido” na lista e no detalhe. Não há encerramento automático.
+
+**Garantias.** Mesmas convenções dos recortes anteriores: Gate antes e dentro da transação; a decisão trava a avaliação, os itens e a interessada e confere versão, estado e exigências; as ações travam a doadora e conferem a versão. Reenvio idêntico devolve o mesmo registro; reenvio alterado ou versão antiga retornam 409. Erros de validação voltam 422 com a entrada preservada; conflitos voltam 409 com link para recarregar e o motivo não registrado. Respostas com `Cache-Control: private, no-store`; textos com escape. Decisões e eventos recusam alteração e exclusão; as migrations recusam rollback com decisões de habilitação, doadoras ou eventos.
+
+**Fora desta etapa:** nova visita durante *Em aguardo* (entregue em 05/11/2026, [seção própria](#visita-complementar-durante-em-aguardo--implementada-em-05112026)); uso da habilitação por coleta e estoque; retenção dos dados.
+
+## Visita complementar durante *Em aguardo* — implementada em 05/11/2026
+
+Decisão do usuário em 05/11/2026, que resolve a pendência criada pelas decisões de 31/10/2026: a nova visita **complementa a avaliação existente**, sem abrir outra. Sem migration nem permissão nova. Fontes: [Solicitacao](../../app/Models/Solicitacao.php) (`scopeAceitandoVisita`, `aceitaVisita`), [Avaliacao](../../app/Models/Avaliacao.php) (`daVisita`, `relatorios`), [Agendamento](../../app/Models/Agendamento.php), [Atendimento](../../app/Models/Atendimento.php), [RelatorioVisita](../../app/Models/RelatorioVisita.php), [AgendaController](../../app/Http/Controllers/AgendaController.php), [AvaliacaoController](../../app/Http/Controllers/AvaliacaoController.php), [RelatorioVisitaController](../../app/Http/Controllers/RelatorioVisitaController.php) e views `agenda/index`, `agenda/show` e `avaliacoes/show`.
+
+**Quando o acompanhamento aceita visita.** Sem visita realizada, como antes; ou com a avaliação em *Em aguardo* e o relatório de **todas** as visitas já analisado por alguma decisão dessa avaliação. Assim, depois de uma visita complementar, outra só pode ser marcada após nova decisão *Em aguardo* sobre o relatório dela. A regra é a mesma na confirmação e no reagendamento da agenda, no registro da realização, na lista “aguardando agendamento” da agenda (marcada como “visita complementar”) e na lista de visitas aguardando registro dos relatórios. Fora dela, a confirmação retorna 409.
+
+**Vínculo.** A avaliação continua ligada à primeira visita (`avaliacoes.atendimento_id`); as visitas do mesmo pedido pertencem a ela. A publicação do relatório complementar não cria avaliação nem muda o estado: *Em aguardo* só termina com nova decisão. A correção de qualquer relatório do acompanhamento segue a trava da avaliação compartilhada.
+
+**Decisão da análise.** Bloqueada (409, e mensagem na tela) enquanto houver visita complementar marcada, relatório em correção ou relatório complementar ainda não publicado. A decisão grava a versão vigente do relatório da **visita mais recente**; o histórico indica a visita de cada decisão quando há mais de uma. A decisão de habilitação também referencia o relatório mais recente.
+
+**Telas.** A avaliação lista todas as visitas com o estado do relatório e, em *Em aguardo*, oferece a quem tem `gerenciar-agenda` o link para agendar a visita complementar. O acompanhamento na agenda mostra “Confirmar visita complementar”.
+
+**Concorrência.** Análise e decisão travam o pedido antes dos relatórios e da avaliação, na mesma ordem da agenda e do registro de visitas, de modo que confirmar visita e decidir não se cruzam.
+
+## Correção de dados do pedido — implementada em 05/11/2026
+
+Decisões do usuário em 05/11/2026: corrige quem tem `atender-solicitacoes`, sem permissão nova; **antes da admissão** todos os dados do pedido são corrigíveis; **depois dela**, só contatos e endereço do cadastro, porque visita, avaliação e doadora dependem da identidade conferida. Sem migration: o evento usa o tipo `correcao`, já previsto em `eventos_solicitacao`. Fontes: [Solicitacao](../../app/Models/Solicitacao.php) (`corrigirDados`, `CAMPOS_CONTATO`, `CAMPOS_IDENTIDADE`), [CorrecaoSolicitacaoRequest](../../app/Http/Requests/CorrecaoSolicitacaoRequest.php), [AtendimentoSolicitacaoController](../../app/Http/Controllers/AtendimentoSolicitacaoController.php) e views `solicitacoes/correcao`, `solicitacoes/atendimento` e `solicitacoes/acompanhamento`.
+
+| Método / caminho | Nome | Acesso e efeito |
+| --- | --- | --- |
+| POST `/interno/solicitacoes/{solicitacao}/correcao` | `interno.solicitacoes.correcao.store` | `atender-solicitacoes`. `versao`, `motivo` (obrigatório, até 2.000) e os campos do formulário de recebimento; após a admissão, `nome_completo`, `cpf` e `outros_detalhes` são descartados. Redireciona ao pedido ou, se admitido, ao acompanhamento. |
+
+**Alcance por situação.**
+- *Enviada* ou *Em análise*: corrige no pedido nome (recalculando o nome normalizado), CPF, telefones, e-mail, endereço, número para WhatsApp e outros detalhes. As correspondências são recalculadas com os dados novos; conferências anteriores deixam de valer para os pares cujos dados mudaram, como já acontecia.
+- *Admitida*: corrige no cadastro (`interessadas`) telefones, e-mail, endereço e número para WhatsApp. O pedido de origem guarda os dados como recebidos.
+- *Arquivada*: 409.
+
+**Regras.** Mesma normalização e validação do recebimento (CPF com dígitos, telefone com DDD, CEP, UF, WhatsApp num telefone preenchido e confirmação de disponibilidade). Erros voltam na sacola `correcao` com a entrada preservada; envio sem nenhuma alteração é recusado. A versão do pedido é conferida com o registro travado (409 se mudou); a correção do cadastro trava também a interessada e incrementa as versões dela e do pedido, invalidando admissões em andamento que a referenciem. Mudança de telefone ou de número para WhatsApp renova `whatsapp_declarado_em`.
+
+**Histórico.** `dados_originais` não muda. Cada correção grava um evento `correcao` no pedido com autor, motivo e, em `dados_anteriores` e `dados_novos`, o registro alterado (`pedido` ou `cadastro`) e os valores anteriores e novos **somente dos campos alterados**. O histórico do pedido mostra os nomes dos campos corrigidos, sem os valores. Esses valores são dados pessoais e seguem a [retenção](#retenção-dos-anexos-e-das-correções--implementada-em-05112026): descartados, o histórico continua mostrando os campos e acrescenta a data do descarte.
+
+## Retenção dos anexos e das correções — implementada em 05/11/2026
+
+Decisões do usuário em 05/11/2026: o prazo é **configurável** (`RETENCAO_ANOS`, em anos) e vale para os arquivos dos exames e para os valores das correções de pedidos; o descarte é disparado **somente por um administrador**, numa tela do sistema, sem terminal e sem agendamento. O prazo em si cabe à equipe responsável pelo serviço; esta implementação não define nem atesta prazo legal. Fontes: [RetencaoController](../../app/Http/Controllers/RetencaoController.php), [AnexoItemAvaliacao](../../app/Models/AnexoItemAvaliacao.php) (`vencidos`, `descartar`), [EventoSolicitacao](../../app/Models/EventoSolicitacao.php) (`correcoesVencidas`, `descartarValores`), [config/retencao.php](../../config/retencao.php) e view `retencao/index`.
+
+| Método / caminho | Nome `interno.retencao.*` | Acesso e efeito |
+| --- | --- | --- |
+| GET `/interno/retencao` | `index` | `gerenciar-retencao` (só administradores). Mostra o prazo, a data-limite, os arquivos e as correções vencidos (20 por página) e o total já descartado. |
+| POST `/interno/retencao/descarte` | `descarte.store` | `gerenciar-retencao`. `limite` (data exibida na tela) e `confirmacao` aceita. Descarta o que venceu até `limite` e redireciona com a contagem. 409 se o prazo não estiver definido ou se `limite` for posterior ao limite atual (prazo aumentado depois de abrir a página). |
+
+**Contagem do prazo.**
+- Anexo: da decisão de habilitação (`decisoes_avaliacao.etapa = habilitacao`) da avaliação. Avaliação ainda na etapa de exames não vence.
+- Correção: da data do evento `correcao`.
+- `RETENCAO_ANOS` vazio, zero ou não numérico significa prazo não definido: a tela informa isso e nada fica disponível para descarte.
+
+**Efeito do descarte.**
+- Anexo: o arquivo é apagado do disco `anexos` e o registro recebe `descartado_em` e `descartado_por_user_id`. Nome original, tipo, tamanho, SHA-256, autor e data do envio continuam. A tela do exame mostra “Arquivo descartado pelo prazo de retenção em …” sem os links; o download responde 410. A marcação é a única alteração permitida no registro e só acontece uma vez.
+- Correção: os valores em `dados_anteriores.campos` e `dados_novos.campos` viram nulos, mantendo registro, nomes dos campos, versão, autor, motivo e data; o evento recebe `valores_descartados_em` e `valores_descartados_por_user_id`. Os dados atuais do pedido e do cadastro não mudam.
+- Cada item é descartado na própria transação, com o registro travado e o prazo conferido de novo; repetir o descarte não altera o que já foi descartado. Se a marcação falhar depois de o arquivo sair do disco, o download responde 404 e o próximo descarte conclui a marcação.
+
+**Rollback.** A migration `2026_11_05_100000_add_descarte_retencao` recusa a reversão havendo descarte registrado.
+
+**Limites.** O nome original do arquivo é mantido e pode conter dado pessoal. Backups antigos continuam com os arquivos e valores descartados até serem substituídos conforme a política de backup, ainda não definida (SEG-15). Testado em SQLite e MariaDB exclusivo; não verificado em navegador.

@@ -87,6 +87,9 @@ class RelatorioVisita extends Model
                 $versao = null;
                 if ($acao === 'abertura_correcao') {
                     abort_unless($relatorio->estado === 'finalizado', 409, 'O relatório não está disponível para iniciar uma correção.');
+                    $avaliacao = Avaliacao::daVisita($relatorio->atendimento_id)->lockForUpdate()->first();
+                    abort_if($avaliacao?->concluida(), 409, 'A análise deste relatório já foi concluída. O relatório não pode mais ser corrigido.');
+                    abort_if($avaliacao?->reservadaPorOutro($autor), 409, $avaliacao?->mensagemReserva().' Abra a correção depois que a análise for encerrada.');
                     $base = $relatorio->versoes()->where('numero', $relatorio->numero_versao_vigente)->firstOrFail();
                     $relatorio->forceFill(['estado' => 'em_correcao', 'base_correcao_numero' => $base->numero,
                         'texto_rascunho' => $base->texto, 'motivo_correcao' => $dados['motivo']]);
@@ -113,6 +116,7 @@ class RelatorioVisita extends Model
                             'finalizado_por_user_id' => $autor->id, 'finalizado_em' => now()->utc()])->save();
                         $relatorio->forceFill(['estado' => 'finalizado', 'numero_versao_vigente' => $versao->numero,
                             'texto_rascunho' => null, 'base_correcao_numero' => null, 'motivo_correcao' => null]);
+                        Avaliacao::abrirParaAtendimento($relatorio->atendimento_id);
                     }
                 }
                 $relatorio->ultimo_editor_user_id = $autor->id;

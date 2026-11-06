@@ -9,7 +9,7 @@
         </section>
 
         <div class="blh-wrap">
-            @canany(['atender-solicitacoes', 'gerenciar-agenda', 'consultar-relatorios-visita', 'consultar-avaliacoes', 'consultar-exames', 'criar-funcionarios', 'gerenciar-permissoes'])
+            @canany(['atender-solicitacoes', 'gerenciar-agenda', 'consultar-relatorios-visita', 'consultar-avaliacoes', 'consultar-exames', 'criar-funcionarios', 'gerenciar-permissoes', 'gerenciar-retencao'])
                 @canany(['atender-solicitacoes', 'gerenciar-agenda', 'consultar-relatorios-visita'])
                     <section class="blh-painel__secao" aria-labelledby="titulo-atendimento">
                         <h2 id="titulo-atendimento">Atendimento</h2>
@@ -60,7 +60,7 @@
                     </section>
                 @endcanany
 
-                @canany(['criar-funcionarios', 'gerenciar-permissoes'])
+                @canany(['criar-funcionarios', 'gerenciar-permissoes', 'gerenciar-retencao'])
                     <section class="blh-painel__secao" aria-labelledby="titulo-administracao">
                         <h2 id="titulo-administracao">Administração</h2>
                         <ul class="blh-cartoes">
@@ -74,6 +74,12 @@
                                 <li><a class="blh-cartao" href="{{ route('interno.permissoes.index') }}">
                                     <h3>Permissões</h3>
                                     <p>Liberar ou retirar acessos e desativar contas da equipe.</p>
+                                </a></li>
+                            @endcan
+                            @can('gerenciar-retencao')
+                                <li><a class="blh-cartao" href="{{ route('interno.retencao.index') }}">
+                                    <h3>Retenção</h3>
+                                    <p>Descartar arquivos de exames e valores de correções com prazo vencido.</p>
                                 </a></li>
                             @endcan
                         </ul>

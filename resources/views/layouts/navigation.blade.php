@@ -25,6 +25,9 @@
             @can('gerenciar-permissoes')
                 <li><a href="{{ route('interno.permissoes.index') }}" @if (request()->routeIs('interno.permissoes.*')) aria-current="page" @endif>Permissões</a></li>
             @endcan
+            @can('gerenciar-retencao')
+                <li><a href="{{ route('interno.retencao.index') }}" @if (request()->routeIs('interno.retencao.*')) aria-current="page" @endif>Retenção</a></li>
+            @endcan
         </ul>
     </div>
 </nav>

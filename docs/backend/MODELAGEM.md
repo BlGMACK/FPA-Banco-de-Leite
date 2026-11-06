@@ -6,7 +6,7 @@ Fonte principal: [migrations](../../database/migrations). Esta descrição repre
 
 ### Inventário em 29/10/2026
 
-São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status`); a de desativação de contas, de 29/10/2026, ainda aguarda aplicação. Nenhuma tabela clínica além do relatório narrativo, nenhuma tabela de doadora aprovada, anexos, coleta ou estoque.
+São 23 migrations, todas aplicadas no banco de desenvolvimento `banco_de_leite_dev` (conferido com `migrate:status` em 31/10/2026; a de desativação de contas entrou no lote 7 e as duas da avaliação no lote 8). Além do relatório narrativo, só há o registro da análise do relatório; nenhuma tabela de exames, doadora aprovada, anexos, coleta ou estoque.
 
 | Recorte | Tabelas | Lote local | Detalhe |
 | --- | --- | --- | --- |
@@ -15,7 +15,8 @@ São 21 migrations. As 20 primeiras estão aplicadas no banco de desenvolvimento
 | Administrativo | `interessadas`, `solicitacoes`, `contatos_solicitacao`, `contato_pedidos`, `resolucoes_solicitacao`, `resolucao_pedidos`, `resolucao_cadastros`, `eventos_solicitacao`, `permissoes`, `permissao_user`, `eventos_permissao` | 3 | [Recorte administrativo](#recorte-administrativo-preparado-em-24102026) |
 | Agenda | contexto em `contatos_solicitacao`; `agendamentos`, `reservas_agenda`, `eventos_agendamento` | 5 | [Agenda](#desenho-físico-proposto-para-agenda--26102026) |
 | Visita e relatório | `atendimentos`, `relatorios_visita`, `versoes_relatorio_visita`, `eventos_atendimento`; estado `realizado` na agenda | 6 | [Atendimento e relatório](#persistência-proposta-para-atendimento-e-relatório--28102026) |
-| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | pendente | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Desativação de contas | `users.desativado_em`, `users.desativado_por_user_id` (FK restrita); `eventos_conta` (conta, autor, `desativacao\|reativacao`, motivo, instante) | 7 | [Contas internas](#contas-internas--atualização-de-27102026) |
+| Análise do relatório | `avaliacoes` (uma por atendimento, estado, `versao`); `decisoes_avaliacao` (imutável: resultado, motivo, versão do relatório analisada, autor, instante, `operacao_id` único, hash) | 8 | [Desenho de avaliação](#desenho-físico-proposto-para-avaliação-exames-e-documentos--29102026) |
 
 As seções seguintes foram escritas a cada etapa e mantêm o desenho, as decisões e os limites de cada recorte; avisos de “sem aplicação ao desenvolvimento” nelas descrevem a data do registro. A tabela abaixo descreve a base Laravel.
 
@@ -47,7 +48,7 @@ Não existe papel nem conta de doadora: contas são apenas internas. A interessa
 
 ## Dados e ambiente
 
-A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) cria uma conta admin e uma funcionário, com valores fixos de demonstração; não é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
+A [factory](../../database/factories/UserFactory.php) cria usuários fictícios e oferece estado sem verificação de e-mail. O [seeder](../../database/seeders/DatabaseSeeder.php) chama os catálogos e, só em ambiente local, cria uma conta admin e uma funcionário com senha aleatória; é idempotente. O [PermissaoSeeder](../../database/seeders/PermissaoSeeder.php) prepara os cinco códigos do catálogo de forma idempotente, sem conceder acessos.
 
 Conexão local, migrations e diferença entre MySQL e SQLite de testes: [Ambiente](../AMBIENTE.md). O levantamento original de 22/10/2026 não inspecionou o legado; a consulta posterior está registrada abaixo e não comprova compatibilidade.
 
@@ -63,7 +64,7 @@ Antes de reutilizar o desenho, confirmar a identificação da pessoa, a regra de
 
 ## Proposta do fluxo de admissão — não implementada
 
-> Situação em 29/10/2026: a parte administrativa (pedido, identidade, contatos, resoluções, admissão), a agenda e o relatório narrativo foram implementados com desenho próprio, descrito nas seções finais deste documento. Continuam apenas propostos: doadora aprovada (D9), triagem estruturada, avaliação de saúde, requisitos, documentos/exames e anexos.
+> Situação em 05/11/2026: a parte administrativa (pedido, identidade, contatos, resoluções, admissão), a agenda, o relatório narrativo, a análise do relatório, exames e documentos com anexos e a doadora aprovada (D9, tabela `doadoras`) foram implementados com desenho próprio, descrito nas seções finais deste documento. Continuam apenas propostos: triagem estruturada e avaliação de saúde além do que a análise e os exames registram.
 
 Referências: **G** = guia do usuário de 23/10/2026; **L** = schema legado acima; **P** = nova proposta. O [Roadmap](ROADMAP.md) identifica acordos e decisões D1–D12. O desenho completo abaixo continua **P**, mesmo quando materializa uma diretriz G. A autorização posterior de 24/10/2026 permitiu preparar apenas o schema administrativo descrito ao final; operações e tabelas clínicas continuam propostas. **PDF indisponível:** não há campos clínicos ou limites de aptidão atribuídos a ele.
 
@@ -341,7 +342,13 @@ Preparação futura deve testar upgrade com registros existentes, restrições/F
 
 ## Desenho físico proposto para avaliação, exames e documentos — 29/10/2026
 
-**Estado: proposta técnica para revisão, não implementada.** Materializa as regras [acordadas em 29/10/2026](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). Nomes de tabelas, campos e limites são propostos; a implementação depende de autorização e da lista real de exames (o catálogo pode começar só com "Exame de sangue" e "Outro exame").
+**Atualização de 05/11/2026:** visitas complementares durante *Em aguardo* não alteram o schema. `avaliacoes.atendimento_id` continua apontando a primeira visita; as demais visitas do mesmo pedido (por `agendamentos.solicitacao_id`) pertencem à mesma avaliação, e cada decisão indica o relatório analisado por `versao_relatorio_id` ([Contratos](CONTRATOS.md#visita-complementar-durante-em-aguardo--implementada-em-05112026)).
+
+**Atualização de 02/11/2026:** a etapa 3 foi implementada com a tabela `doadoras` (D9) no lugar de `habilitacoes`, mas com o desenho recomendado: referência à interessada, à avaliação (única) e à decisão de origem, sem cópia de dados; `tipo` (`definitiva`, `temporaria`), `condicao`, `valida_ate`, `estado` (`ativa`, `suspensa`, `encerrada`, `revogada`) e `versao`. `interessada_id` **não é único**: uma pessoa pode ter várias habilitações, e a regra de uma vigente por vez é garantida na transação. Eventos em `eventos_doadora`. `avaliacoes` ganhou os estados finais e `possui_plano_saude`; `decisoes_avaliacao`, a etapa `habilitacao`, `possui_plano_saude`, `condicao` e `valida_ate`. Contrato em [Contratos](CONTRATOS.md#decisão-de-habilitação-e-doadoras-etapa-3--implementada-em-02112026).
+
+**Atualização de 31/10/2026:** `avaliacoes` e `decisoes_avaliacao` foram **implementadas** apenas para a análise do relatório: `avaliacoes.estado` aceita só `aguardando_analise`, `em_aguardo`, `liberada_exames` e `nao_apta`; `decisoes_avaliacao.etapa` só `analise_relatorio`, com `versao_analisada` no lugar de “versão”; `possui_plano_saude`, `condicao` e `valida_ate` ficaram para as etapas de documentos e habilitação, que acrescentarão valores e colunas por novas migrations. A permissão de leitura chama-se `consultar-avaliacoes` (separada de `consultar-exames`). Decisão definitiva trava correções do relatório ([Contratos](CONTRATOS.md#análise-do-relatório-avaliação--implementada-em-31102026)). O restante desta seção continua proposto.
+
+**Estado original: proposta técnica de 29/10/2026**, depois implementada com as diferenças registradas nas atualizações acima. Materializa as regras [acordadas em 29/10/2026](ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026). Nomes de tabelas, campos e limites são propostos; a implementação depende de autorização e da lista real de exames (o catálogo pode começar só com "Exame de sangue" e "Outro exame").
 
 ### Estruturas
 
@@ -367,4 +374,4 @@ Preparação futura deve testar upgrade com registros existentes, restrições/F
 
 ### Pendências antes de implementar
 
-Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; retenção dos anexos; aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).
+Lista real de exames e documentos com prazos; o que encerra `em_aguardo`; o que define o fim de uma habilitação temporária; formatos e tamanho dos arquivos; prazo de retenção dos anexos (mecanismo implementado em 05/11/2026, [contrato](CONTRATOS.md#retenção-dos-anexos-e-das-correções--implementada-em-05112026)); aceite da recomendação para D9. Requisitos de segurança dos anexos: [SEG-12](../SEGURANCA.md#segurança-dos-módulos-e-da-operação).

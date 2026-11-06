@@ -1,10 +1,10 @@
 # Guia da documentação
 
-## Situação em 29/10/2026
+## Situação em 05/11/2026
 
-O primeiro fluxo (solicitação até habilitação para doar) está implementado até o **relatório de visita**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas e relatório narrativo com rascunho, finalização e correções versionadas. Das 21 migrations, 20 estão aplicadas no banco de desenvolvimento; a de desativação de contas aguarda aplicação. A suíte automatizada passa (312 testes, 4 ignorados por exigirem MariaDB).
+O primeiro fluxo (solicitação até habilitação para doar) está **implementado de ponta a ponta**: solicitação pública sem conta, fila com alertas de correspondência, atendimento e admissão administrativa, agenda de visitas, relatório narrativo com rascunho, finalização e correções versionadas, **análise do relatório** (31/10/2026), **exames e documentos** com anexos (01/11/2026) e **decisão de habilitação** com a tabela `doadoras`, suspensão, encerramento e revogação (02/11/2026). As 32 migrations estão aplicadas no banco de desenvolvimento (conferência de 05/11/2026). Mensagens do sistema e do framework em português (pt-BR). A suíte automatizada passa (452 testes, 4 ignorados por exigirem MariaDB, em 05/11/2026).
 
-O administrador concede e revoga permissões e desativa ou reativa funcionários pela tela “Permissões”. Ainda não existem: documentos/exames, avaliação de saúde, decisão e habilitação; correção de dados do pedido; coleta, estoque e distribuição. O fluxo completo foi exercitado em navegador automatizado em 29/10/2026, sem defeitos funcionais; falta a avaliação de usabilidade pela equipe.
+O administrador concede e revoga permissões e desativa ou reativa funcionários pela tela “Permissões”. Desde 05/11/2026, com a avaliação *Em aguardo*, a equipe pode marcar uma **visita complementar**, cujo relatório entra na mesma avaliação. A equipe de atendimento também corrige dados do pedido (antes da admissão) e contatos e endereço do cadastro (depois), com motivo e histórico. Pela tela “Retenção”, o administrador descarta arquivos de exames e valores de correções vencidos, conforme um prazo configurável que a equipe ainda precisa definir. Ainda não existem: coleta, estoque e distribuição. As telas foram exercitadas em navegador automatizado (29/10, 31/10, 01/11 e 02/11/2026); falta a avaliação de usabilidade pela equipe.
 
 O retrato completo, com fontes e evidências, está no [Estado atual do Status](backend/STATUS.md#estado-atual--29102026). O código e as migrations são as evidências de implementação; ideias, propostas e arquivos antigos não comprovam funcionalidades disponíveis.
 
@@ -23,6 +23,10 @@ O retrato completo, com fontes e evidências, está no [Estado atual do Status](
 | 27/10/2026 | Telas da agenda; contas exclusivamente internas e cadastro de funcionários. |
 | 28/10/2026 | Ativação local da agenda; especificação, schema, models e operações dos relatórios de visita. |
 | 29/10/2026 | Ativação local dos relatórios e telas Blade de relatório; teste em navegador e ajustes de usabilidade; tela de gestão de permissões; regras acordadas para desativação de funcionários e para avaliação, exames e documentos ([Roadmap](backend/ROADMAP.md#avaliação-após-visita-exames-e-documentos--acordado-em-29102026)). |
+| 31/10/2026 | Migration de desativação aplicada no desenvolvimento; mensagens do sistema e do framework em português (pt-BR); análise do relatório (avaliação) com trava de correção após decisão definitiva; teste das telas de avaliação em navegador automatizado; reserva da análise e confirmação das decisões definitivas. |
+| 01/11/2026 | Decisões sobre exames, documentos e habilitação (D9: tabela `doadoras`; catálogo provisório; anexos; entrega por etapas); etapa 1 dos exames e documentos; etapa 2, anexos dos exames. |
+| 02/11/2026 | Migration dos anexos aplicada no desenvolvimento; decisões sobre a etapa 3 e decisão de habilitação com tabela `doadoras`, aplicada no desenvolvimento; catálogo de exames definido (só exame de sangue, 30 dias); teste das telas de habilitação em navegador e menu recolhido abaixo de 1400 px. |
+| 05/11/2026 | Conferência do repositório: suíte repetida e resumos de situação da documentação atualizados. Decisão e implementação da visita complementar durante *Em aguardo*, que complementa a mesma avaliação (sem migration). Decisão e implementação da correção de dados do pedido e do cadastro (sem migration). Limpeza técnica: seeder idempotente, middleware `role` removido, scripts do Composer alinhados. |
 
 Cada etapa, com comandos, resultados e limites, está no [histórico do Status](backend/STATUS.md#histórico-de-verificações).
 

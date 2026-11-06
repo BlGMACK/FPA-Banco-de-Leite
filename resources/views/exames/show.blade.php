@@ -44,8 +44,12 @@
                     <h3 class="h6">Arquivos</h3>
                     <ul class="list-unstyled mb-3">@foreach ($item->anexos as $anexo)
                         <li class="mb-1 text-break">{{ $anexo->nome_original }} · {{ $anexo->tamanhoLegivel() }} · {{ $anexo->enviadoPor->name }} · {{ $anexo->enviado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i') }}
-                            · <a href="{{ route('interno.exames.anexos.arquivo', $anexo->id) }}" target="_blank" rel="noopener">Abrir</a>
-                            · <a href="{{ route('interno.exames.anexos.arquivo', ['anexo' => $anexo->id, 'baixar' => 1]) }}">Baixar</a></li>
+                            @if ($anexo->descartado_em)
+                                · <span class="text-body-secondary">Arquivo descartado pelo prazo de retenção em {{ $anexo->descartado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y') }}</span></li>
+                            @else
+                                · <a href="{{ route('interno.exames.anexos.arquivo', $anexo->id) }}" target="_blank" rel="noopener">Abrir</a>
+                                · <a href="{{ route('interno.exames.anexos.arquivo', ['anexo' => $anexo->id, 'baixar' => 1]) }}">Baixar</a></li>
+                            @endif
                     @endforeach</ul>
                 @endif
                 @if ($formulario === $form && $falhas)<div class="alert alert-danger" role="alert">@foreach ($falhas as $mensagens)@foreach ($mensagens as $mensagem)<p class="mb-0">{{ $mensagem }}</p>@endforeach @endforeach
