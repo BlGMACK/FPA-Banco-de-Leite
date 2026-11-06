@@ -179,11 +179,11 @@ Atualize esta tabela no próprio PR da tela.
 
 | # | Tela | Situação | PR | Observações |
 | --- | --- | --- | --- | --- |
-| 0 | Base visual | não iniciada | — | — |
+| 0 | Base visual | em revisão (PR aberto) | — | Branch `frontend`: barra superior com usuário, menu lateral à direita a partir de 62rem (recolhido no botão “Menu” abaixo disso). |
 | 1 | Página inicial | não iniciada | — | — |
 | 2 | Login e senha | não iniciada | — | — |
 | 3 | Solicitação pública | não iniciada | — | — |
-| 4 | Painel | não iniciada | — | — |
+| 4 | Painel | em revisão (PR aberto) | — | Branch `frontend`: cartões por área, exibidos conforme as permissões; aviso quando nenhuma área foi liberada. |
 | 5 | Fila de solicitações | não iniciada | — | — |
 | 6 | Acompanhamentos | não iniciada | — | — |
 | 7 | Agenda | não iniciada | — | — |
