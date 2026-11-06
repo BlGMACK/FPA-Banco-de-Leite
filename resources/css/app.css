@@ -134,6 +134,37 @@
     .btn-blh { transition: background-color .15s ease, border-color .15s ease; }
 }
 
+
+/* Componentes Bootstrap na área de conteúdo interna (cartões, tabelas, formulários e botões) */
+.blh-principal .container { --bs-gutter-x: 1.5rem; }
+.blh-principal .card {
+    border-color: #e2eaf3;
+    border-radius: .85rem;
+    box-shadow: 0 .25rem 1rem rgba(20, 40, 58, .045);
+}
+.blh-principal .card-header { background: #fff; border-bottom-color: #e9eff6; }
+.blh-principal .table > :not(caption) > * > * { padding: .8rem .9rem; }
+.blh-principal .table thead th {
+    background: #f7f9fc;
+    color: var(--blh-tinta-suave);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+.blh-principal .table tbody tr:last-child > * { border-bottom-width: 0; }
+.blh-principal .form-control, .blh-principal .form-select {
+    border-color: #d8e2ed;
+    border-radius: .55rem;
+}
+.blh-principal .form-control:focus, .blh-principal .form-select:focus {
+    border-color: var(--blh-azul-medio);
+    box-shadow: 0 0 0 .2rem rgba(91, 155, 213, .2);
+}
+.blh-principal .btn { border-radius: .55rem; font-weight: 600; }
+.blh-principal .btn-primary { --bs-btn-bg: var(--blh-azul); --bs-btn-border-color: var(--blh-azul); --bs-btn-hover-bg: var(--blh-azul-escuro); --bs-btn-hover-border-color: var(--blh-azul-escuro); }
+.blh-principal .alert { border-radius: .7rem; }
 /* ==========================================================================
    Área interna: moldura com menu lateral à direita e painel
    Mesmos tokens da área pública (--blh-*). As telas internas continuam
