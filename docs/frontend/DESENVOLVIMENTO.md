@@ -193,6 +193,7 @@ Atualize esta tabela no próprio PR da tela.
 | 11 | Perfil | não iniciada | — | — |
 | 12 | Páginas de erro | não iniciada | — | — |
 | 13 | Avaliações | não iniciada | — | Tela de apoio entregue em 31/10/2026. |
+| 14 | Coleta e recebimento | em andamento | — | Tela local sem gravação de dados. |
 
 Situações: não iniciada, em andamento, em revisão (PR aberto), integrada (merge em `frontend`), em `main`.
 

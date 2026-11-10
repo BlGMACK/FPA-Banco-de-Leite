@@ -17,6 +17,12 @@ Route::get('/', function () {
     return view('inicio');
 });
 
+Route::get('/coletas', function () {
+    abort_unless(app()->isLocal(), 404);
+
+    return view('coletas.registrar');
+})->name('coletas.registrar');
+
 Route::get('/doar', [SolicitacaoController::class, 'create'])->name('solicitacoes.create');
 Route::post('/pedidos-de-cadastro', [SolicitacaoController::class, 'store'])
     ->middleware('throttle:receber-solicitacoes')->name('solicitacoes.store');
