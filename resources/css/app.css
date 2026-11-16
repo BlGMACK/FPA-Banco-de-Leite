@@ -160,7 +160,9 @@
 .blh-coleta__aviso strong { color: var(--blh-azul-escuro); }
 .blh-coleta__aviso-icone { display: grid; width: 1.35rem; height: 1.35rem; flex: none; place-items: center; border-radius: 50%; background: var(--blh-azul); color: #fff; font-family: var(--blh-fonte-titulo); font-size: .95rem; font-weight: 700; }
 .blh-coleta__acoes { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #e8eff7; }
-.blh-coleta__acoes .btn { min-height: 2.75rem; }
+.blh-coleta__acoes .btn { min-height: 2.75rem; --bs-btn-padding-x: 1.4rem; --bs-btn-padding-y: .6rem; }
+.blh-coleta__acoes .btn-blh { --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: var(--blh-azul); --bs-btn-disabled-border-color: var(--blh-azul); }
+.blh-coleta__acoes .btn-blh:disabled { box-shadow: none; }
 @media (min-width: 42rem) {
     .blh-coleta__grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

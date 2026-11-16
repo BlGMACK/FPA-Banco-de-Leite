@@ -196,7 +196,7 @@ Atualize esta tabela no próprio PR da tela.
 | 11 | Perfil | não iniciada | — | — |
 | 12 | Páginas de erro | não iniciada | — | — |
 | 13 | Avaliações | não iniciada | — | Tela de apoio entregue em 31/10/2026. |
-| 14 | Coleta e recebimento | em revisão (PR aberto) | #17 | Prévia visual em `/interno/coletas`, na área interna, com item “Coletas” no menu lateral e cartão no painel. Não grava dados: a coleta ainda não existe no backend. |
+| 14 | Coleta e recebimento | em revisão (PR aberto) | #17 | Prévia visual em `/interno/coletas`, na área interna, com item “Coletas” no menu lateral e cartão no painel, ambos exibidos só para quem tem alguma área liberada. Não grava dados: a coleta ainda não existe no backend. |
 
 Situações: não iniciada, em andamento, em revisão (PR aberto), integrada (merge em `frontend`), em `main`.
 

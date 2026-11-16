@@ -46,7 +46,10 @@
                 @can('consultar-exames')
                     <li><a href="{{ route('interno.exames.index') }}" @if (request()->routeIs('interno.exames.*')) aria-current="page" @endif>Exames</a></li>
                 @endcan
-                <li><a href="{{ route('interno.coletas.registrar') }}" @if (request()->routeIs('interno.coletas.*')) aria-current="page" @endif>Coletas</a></li>
+                {{-- Mesmo critério do cartão no painel: só para quem tem alguma área liberada. --}}
+                @canany(['atender-solicitacoes', 'gerenciar-agenda', 'consultar-relatorios-visita', 'consultar-avaliacoes', 'consultar-exames', 'criar-funcionarios', 'gerenciar-permissoes', 'gerenciar-retencao'])
+                    <li><a href="{{ route('interno.coletas.registrar') }}" @if (request()->routeIs('interno.coletas.*')) aria-current="page" @endif>Coletas</a></li>
+                @endcanany
                 @can('criar-funcionarios')
                     <li><a href="{{ route('interno.funcionarios.create') }}" @if (request()->routeIs('interno.funcionarios.*')) aria-current="page" @endif>Cadastrar funcionário</a></li>
                 @endcan

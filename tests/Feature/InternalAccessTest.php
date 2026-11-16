@@ -33,9 +33,9 @@ class InternalAccessTest extends TestCase
         $this->get('/coletas')->assertNotFound();
         $this->get('/interno/coletas')->assertRedirect('/login');
 
-        $user = User::factory()->funcionario()->create();
+        $admin = User::factory()->admin()->create();
 
-        $response = $this->actingAs($user)->get('/interno/coletas')->assertOk()
+        $response = $this->actingAs($admin)->get('/interno/coletas')->assertOk()
             ->assertSee('Registrar coleta e recebimento')
             ->assertSee('Nenhum dado será salvo nesta tela.')
             ->assertSee('Navegação principal')
@@ -45,6 +45,16 @@ class InternalAccessTest extends TestCase
             '#href="'.preg_quote(route('interno.coletas.registrar'), '#').'"\s+aria-current="page"\s*>Coletas</a>#',
             $response->getContent()
         );
+        $this->get('/dashboard')->assertOk()->assertSee('href="'.route('interno.coletas.registrar').'"', false);
+    }
+
+    public function test_collection_preview_is_hidden_from_menu_and_panel_without_released_areas(): void
+    {
+        $semAreas = User::factory()->funcionario()->create();
+
+        $this->actingAs($semAreas)->get('/dashboard')->assertOk()
+            ->assertSee('Seu acesso ainda não foi liberado')
+            ->assertDontSee(route('interno.coletas.registrar'), false);
     }
 
     public function test_removed_account_cannot_login_or_recover_password_even_with_existing_token(): void
