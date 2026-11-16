@@ -90,7 +90,7 @@ Rotas internas exigem login. A coluna “Permissão” indica quem enxerga a tel
 | 11 | `front/perfil` | Perfil, troca de senha e exclusão de conta | `/profile` | `profile/` | `ProfileController` | `ProfileTest`, `tests/Feature/Auth/PasswordUpdateTest.php` | logado |
 | 12 | `front/erros` | Página de conflito (409) e páginas de erro | — | `errors/` | — | `RelatorioVisitaWebTest` | — |
 | 13 | `front/avaliacoes` | Lista de avaliações, situação, decisão da análise do relatório e histórico | `/interno/avaliacoes`, `/interno/avaliacoes/{id}` | `avaliacoes/` | `AvaliacaoController` | `AvaliacaoWebTest` | `consultar-avaliacoes` / `avaliar-doadoras` |
-| 14 | `front/coletas` | Coleta e recebimento: prévia visual, sem gravação (a coleta ainda não existe no backend) | `/coletas` (só em ambiente local; 404 nos demais) | `coletas/registrar` | closure em `routes/web.php` | `InternalAccessTest` | pública, só local |
+| 14 | `front/coletas` | Coleta e recebimento: prévia visual, sem gravação (a coleta ainda não existe no backend) | `/interno/coletas` | `coletas/registrar` | closure em `routes/web.php` | `InternalAccessTest` | logado |
 
 Os caminhos de view são relativos a `resources/views/`. Os controllers ficam em `app/Http/Controllers/` e os testes em `tests/Feature/`.
 
@@ -196,7 +196,7 @@ Atualize esta tabela no próprio PR da tela.
 | 11 | Perfil | não iniciada | — | — |
 | 12 | Páginas de erro | não iniciada | — | — |
 | 13 | Avaliações | não iniciada | — | Tela de apoio entregue em 31/10/2026. |
-| 14 | Coleta e recebimento | em revisão (PR aberto) | #17 | Prévia visual em `/coletas`, disponível só em ambiente local e sem gravação de dados; a coleta ainda não existe no backend. |
+| 14 | Coleta e recebimento | em revisão (PR aberto) | #17 | Prévia visual em `/interno/coletas`, na área interna, com item “Coletas” no menu lateral e cartão no painel. Não grava dados: a coleta ainda não existe no backend. |
 
 Situações: não iniciada, em andamento, em revisão (PR aberto), integrada (merge em `frontend`), em `main`.
 

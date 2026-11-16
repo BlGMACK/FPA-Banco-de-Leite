@@ -46,6 +46,7 @@
                 @can('consultar-exames')
                     <li><a href="{{ route('interno.exames.index') }}" @if (request()->routeIs('interno.exames.*')) aria-current="page" @endif>Exames</a></li>
                 @endcan
+                <li><a href="{{ route('interno.coletas.registrar') }}" @if (request()->routeIs('interno.coletas.*')) aria-current="page" @endif>Coletas</a></li>
                 @can('criar-funcionarios')
                     <li><a href="{{ route('interno.funcionarios.create') }}" @if (request()->routeIs('interno.funcionarios.*')) aria-current="page" @endif>Cadastrar funcionário</a></li>
                 @endcan

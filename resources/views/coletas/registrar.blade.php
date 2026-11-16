@@ -1,5 +1,5 @@
-<x-public-layout titulo="Registrar coleta | Banco de Leite Humano">
-    <section class="blh-hero blh-coleta__hero" aria-labelledby="titulo-coleta">
+<x-app-layout>
+    <section class="blh-coleta__hero" aria-labelledby="titulo-coleta">
         <div class="blh-wrap blh-coleta__hero-inner">
             <div>
                 <p class="blh-coleta__sobretitulo">Coletas</p>
@@ -63,10 +63,10 @@
                 </div>
 
                 <footer class="blh-coleta__acoes">
-                    <a class="btn btn-outline-secondary" href="{{ url('/') }}">Voltar ao início</a>
+                    <a class="btn btn-outline-secondary" href="{{ route('dashboard') }}">Voltar ao painel</a>
                     <button class="btn btn-blh" type="button" disabled>Registrar recebimento</button>
                 </footer>
             </div>
         </section>
     </div>
-</x-public-layout>
+</x-app-layout>

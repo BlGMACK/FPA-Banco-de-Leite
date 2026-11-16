@@ -17,12 +17,6 @@ Route::get('/', function () {
     return view('inicio');
 });
 
-Route::get('/coletas', function () {
-    abort_unless(app()->isLocal(), 404);
-
-    return view('coletas.registrar');
-})->name('coletas.registrar');
-
 Route::get('/doar', [SolicitacaoController::class, 'create'])->name('solicitacoes.create');
 Route::post('/pedidos-de-cadastro', [SolicitacaoController::class, 'store'])
     ->middleware('throttle:receber-solicitacoes')->name('solicitacoes.store');
@@ -80,6 +74,11 @@ Route::middleware(['auth', 'can:gerenciar-retencao'])->prefix('interno/retencao'
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Prévia visual da coleta: a coleta ainda não existe no backend e esta tela não grava dados.
+Route::get('/interno/coletas', function () {
+    return view('coletas.registrar');
+})->middleware(['auth', 'verified'])->name('interno.coletas.registrar');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])

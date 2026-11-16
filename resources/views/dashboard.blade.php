@@ -60,6 +60,16 @@
                     </section>
                 @endcanany
 
+                <section class="blh-painel__secao" aria-labelledby="titulo-coleta">
+                    <h2 id="titulo-coleta">Coleta</h2>
+                    <ul class="blh-cartoes">
+                        <li><a class="blh-cartao" href="{{ route('interno.coletas.registrar') }}">
+                            <h3>Coletas</h3>
+                            <p>Registro do leite recebido pelo Banco de Leite (prévia, ainda sem gravação).</p>
+                        </a></li>
+                    </ul>
+                </section>
+
                 @canany(['criar-funcionarios', 'gerenciar-permissoes', 'gerenciar-retencao'])
                     <section class="blh-painel__secao" aria-labelledby="titulo-administracao">
                         <h2 id="titulo-administracao">Administração</h2>
