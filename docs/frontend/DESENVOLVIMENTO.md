@@ -179,9 +179,9 @@ Atualize esta tabela no próprio PR da tela.
 
 | # | Tela | Situação | PR | Observações |
 | --- | --- | --- | --- | --- |
-| 0 | Base visual | em revisão (PR aberto) | — | Branch `frontend`: barra superior com usuário, menu lateral à direita a partir de 62rem (recolhido no botão “Menu” abaixo disso). |
+| 0 | Base visual | em revisão (PR aberto) | — | Branch `frontend`: barra superior só com a marca; menu lateral à esquerda a partir de 62rem (recolhido no botão “Menu” abaixo disso), com a conta no topo: nome e iniciais da pessoa logada, que abrem e-mail, tipo de acesso, “Meu perfil” e “Sair”. |
 | 1 | Página inicial | não iniciada | — | — |
-| 2 | Login e senha | não iniciada | — | — |
+| 2 | Login e senha | em revisão (PR aberto) | — | Branch `front/login`: login no layout público; depende da branch `frontend` (estilos de cartões, tabelas e formulários aplicados à área de conteúdo). |
 | 3 | Solicitação pública | não iniciada | — | — |
 | 4 | Painel | em revisão (PR aberto) | — | Branch `frontend`: cartões por área, exibidos conforme as permissões; aviso quando nenhuma área foi liberada. |
 | 5 | Fila de solicitações | não iniciada | — | — |
