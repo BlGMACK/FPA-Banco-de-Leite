@@ -4,6 +4,8 @@ Guia para a equipe de frontend e seus agentes de IA. Define como trabalhar **tel
 
 **Origem:** o trabalho tela por tela, a branch própria de frontend, os pull requests e o merge feito pelo responsável do repositório foram definidos pelo usuário em 30/10/2026. A branch por tela, a tela 0 de base visual, a ordem sugerida e o checklist são complementos **propostos** nesta redação, a confirmar.
 
+**Prioridade até a apresentação (definida pelo usuário em 16/11/2026):** o trabalho se concentra totalmente no frontend, ou seja, no que será apresentado e visível. A aplicação real do sistema (backend de coleta, estoque e distribuição e as demais pendências) fica para depois da apresentação. Por isso podem existir telas de prévia de módulos sem backend, como a de coleta (tela 14), que não gravam dados.
+
 ## O que é o frontend neste projeto
 
 Não existe SPA nem API. O frontend é o conjunto de **views Blade** renderizadas pelo Laravel, estilizadas com **Bootstrap 5.3** e com interações leves em **Alpine**, empacotadas pelo **Vite**. Cada tela recebe dados prontos do controller e envia formulários HTML comuns (com CSRF) de volta ao servidor.
@@ -88,6 +90,7 @@ Rotas internas exigem login. A coluna “Permissão” indica quem enxerga a tel
 | 11 | `front/perfil` | Perfil, troca de senha e exclusão de conta | `/profile` | `profile/` | `ProfileController` | `ProfileTest`, `tests/Feature/Auth/PasswordUpdateTest.php` | logado |
 | 12 | `front/erros` | Página de conflito (409) e páginas de erro | — | `errors/` | — | `RelatorioVisitaWebTest` | — |
 | 13 | `front/avaliacoes` | Lista de avaliações, situação, decisão da análise do relatório e histórico | `/interno/avaliacoes`, `/interno/avaliacoes/{id}` | `avaliacoes/` | `AvaliacaoController` | `AvaliacaoWebTest` | `consultar-avaliacoes` / `avaliar-doadoras` |
+| 14 | `front/coletas` | Coleta e recebimento: prévia visual, sem gravação (a coleta ainda não existe no backend) | `/coletas` (só em ambiente local; 404 nos demais) | `coletas/registrar` | closure em `routes/web.php` | `InternalAccessTest` | pública, só local |
 
 Os caminhos de view são relativos a `resources/views/`. Os controllers ficam em `app/Http/Controllers/` e os testes em `tests/Feature/`.
 
@@ -179,11 +182,11 @@ Atualize esta tabela no próprio PR da tela.
 
 | # | Tela | Situação | PR | Observações |
 | --- | --- | --- | --- | --- |
-| 0 | Base visual | em revisão (PR aberto) | — | Branch `frontend`: barra superior só com a marca; menu lateral à esquerda a partir de 62rem (recolhido no botão “Menu” abaixo disso), com a conta no topo: nome e iniciais da pessoa logada, que abrem e-mail, tipo de acesso, “Meu perfil” e “Sair”. |
+| 0 | Base visual | em `main` | #14, #16 | Branch `frontend`: barra superior só com a marca; menu lateral à esquerda a partir de 62rem (recolhido no botão “Menu” abaixo disso), com a conta no topo: nome e iniciais da pessoa logada, que abrem e-mail, tipo de acesso, “Meu perfil” e “Sair”. |
 | 1 | Página inicial | não iniciada | — | — |
-| 2 | Login e senha | em revisão (PR aberto) | — | Branch `front/login`: login no layout público; depende da branch `frontend` (estilos de cartões, tabelas e formulários aplicados à área de conteúdo). |
+| 2 | Login e senha | em `main` | #13 | Branch `front/login`: login no layout público; depende da branch `frontend` (estilos de cartões, tabelas e formulários aplicados à área de conteúdo). |
 | 3 | Solicitação pública | não iniciada | — | — |
-| 4 | Painel | em revisão (PR aberto) | — | Branch `frontend`: cartões por área, exibidos conforme as permissões; aviso quando nenhuma área foi liberada. |
+| 4 | Painel | em `main` | #14 | Branch `frontend`: cartões por área, exibidos conforme as permissões; aviso quando nenhuma área foi liberada. |
 | 5 | Fila de solicitações | não iniciada | — | — |
 | 6 | Acompanhamentos | não iniciada | — | — |
 | 7 | Agenda | não iniciada | — | — |
@@ -193,7 +196,7 @@ Atualize esta tabela no próprio PR da tela.
 | 11 | Perfil | não iniciada | — | — |
 | 12 | Páginas de erro | não iniciada | — | — |
 | 13 | Avaliações | não iniciada | — | Tela de apoio entregue em 31/10/2026. |
-| 14 | Coleta e recebimento | em andamento | — | Tela local sem gravação de dados. |
+| 14 | Coleta e recebimento | em revisão (PR aberto) | #17 | Prévia visual em `/coletas`, disponível só em ambiente local e sem gravação de dados; a coleta ainda não existe no backend. |
 
 Situações: não iniciada, em andamento, em revisão (PR aberto), integrada (merge em `frontend`), em `main`.
 

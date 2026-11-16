@@ -28,6 +28,18 @@ class InternalAccessTest extends TestCase
         $this->assertDatabaseCount('users', 0);
     }
 
+    public function test_collection_preview_exists_only_in_local_environment_and_saves_nothing(): void
+    {
+        $this->get('/coletas')->assertNotFound();
+
+        $this->app['env'] = 'local';
+
+        $this->get('/coletas')->assertOk()
+            ->assertSee('Registrar coleta e recebimento')
+            ->assertSee('Nenhum dado será salvo nesta tela.')
+            ->assertDontSee('<form', false);
+    }
+
     public function test_removed_account_cannot_login_or_recover_password_even_with_existing_token(): void
     {
         Notification::fake();
