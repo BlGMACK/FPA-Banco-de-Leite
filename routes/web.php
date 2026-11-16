@@ -75,6 +75,11 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Prévia visual da coleta: a coleta ainda não existe no backend e esta tela não grava dados.
+Route::get('/interno/coletas', function () {
+    return view('coletas.registrar');
+})->middleware(['auth', 'verified'])->name('interno.coletas.registrar');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');

@@ -17,7 +17,7 @@ A aplicação é um monólito web Laravel com páginas renderizadas por Blade e 
 
 | Caminho | Responsabilidade observada |
 | --- | --- |
-| [routes/web.php](../routes/web.php) | Solicitação pública sem conta (`/doar`), painel e perfil, e áreas internas: `interno/solicitacoes`, `interno/acompanhamentos`, `interno/agenda`, `interno/relatorios`, `interno/funcionarios` e `interno/permissoes`. Cada grupo exige autenticação e o Gate correspondente. |
+| [routes/web.php](../routes/web.php) | Solicitação pública sem conta (`/doar`), painel e perfil, e áreas internas: `interno/solicitacoes`, `interno/acompanhamentos`, `interno/agenda`, `interno/relatorios`, `interno/funcionarios` e `interno/permissoes`. Cada grupo exige autenticação e o Gate correspondente. A prévia da coleta (`interno/coletas`) exige só login e não grava dados. |
 | [routes/auth.php](../routes/auth.php) | Sessão, senha e verificação de e-mail para contas internas. Sem autocadastro. |
 | [routes/console.php](../routes/console.php) | Comando de exemplo `inspire`; não há agendamento de negócio. |
 | [bootstrap/app.php](../bootstrap/app.php) | Inicialização, health check `/up`, `EnsureInternalAccount` no grupo web e alias `role`. |
@@ -54,4 +54,4 @@ Esconder links na navegação não substitui a autorização do servidor. As rot
 - **Permissões:** `PermissaoController` e views `permissoes`, protegidos por `gerenciar-permissoes` (somente admin). Concessão e revogação delegadas a `Permissao::conceder/revogar`; desativação e reativação de funcionários a `User::desativar/reativar`, ambas com motivo e histórico. Ver [Contratos](backend/CONTRATOS.md#gestão-de-permissões-implementada-em-29102026).
 - **Retenção:** `RetencaoController` e view `retencao/index`, protegidos por `gerenciar-retencao` (somente admin). Prazo em `config/retencao.php` (`RETENCAO_ANOS`); descarte delegado a `AnexoItemAvaliacao::descartar` e `EventoSolicitacao::descartarValores`, um item por transação. Sem comando nem agendamento.
 
-A página inicial apresenta o acesso à solicitação e ao login; o painel mostra atalhos para as áreas internas liberadas ao usuário e avisa quando nenhuma foi liberada. Todas as telas existentes são apoio ao desenvolvimento, sem aprovação como interface final nem revisão visual registrada.
+A página inicial apresenta o acesso à solicitação e ao login; o painel mostra atalhos para as áreas internas liberadas ao usuário e avisa quando nenhuma foi liberada; o atalho da prévia da coleta aparece para quem tem alguma área liberada. Todas as telas existentes são apoio ao desenvolvimento, sem aprovação como interface final nem revisão visual registrada.

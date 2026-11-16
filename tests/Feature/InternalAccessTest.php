@@ -28,6 +28,25 @@ class InternalAccessTest extends TestCase
         $this->assertDatabaseCount('users', 0);
     }
 
+    public function test_collection_preview_is_internal_listed_in_menu_and_saves_nothing(): void
+    {
+        $this->get('/coletas')->assertNotFound();
+        $this->get('/interno/coletas')->assertRedirect('/login');
+
+        $user = User::factory()->funcionario()->create();
+
+        $response = $this->actingAs($user)->get('/interno/coletas')->assertOk()
+            ->assertSee('Registrar coleta e recebimento')
+            ->assertSee('Nenhum dado será salvo nesta tela.')
+            ->assertSee('Navegação principal')
+            ->assertDontSee('action="'.route('interno.coletas.registrar'), false);
+
+        $this->assertMatchesRegularExpression(
+            '#href="'.preg_quote(route('interno.coletas.registrar'), '#').'"\s+aria-current="page"\s*>Coletas</a>#',
+            $response->getContent()
+        );
+    }
+
     public function test_removed_account_cannot_login_or_recover_password_even_with_existing_token(): void
     {
         Notification::fake();
